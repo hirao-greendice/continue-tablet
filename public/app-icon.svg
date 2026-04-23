@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Tablet Test">
+  <rect width="512" height="512" rx="112" fill="#071018"/>
+  <circle cx="128" cy="168" r="82" fill="#00c2ff"/>
+  <circle cx="356" cy="174" r="82" fill="#9dff5f"/>
+  <circle cx="256" cy="342" r="94" fill="#ff6f59"/>
+  <path fill="#fff9e9" fill-opacity=".82" d="M164 96h184c38 0 68 30 68 68v184c0 38-30 68-68 68H164c-38 0-68-30-68-68V164c0-38 30-68 68-68Zm0 32c-20 0-36 16-36 36v184c0 20 16 36 36 36h184c20 0 36-16 36-36V164c0-20-16-36-36-36H164Z"/>
+</svg>

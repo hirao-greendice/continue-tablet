@@ -1,0 +1,20 @@
+{
+  "name": "Tablet Fullscreen Test",
+  "short_name": "Tablet Test",
+  "description": "A fullscreen tablet display-mode test app.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "background_color": "#071018",
+  "theme_color": "#071018",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
