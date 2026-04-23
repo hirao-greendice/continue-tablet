@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tablet-fullscreen-test-v1'
+const CACHE_NAME = 'tablet-fullscreen-test-v2'
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
@@ -33,12 +33,22 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put('./', copy))
+          return response
+        })
+        .catch(() => caches.match('./')),
+    )
+    return
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      return (
-        cachedResponse ||
-        fetch(event.request).catch(() => caches.match('./'))
-      )
+      return cachedResponse || fetch(event.request)
     }),
   )
 })

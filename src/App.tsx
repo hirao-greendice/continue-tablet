@@ -16,6 +16,11 @@ const colorTiles = [
   },
 ]
 
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (event: MediaQueryListEvent) => void) => void
+  removeListener?: (listener: (event: MediaQueryListEvent) => void) => void
+}
+
 function getDisplayMode() {
   const iosStandalone =
     'standalone' in window.navigator &&
@@ -41,8 +46,12 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement))
 
   useEffect(() => {
-    const fullscreenQuery = window.matchMedia('(display-mode: fullscreen)')
-    const standaloneQuery = window.matchMedia('(display-mode: standalone)')
+    const fullscreenQuery: LegacyMediaQueryList = window.matchMedia(
+      '(display-mode: fullscreen)',
+    )
+    const standaloneQuery: LegacyMediaQueryList = window.matchMedia(
+      '(display-mode: standalone)',
+    )
 
     const updateViewportState = () => {
       setDisplayMode(getDisplayMode())
@@ -50,13 +59,17 @@ function App() {
     }
 
     document.addEventListener('fullscreenchange', updateViewportState)
-    fullscreenQuery.addEventListener('change', updateViewportState)
-    standaloneQuery.addEventListener('change', updateViewportState)
+    fullscreenQuery.addEventListener?.('change', updateViewportState)
+    fullscreenQuery.addListener?.(updateViewportState)
+    standaloneQuery.addEventListener?.('change', updateViewportState)
+    standaloneQuery.addListener?.(updateViewportState)
 
     return () => {
       document.removeEventListener('fullscreenchange', updateViewportState)
-      fullscreenQuery.removeEventListener('change', updateViewportState)
-      standaloneQuery.removeEventListener('change', updateViewportState)
+      fullscreenQuery.removeEventListener?.('change', updateViewportState)
+      fullscreenQuery.removeListener?.(updateViewportState)
+      standaloneQuery.removeEventListener?.('change', updateViewportState)
+      standaloneQuery.removeListener?.(updateViewportState)
     }
   }, [])
 

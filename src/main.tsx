@@ -13,7 +13,7 @@ document.addEventListener('touchmove', preventDocumentScroll, { passive: false }
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    const swUrl = new URL(`${import.meta.env.BASE_URL}sw.js`, window.location.origin)
+    const swUrl = new URL(`${import.meta.env.BASE_URL}sw.js`, window.location.href)
     navigator.serviceWorker.register(swUrl).catch(() => undefined)
   })
 }
