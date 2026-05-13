@@ -1,5 +1,7 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
+import Cropper, { type Area, type Point } from 'react-easy-crop'
 import './App.css'
+import { createCroppedPhotoFile } from './cropImage'
 import {
   saveCurrentPhotos,
   subscribeCurrentPhotos,
@@ -10,6 +12,11 @@ import {
 type Screen = 'home' | 'scene1' | 'scene2' | 'scene3' | 'photos'
 type PhotoSlot = {
   id: number
+  label: string
+  src: string
+}
+type CropDraft = {
+  slotId: number
   label: string
   src: string
 }
@@ -421,6 +428,31 @@ type PhotoManagerProps = {
 }
 
 function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoManagerProps) {
+  const [cropDraft, setCropDraft] = useState<CropDraft | null>(null)
+  const objectUrls = useRef<string[]>([])
+
+  useEffect(() => {
+    const createdObjectUrls = objectUrls.current
+
+    return () => {
+      createdObjectUrls.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [])
+
+  const openCropper = (photo: PhotoSlot, file: File | null) => {
+    if (!file) {
+      return
+    }
+
+    const src = URL.createObjectURL(file)
+    objectUrls.current.push(src)
+    setCropDraft({
+      slotId: photo.id,
+      label: photo.label,
+      src,
+    })
+  }
+
   return (
     <section className="photo-manager" aria-label="写真撮影">
       <button className="back-button photo-back" type="button" onClick={onBack}>
@@ -437,13 +469,13 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
               <div>
                 <h2>{photo.id}. {photo.label}</h2>
                 <label className="photo-input-button">
-                  撮影・選択
+                  撮影・撮り直し
                   <input
                     accept="image/*"
                     capture="environment"
                     type="file"
                     onChange={(event) => {
-                      void onUpdatePhoto(photo.id, event.target.files?.[0] ?? null)
+                      openCropper(photo, event.target.files?.[0] ?? null)
                       event.currentTarget.value = ''
                     }}
                   />
@@ -453,7 +485,93 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
           ))}
         </div>
       </div>
+      {cropDraft && (
+        <PhotoCropDialog
+          draft={cropDraft}
+          onCancel={() => setCropDraft(null)}
+          onUpdate={async (file) => {
+            await onUpdatePhoto(cropDraft.slotId, file)
+            setCropDraft(null)
+          }}
+        />
+      )}
     </section>
+  )
+}
+
+type PhotoCropDialogProps = {
+  draft: CropDraft
+  onCancel: () => void
+  onUpdate: (file: File) => Promise<void>
+}
+
+function PhotoCropDialog({ draft, onCancel, onUpdate }: PhotoCropDialogProps) {
+  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  const updatePhoto = async () => {
+    if (!croppedAreaPixels) {
+      return
+    }
+
+    setIsUpdating(true)
+
+    try {
+      const file = await createCroppedPhotoFile(draft.src, croppedAreaPixels, draft.slotId)
+      await onUpdate(file)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  return (
+    <div className="crop-dialog" role="dialog" aria-modal="true" aria-label="写真の切り取り">
+      <div className="crop-panel">
+        <header className="crop-header">
+          <h2>{draft.slotId}. {draft.label}</h2>
+          <button className="crop-cancel" type="button" onClick={onCancel}>
+            キャンセル
+          </button>
+        </header>
+
+        <div className="crop-area">
+          <Cropper
+            image={draft.src}
+            crop={crop}
+            zoom={zoom}
+            aspect={15 / 26}
+            objectFit="contain"
+            onCropChange={setCrop}
+            onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}
+            onZoomChange={setZoom}
+          />
+        </div>
+
+        <div className="crop-controls">
+          <label>
+            拡大
+            <input
+              max="3"
+              min="1"
+              step="0.01"
+              type="range"
+              value={zoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+            />
+          </label>
+          <button
+            className="crop-update"
+            type="button"
+            disabled={isUpdating}
+            onClick={() => void updatePhoto()}
+          >
+            {isUpdating ? '更新中...' : '更新する'}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 

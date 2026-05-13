@@ -480,3 +480,82 @@ button:focus-visible {
   opacity: 0;
   pointer-events: none;
 }
+
+.crop-dialog {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.78);
+}
+
+.crop-panel {
+  display: grid;
+  width: 1000px;
+  height: 1680px;
+  grid-template-rows: auto 1fr auto;
+  gap: 30px;
+  padding: 42px;
+  background: #111;
+  color: #fff;
+}
+
+.crop-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 24px;
+}
+
+.crop-header h2 {
+  margin: 0;
+  font-size: 42px;
+}
+
+.crop-cancel {
+  width: 220px;
+  height: 86px;
+  background: #dedede;
+  color: #111;
+  font-size: 32px;
+  font-weight: 900;
+}
+
+.crop-area {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.crop-controls {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  align-items: center;
+  gap: 38px;
+}
+
+.crop-controls label {
+  display: grid;
+  gap: 14px;
+  font-size: 32px;
+  font-weight: 900;
+}
+
+.crop-controls input[type='range'] {
+  width: 100%;
+  accent-color: #99d513;
+}
+
+.crop-update {
+  height: 104px;
+  background: #99d513;
+  color: #050505;
+  font-size: 38px;
+  font-weight: 900;
+}
+
+.crop-update:disabled {
+  opacity: 0.58;
+}

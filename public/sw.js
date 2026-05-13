@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tablet-fullscreen-test-v2'
+const CACHE_NAME = 'continue-tablet-v1'
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
@@ -46,9 +46,30 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  const url = new URL(event.request.url)
+  const isStaticAsset =
+    url.origin === self.location.origin &&
+    ['script', 'style', 'font', 'image', 'video', 'manifest'].includes(
+      event.request.destination,
+    )
+  const isRemoteImage = event.request.destination === 'image'
+
+  if (!isStaticAsset && !isRemoteImage) {
+    return
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      return cachedResponse || fetch(event.request)
+      const fetchAndCache = fetch(event.request).then((response) => {
+        if (response.ok || response.type === 'opaque') {
+          const copy = response.clone()
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy))
+        }
+
+        return response
+      })
+
+      return cachedResponse || fetchAndCache
     }),
   )
 })
