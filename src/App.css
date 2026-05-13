@@ -125,18 +125,6 @@ button:focus-visible {
   pointer-events: none;
 }
 
-.scene-one-background {
-  background-image: url('/backgrounds/scene-1.jpg');
-}
-
-.scene-two-background {
-  background-image: url('/backgrounds/scene-2.jpg');
-}
-
-.scene-three-background {
-  background-image: url('/backgrounds/scene-3.jpg');
-}
-
 .story-screen > *:not(.story-background) {
   position: relative;
   z-index: 1;

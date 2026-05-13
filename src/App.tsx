@@ -21,10 +21,16 @@ type CropDraft = {
   src: string
 }
 
+function publicAsset(path: string) {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
+}
+
+const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260513-1'
+
 const defaultPhotos: PhotoSlot[] = [
-  { id: 1, label: '雛用係の役', src: '/photos/team-photo-1.jpg' },
-  { id: 2, label: '学芸員の役', src: '/photos/team-photo-2.jpg' },
-  { id: 3, label: 'ケージーの役', src: '/photos/team-photo-3.jpg' },
+  { id: 1, label: '雛用係の役', src: publicAsset('photos/team-photo-1.jpg') },
+  { id: 2, label: '学芸員の役', src: publicAsset('photos/team-photo-2.jpg') },
+  { id: 3, label: 'ケージーの役', src: publicAsset('photos/team-photo-3.jpg') },
 ]
 
 const STAGE_WIDTH = 1200
@@ -51,6 +57,7 @@ function App() {
   const [stageScale, setStageScale] = useState(getStageScale)
   const [photos, setPhotos] = useState<PhotoSlot[]>(defaultPhotos)
   const [uploadStatus, setUploadStatus] = useState('')
+  const preloadedPhotoImages = useRef<HTMLImageElement[]>([])
 
   useEffect(() => {
     const fullscreenQuery: LegacyMediaQueryList = window.matchMedia(
@@ -99,6 +106,18 @@ function App() {
       setPhotos((currentPhotos) => mergeStoredPhotos(currentPhotos, storedPhotos))
     })
   }, [])
+
+  useEffect(() => {
+    if (screen !== 'scene2') {
+      return
+    }
+
+    preloadedPhotoImages.current = photos.map((photo) => {
+      const image = new Image()
+      image.src = photo.src
+      return image
+    })
+  }, [photos, screen])
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === selectedPhotoId),
@@ -253,14 +272,22 @@ function SceneOne({ onBack, onNext }: SceneOneProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
 
-  const playVideo = () => {
-    setIsVideoPlaying(true)
-    void videoRef.current?.play().catch(() => undefined)
+  const playVideo = async () => {
+    try {
+      await videoRef.current?.play()
+      setIsVideoPlaying(true)
+    } catch {
+      setIsVideoPlaying(false)
+    }
   }
 
   return (
     <section className="story-screen scene-one">
-      <div className="story-background scene-one-background" aria-hidden="true" />
+      <div
+        className="story-background"
+        style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-1.jpg')}")` }}
+        aria-hidden="true"
+      />
       <button className="back-button" type="button" onClick={onBack}>
         戻る
       </button>
@@ -286,9 +313,14 @@ function SceneOne({ onBack, onNext }: SceneOneProps) {
           data-playing={isVideoPlaying}
           type="button"
           aria-label="動画を再生"
-          onClick={playVideo}
+          onClick={() => void playVideo()}
         >
-          <video ref={videoRef} src="/videos/scene-1.mp4" playsInline />
+          <video
+            ref={videoRef}
+            src={publicAsset(`videos/scene-1.mp4?v=${SCENE_ONE_VIDEO_VERSION}`)}
+            preload="metadata"
+            playsInline
+          />
           <span className="play-mark" />
           <span>再生する</span>
         </button>
@@ -308,7 +340,11 @@ type SceneTwoProps = {
 function SceneTwo({ onBack, onNext }: SceneTwoProps) {
   return (
     <section className="story-screen scene-two">
-      <div className="story-background scene-two-background" aria-hidden="true" />
+      <div
+        className="story-background"
+        style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-2.jpg')}")` }}
+        aria-hidden="true"
+      />
       <button className="back-button" type="button" onClick={onBack}>
         戻る
       </button>
@@ -386,7 +422,11 @@ function SceneThree({
 }: SceneThreeProps) {
   return (
     <section className="story-screen scene-three">
-      <div className="story-background scene-three-background" aria-hidden="true" />
+      <div
+        className="story-background"
+        style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-3.jpg')}")` }}
+        aria-hidden="true"
+      />
       <header className="answer-header">
         <button className="back-button answer-back" type="button" onClick={onBack}>
           戻る

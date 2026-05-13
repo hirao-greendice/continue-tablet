@@ -11,11 +11,20 @@ const preventDocumentScroll = (event: TouchEvent) => {
 
 document.addEventListener('touchmove', preventDocumentScroll, { passive: false })
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     const swUrl = new URL(`${import.meta.env.BASE_URL}sw.js`, window.location.href)
     navigator.serviceWorker.register(swUrl).catch(() => undefined)
   })
+}
+
+if ('serviceWorker' in navigator && import.meta.env.DEV) {
+  navigator.serviceWorker
+    .getRegistrations()
+    .then((registrations) =>
+      Promise.all(registrations.map((registration) => registration.unregister())),
+    )
+    .catch(() => undefined)
 }
 
 createRoot(document.getElementById('root')!).render(
