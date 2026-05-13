@@ -1,7 +1,7 @@
 {
-  "name": "Tablet Fullscreen Test",
-  "short_name": "Tablet Test",
-  "description": "A fullscreen tablet display-mode test app.",
+  "name": "ゲームは続く タブレット",
+  "short_name": "ゲームは続く",
+  "description": "謎解き公演「ゲームは続く」で使用するタブレットアプリ。",
   "start_url": ".",
   "scope": ".",
   "display": "fullscreen",

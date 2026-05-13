@@ -23,6 +23,7 @@ type PhotoSlot = {
   id: number
   label: string
   src: string
+  updatedAt?: number
 }
 type CropDraft = {
   slotId: number
@@ -238,8 +239,9 @@ function App() {
 
     try {
       const src = await uploadCurrentPhoto(slotId, file)
+      const updatedAt = Date.now()
       const nextPhotos = photos.map((photo) =>
-        photo.id === slotId ? { ...photo, src } : photo,
+        photo.id === slotId ? { ...photo, src, updatedAt } : photo,
       )
 
       setPhotos(nextPhotos)
@@ -356,7 +358,13 @@ function App() {
 function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto[]) {
   return currentPhotos.map((photo) => {
     const storedPhoto = storedPhotos.find((item) => item.id === photo.id)
-    return storedPhoto ? { ...photo, src: storedPhoto.src } : photo
+    return storedPhoto
+      ? {
+          ...photo,
+          src: storedPhoto.src,
+          updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhoto.src),
+        }
+      : photo
   })
 }
 
@@ -364,7 +372,31 @@ function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   return photos.map((photo) => ({
     id: photo.id,
     src: photo.src,
+    updatedAt: photo.updatedAt,
   }))
+}
+
+function getPhotoVersionTimestamp(src: string) {
+  const version = new URL(src, window.location.href).searchParams.get('v')
+  const timestamp = Number(version)
+
+  return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : undefined
+}
+
+const photoUpdatedAtFormatter = new Intl.DateTimeFormat('ja-JP', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+function formatPhotoUpdatedAt(updatedAt: number | undefined) {
+  if (!updatedAt) {
+    return '更新日時: 未更新'
+  }
+
+  return `更新日時: ${photoUpdatedAtFormatter.format(new Date(updatedAt))}`
 }
 
 function createEmptyTeamStates() {
@@ -824,6 +856,7 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
               <img src={photo.src} alt={`${photo.label}の現在の写真`} />
               <div>
                 <h2>{photo.id}. {photo.label}</h2>
+                <p className="photo-updated-at">{formatPhotoUpdatedAt(photo.updatedAt)}</p>
                 <label className="photo-input-button">
                   撮影・撮り直し
                   <input

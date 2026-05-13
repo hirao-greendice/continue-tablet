@@ -5,6 +5,7 @@ import { db, storage } from './firebase'
 export type StoredPhoto = {
   id: number
   src: string
+  updatedAt?: number
 }
 
 type CurrentPhotosDocument = {
