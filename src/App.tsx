@@ -9,8 +9,14 @@ import {
   uploadCurrentPhoto,
   type StoredPhoto,
 } from './photoStore'
+import {
+  connectTeamPresence,
+  submitTeamAnswer,
+  subscribeTeamStates,
+  type TeamState,
+} from './teamStore'
 
-type Screen = 'home' | 'scene1' | 'scene2' | 'scene3' | 'photos'
+type Screen = 'home' | 'scene1' | 'scene2' | 'scene3' | 'photos' | 'master'
 type PhotoSlot = {
   id: number
   label: string
@@ -36,6 +42,7 @@ const defaultPhotos: PhotoSlot[] = [
 
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
+const TEAM_STALE_MS = 45_000
 
 type LegacyMediaQueryList = MediaQueryList & {
   addListener?: (listener: (event: MediaQueryListEvent) => void) => void
@@ -52,11 +59,13 @@ function getStageScale() {
 
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
-  const [, setTeamNumber] = useState<number | null>(null)
+  const [teamNumber, setTeamNumber] = useState<number | null>(null)
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(getIsFullscreen)
   const [stageScale, setStageScale] = useState(getStageScale)
   const [photos, setPhotos] = useState<PhotoSlot[]>(defaultPhotos)
+  const [teamStates, setTeamStates] = useState<TeamState[]>(createEmptyTeamStates)
+  const [masterNow, setMasterNow] = useState(() => Date.now())
   const [uploadStatus, setUploadStatus] = useState('')
   const preloadedPhotoImages = useRef<HTMLImageElement[]>([])
 
@@ -109,6 +118,26 @@ function App() {
   }, [])
 
   useEffect(() => {
+    return subscribeTeamStates(setTeamStates)
+  }, [])
+
+  useEffect(() => {
+    if (!teamNumber) {
+      return
+    }
+
+    return connectTeamPresence(teamNumber)
+  }, [teamNumber])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setMasterNow(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
     if (screen !== 'scene2') {
       return
     }
@@ -158,6 +187,17 @@ function App() {
     }
   }
 
+  const submitAnswer = async () => {
+    if (!teamNumber || !selectedPhoto) {
+      return
+    }
+
+    await submitTeamAnswer(teamNumber, {
+      label: getAnswerLabel(selectedPhoto.id),
+      photoId: selectedPhoto.id,
+    })
+  }
+
   return (
     <main className="app-frame">
       <div
@@ -173,7 +213,11 @@ function App() {
       >
         <div className="stage-content">
           {screen === 'home' && (
-            <HomeScreen onStartTeam={startTeam} onOpenPhotos={() => setScreen('photos')} />
+            <HomeScreen
+              onStartTeam={startTeam}
+              onOpenMaster={() => setScreen('master')}
+              onOpenPhotos={() => setScreen('photos')}
+            />
           )}
 
           {screen === 'scene1' && (
@@ -193,6 +237,15 @@ function App() {
               selectedPhotoId={selectedPhotoId}
               onBack={() => setScreen('scene2')}
               onSelect={setSelectedPhotoId}
+              onSubmit={submitAnswer}
+            />
+          )}
+
+          {screen === 'master' && (
+            <MasterScreen
+              now={masterNow}
+              teams={teamStates}
+              onBack={() => setScreen('home')}
             />
           )}
 
@@ -230,12 +283,37 @@ function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   }))
 }
 
+function createEmptyTeamStates() {
+  return Array.from({ length: 8 }, (_, index) => ({ team: index + 1 }))
+}
+
+function getAnswerLabel(photoId: number) {
+  if (photoId === 1) {
+    return '雑用係'
+  }
+
+  if (photoId === 2) {
+    return '学芸員'
+  }
+
+  return 'ケージー'
+}
+
+function isTeamAlive(team: TeamState, now: number) {
+  if (!team.online || !team.lastSeen) {
+    return false
+  }
+
+  return now - team.lastSeen < TEAM_STALE_MS
+}
+
 type HomeScreenProps = {
+  onOpenMaster: () => void
   onStartTeam: (team: number) => void
   onOpenPhotos: () => void
 }
 
-function HomeScreen({ onStartTeam, onOpenPhotos }: HomeScreenProps) {
+function HomeScreen({ onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
   return (
     <section className="home-screen" aria-label="チーム選択">
       <div className="team-grid" aria-label="チーム番号">
@@ -252,7 +330,7 @@ function HomeScreen({ onStartTeam, onOpenPhotos }: HomeScreenProps) {
       </div>
 
       <div className="home-actions">
-        <button className="home-action-button" type="button" disabled>
+        <button className="home-action-button" type="button" onClick={onOpenMaster}>
           MASTER
         </button>
         <button className="home-action-button" type="button" onClick={onOpenPhotos}>
@@ -303,6 +381,13 @@ function SceneOne({ onNext }: SceneOneProps) {
           ゲームが始まる前に言ったように
           <br />
           いまこの会場には大変なことが起きているんだ。
+        </p>
+        <p>
+          文字で説明するより聞かせたほうがいいか。
+          <br />
+          みんながこの会場に入る前に私がみた光景を、
+          <br />
+          なるべくリアルに再現するね。
         </p>
         <button
           className="video-box"
@@ -407,6 +492,7 @@ type SceneThreeProps = {
   selectedPhotoId: number | null
   onBack: () => void
   onSelect: (photoId: number) => void
+  onSubmit: () => Promise<void>
 }
 
 function SceneThree({
@@ -415,6 +501,7 @@ function SceneThree({
   selectedPhotoId,
   onBack,
   onSelect,
+  onSubmit,
 }: SceneThreeProps) {
   return (
     <section className="story-screen scene-three">
@@ -465,10 +552,45 @@ function SceneThree({
           className="submit-answer"
           type="button"
           disabled={!selectedPhoto}
-          onClick={() => undefined}
+          onClick={() => void onSubmit()}
         >
           天使に提出する
         </button>
+      </div>
+    </section>
+  )
+}
+
+type MasterScreenProps = {
+  now: number
+  teams: TeamState[]
+  onBack: () => void
+}
+
+function MasterScreen({ now, teams, onBack }: MasterScreenProps) {
+  return (
+    <section className="master-screen" aria-label="MASTER">
+      <button className="master-back" type="button" onClick={onBack}>
+        戻る
+      </button>
+      <h1>MASTER</h1>
+
+      <div className="master-team-grid">
+        {teams.map((team) => {
+          const answer = team.answer
+          const isCorrect = answer?.photoId === 2 || answer?.label === '学芸員'
+
+          return (
+            <article className="master-team" key={team.team}>
+              <div className="master-team-number" data-alive={isTeamAlive(team, now)}>
+                {team.team}
+              </div>
+              <div className="master-team-answer" data-correct={isCorrect}>
+                {answer?.label ?? ''}
+              </div>
+            </article>
+          )
+        })}
       </div>
     </section>
   )

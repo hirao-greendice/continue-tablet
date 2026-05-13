@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app'
+import { getDatabase } from 'firebase/database'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
@@ -15,3 +16,8 @@ const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig)
 export const db = getFirestore(firebaseApp)
 export const storage = getStorage(firebaseApp)
+export const realtimeDb = getDatabase(
+  firebaseApp,
+  import.meta.env.VITE_FIREBASE_DATABASE_URL ||
+    'https://continue-game-default-rtdb.firebaseio.com',
+)
