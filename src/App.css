@@ -403,7 +403,7 @@ button:focus-visible {
 
 .photo-manager-inner {
   height: 100%;
-  padding: 140px 88px 80px;
+  padding: 140px 60px 80px;
 }
 
 .photo-manager h1 {
@@ -429,34 +429,38 @@ button:focus-visible {
 
 .photo-editor-list {
   display: grid;
-  gap: 34px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
 }
 
 .photo-editor {
   display: grid;
-  grid-template-columns: 220px 1fr;
-  align-items: center;
-  gap: 44px;
-  padding: 30px;
+  justify-items: center;
+  align-content: start;
+  gap: 28px;
+  padding: 28px 20px 34px;
   border: 4px solid #d2d2d2;
   background: #fff;
+  text-align: center;
 }
 
 .photo-editor img {
-  width: 220px;
-  height: 220px;
+  width: 300px;
+  height: 520px;
   object-fit: cover;
   background: #ddd;
 }
 
 .photo-editor h2 {
-  margin: 0 0 34px;
-  font-size: 38px;
+  min-height: 88px;
+  margin: 0 0 22px;
+  font-size: 31px;
+  line-height: 1.2;
 }
 
 .photo-input-button {
   display: inline-grid;
-  width: 300px;
+  width: 280px;
   height: 94px;
   place-items: center;
   background: #99d513;
@@ -474,9 +478,9 @@ button:focus-visible {
 }
 
 .crop-dialog {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 100;
   display: grid;
   place-items: center;
   background: rgba(0, 0, 0, 0.78);
@@ -484,10 +488,10 @@ button:focus-visible {
 
 .crop-panel {
   display: grid;
-  width: 1000px;
-  height: 1680px;
-  grid-template-rows: auto 1fr auto;
-  gap: 30px;
+  width: min(1080px, calc(100vw - 48px));
+  height: min(1800px, calc(100dvh - 48px));
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 26px;
   padding: 42px;
   background: #111;
   color: #fff;
@@ -516,6 +520,11 @@ button:focus-visible {
 
 .crop-area {
   position: relative;
+  align-self: center;
+  justify-self: center;
+  width: min(820px, calc((100dvh - 340px) * 15 / 26), calc(100vw - 140px));
+  max-width: 100%;
+  aspect-ratio: 15 / 26;
   min-height: 0;
   overflow: hidden;
   background: #000;

@@ -32,7 +32,11 @@ export async function uploadCurrentPhoto(slotId: number, file: File) {
     contentType: file.type,
   })
 
-  return getDownloadURL(photoRef)
+  const downloadUrl = await getDownloadURL(photoRef)
+  const versionedUrl = new URL(downloadUrl)
+  versionedUrl.searchParams.set('v', Date.now().toString())
+
+  return versionedUrl.toString()
 }
 
 export async function saveCurrentPhotos(photos: StoredPhoto[]) {

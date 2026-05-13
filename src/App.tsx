@@ -1,4 +1,5 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Cropper, { type Area, type Point } from 'react-easy-crop'
 import './App.css'
 import { createCroppedPhotoFile } from './cropImage'
@@ -543,16 +544,18 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
           ))}
         </div>
       </div>
-      {cropDraft && (
-        <PhotoCropDialog
-          draft={cropDraft}
-          onCancel={() => setCropDraft(null)}
-          onUpdate={async (file) => {
-            await onUpdatePhoto(cropDraft.slotId, file)
-            setCropDraft(null)
-          }}
-        />
-      )}
+      {cropDraft &&
+        createPortal(
+          <PhotoCropDialog
+            draft={cropDraft}
+            onCancel={() => setCropDraft(null)}
+            onUpdate={async (file) => {
+              await onUpdatePhoto(cropDraft.slotId, file)
+              setCropDraft(null)
+            }}
+          />,
+          document.body,
+        )}
     </section>
   )
 }
