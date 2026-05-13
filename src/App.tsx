@@ -11,6 +11,7 @@ import {
 } from './photoStore'
 import {
   connectTeamPresence,
+  resetTeamAnswers,
   subscribeRealtimeConnection,
   submitTeamAnswer,
   subscribeTeamStates,
@@ -264,6 +265,15 @@ function App() {
     setSubmittedPhotoId(selectedPhoto.id)
   }
 
+  const resetMasterAnswers = async () => {
+    try {
+      await resetTeamAnswers()
+      setRealtimeError('')
+    } catch (error) {
+      setRealtimeError(error instanceof Error ? error.message : String(error))
+    }
+  }
+
   return (
     <main className="app-frame">
       <div
@@ -317,6 +327,7 @@ function App() {
               realtimeError={realtimeError}
               teams={teamStates}
               onBack={() => setScreen('home')}
+              onResetAnswers={resetMasterAnswers}
             />
           )}
 
@@ -776,6 +787,7 @@ type MasterScreenProps = {
   realtimeError: string
   teams: TeamState[]
   onBack: () => void
+  onResetAnswers: () => Promise<void>
 }
 
 function MasterScreen({
@@ -784,11 +796,15 @@ function MasterScreen({
   realtimeError,
   teams,
   onBack,
+  onResetAnswers,
 }: MasterScreenProps) {
   return (
     <section className="master-screen" aria-label="MASTER">
       <button className="master-back" type="button" onClick={onBack}>
         戻る
+      </button>
+      <button className="master-reset-answers" type="button" onClick={() => void onResetAnswers()}>
+        リセット機能
       </button>
       <h1>MASTER</h1>
       <div className="master-connection" data-connected={realtimeConnected}>

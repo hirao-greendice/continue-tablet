@@ -297,6 +297,19 @@ button:focus-visible {
   font-weight: 900;
 }
 
+.master-reset-answers {
+  position: absolute;
+  bottom: 38px;
+  left: 38px;
+  width: 270px;
+  height: 92px;
+  border: 4px solid #d9d9d9;
+  background: #fff;
+  color: #050505;
+  font-size: 34px;
+  font-weight: 900;
+}
+
 .master-team-grid {
   display: grid;
   grid-template-columns: repeat(4, 174px);
