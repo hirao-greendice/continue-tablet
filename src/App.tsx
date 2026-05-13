@@ -483,6 +483,7 @@ type HomeScreenProps = {
 function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
   return (
     <section className="home-screen" aria-label="チーム選択">
+      <h1 className="home-title">ゲームは続く</h1>
       <div className="home-photo-strip" aria-label="現在の写真">
         {photos.map((photo) => (
           <article className="home-photo-card" key={photo.id}>
@@ -941,6 +942,7 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
       <button className="back-button photo-back" type="button" onClick={onBack}>
         戻る
       </button>
+      <img className="photo-qr" src={publicAsset('QR.png')} alt="QRコード" />
       <div className="photo-manager-inner">
         <h1>写真撮影</h1>
         <p>3枚の写真を選ぶと、最終解答の候補画像に反映されます。</p>
