@@ -262,9 +262,13 @@ button:focus-visible {
 }
 
 .scene-two-content {
-  padding-top: 170px;
-  font-size: 32px;
-  line-height: 1.42;
+  padding-top: 132px;
+  font-size: 29px;
+  line-height: 1.34;
+}
+
+.scene-two-content p {
+  margin-bottom: 34px;
 }
 
 .answer-header {

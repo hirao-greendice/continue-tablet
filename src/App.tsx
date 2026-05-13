@@ -326,6 +326,10 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
           キャラクターをキーボックスにしたり、
           <br />
           人間にしたりするようだよ。
+          <br />
+          それで、もともとは今日キーボックスがあったはずの
+          <br />
+          ところに犯人が立っているようだ。
         </p>
         <p>
           犯人が何をするか分からないので、
@@ -335,6 +339,15 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
           先程の「忘却の一撃」は
           <br />
           1時間に1回しか打てないので、もう使えないんだ。
+          <br />
+          今はとにかくゲームが続いているようにみせよう。
+        </p>
+        <p>
+          でも、このままほっといても、強盗はこのあと、
+          <br />
+          この会場にお金があまりないことに気づき、
+          <br />
+          結局暴れることにはなるんだよね…
         </p>
         <p>
           ここで提案！
@@ -342,6 +355,11 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
           君たちが、犯人が誰か突き止めることさえできれば、
           <br />
           私が溜めてきた「改心の一撃」を放してあげる！
+          <br />
+          <br />
+          「改心の一撃」がフルチャージするのは
+          <br />
+          ちょうどゲームが終わる瞬間
         </p>
       </div>
       <button className="primary-next scene-two-next" type="button" onClick={onNext}>
