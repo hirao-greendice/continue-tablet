@@ -134,6 +134,47 @@ button:focus-visible {
   line-height: 1;
 }
 
+.master-connection {
+  position: absolute;
+  top: 118px;
+  right: 52px;
+  padding: 14px 22px;
+  background: #666;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.master-connection[data-connected='true'] {
+  background: #99d513;
+  color: #050505;
+}
+
+.master-error {
+  position: absolute;
+  top: 178px;
+  right: 52px;
+  max-width: 560px;
+  padding: 12px 18px;
+  background: #b00000;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.master-url {
+  position: absolute;
+  right: 52px;
+  bottom: 38px;
+  max-width: 700px;
+  overflow: hidden;
+  color: #777;
+  font-size: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .master-back {
   position: absolute;
   top: 24px;

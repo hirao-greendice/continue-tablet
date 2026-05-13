@@ -11,10 +11,12 @@ import {
 } from './photoStore'
 import {
   connectTeamPresence,
+  subscribeRealtimeConnection,
   submitTeamAnswer,
   subscribeTeamStates,
   type TeamState,
 } from './teamStore'
+import { realtimeDatabaseUrl } from './firebase'
 
 type Screen = 'home' | 'scene1' | 'scene2' | 'scene3' | 'photos' | 'master'
 type PhotoSlot = {
@@ -65,6 +67,8 @@ function App() {
   const [stageScale, setStageScale] = useState(getStageScale)
   const [photos, setPhotos] = useState<PhotoSlot[]>(defaultPhotos)
   const [teamStates, setTeamStates] = useState<TeamState[]>(createEmptyTeamStates)
+  const [realtimeConnected, setRealtimeConnected] = useState(false)
+  const [realtimeError, setRealtimeError] = useState('')
   const [masterNow, setMasterNow] = useState(() => Date.now())
   const [uploadStatus, setUploadStatus] = useState('')
   const preloadedPhotoImages = useRef<HTMLImageElement[]>([])
@@ -118,7 +122,11 @@ function App() {
   }, [])
 
   useEffect(() => {
-    return subscribeTeamStates(setTeamStates)
+    return subscribeTeamStates(setTeamStates, setRealtimeError)
+  }, [])
+
+  useEffect(() => {
+    return subscribeRealtimeConnection(setRealtimeConnected)
   }, [])
 
   useEffect(() => {
@@ -126,7 +134,7 @@ function App() {
       return
     }
 
-    return connectTeamPresence(teamNumber)
+    return connectTeamPresence(teamNumber, setRealtimeError)
   }, [teamNumber])
 
   useEffect(() => {
@@ -244,6 +252,8 @@ function App() {
           {screen === 'master' && (
             <MasterScreen
               now={masterNow}
+              realtimeConnected={realtimeConnected}
+              realtimeError={realtimeError}
               teams={teamStates}
               onBack={() => setScreen('home')}
             />
@@ -567,17 +577,30 @@ function SceneThree({
 
 type MasterScreenProps = {
   now: number
+  realtimeConnected: boolean
+  realtimeError: string
   teams: TeamState[]
   onBack: () => void
 }
 
-function MasterScreen({ now, teams, onBack }: MasterScreenProps) {
+function MasterScreen({
+  now,
+  realtimeConnected,
+  realtimeError,
+  teams,
+  onBack,
+}: MasterScreenProps) {
   return (
     <section className="master-screen" aria-label="MASTER">
       <button className="master-back" type="button" onClick={onBack}>
         戻る
       </button>
       <h1>MASTER</h1>
+      <div className="master-connection" data-connected={realtimeConnected}>
+        RTDB {realtimeConnected ? '接続中' : '未接続'}
+      </div>
+      {realtimeError && <div className="master-error">{realtimeError}</div>}
+      <div className="master-url">{realtimeDatabaseUrl}</div>
 
       <div className="master-team-grid">
         {teams.map((team) => {

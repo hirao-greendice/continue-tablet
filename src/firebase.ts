@@ -3,9 +3,14 @@ import { getDatabase } from 'firebase/database'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
+export const realtimeDatabaseUrl =
+  import.meta.env.VITE_FIREBASE_DATABASE_URL ||
+  'https://continue-game-default-rtdb.asia-southeast1.firebasedatabase.app'
+
 const firebaseConfig = {
   apiKey: 'AIzaSyDwCogYTgY_k4JYM6dTEb2oB1NjqRF0OPg',
   authDomain: 'continue-game.firebaseapp.com',
+  databaseURL: realtimeDatabaseUrl,
   projectId: 'continue-game',
   storageBucket: 'continue-game.firebasestorage.app',
   messagingSenderId: '267058650523',
@@ -16,8 +21,4 @@ const firebaseConfig = {
 export const firebaseApp = initializeApp(firebaseConfig)
 export const db = getFirestore(firebaseApp)
 export const storage = getStorage(firebaseApp)
-export const realtimeDb = getDatabase(
-  firebaseApp,
-  import.meta.env.VITE_FIREBASE_DATABASE_URL ||
-    'https://continue-game-default-rtdb.firebaseio.com',
-)
+export const realtimeDb = getDatabase(firebaseApp, realtimeDatabaseUrl)
