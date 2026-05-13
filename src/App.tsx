@@ -690,29 +690,39 @@ function SceneThree({
       <div className="answer-content">
         <h2>本物の強盗は：</h2>
         <div className="suspect-list">
-          {photos.map((photo) => (
-            <button
-              className="suspect-card"
-              data-selected={selectedPhotoId === photo.id}
-              key={photo.id}
-              type="button"
-              onClick={() => onSelect(photo.id)}
-            >
-              <span className="suspect-number">{photo.id}</span>
-              <span className="suspect-label">{photo.label}</span>
-              <span className="suspect-frame">
-                <img src={photo.src} alt={photo.label} />
-              </span>
-            </button>
-          ))}
+          {photos.map((photo) => {
+            const isSelected = selectedPhotoId === photo.id
+
+            return (
+              <button
+                className="suspect-card"
+                data-selected={isSelected}
+                key={photo.id}
+                type="button"
+                onClick={() => onSelect(photo.id)}
+              >
+                <span className="suspect-number">{photo.id}</span>
+                <span className="suspect-label">{photo.label}</span>
+                <span className="suspect-frame">
+                  <img src={photo.src} alt={photo.label} />
+                </span>
+                <span className="selection-pointer-slot" aria-hidden="true">
+                  {isSelected && (
+                    <img
+                      className="selection-pointer"
+                      src={publicAsset('select.png')}
+                      alt=""
+                    />
+                  )}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         <div className="selection-area" aria-live="polite">
           {selectedPhoto ? (
-            <>
-              <span className="finger-indicator">☝</span>
-              <strong>お前だ！</strong>
-            </>
+            <strong>お前だ！</strong>
           ) : (
             <span className="empty-selection">選択してください</span>
           )}

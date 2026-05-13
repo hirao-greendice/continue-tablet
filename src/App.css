@@ -588,23 +588,40 @@ button:focus-visible {
   object-fit: cover;
 }
 
+.selection-pointer-slot {
+  display: grid;
+  height: 154px;
+  place-items: center;
+}
+
+.selection-pointer {
+  width: 177px;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  animation: selection-pointer-bounce 0.9s ease-in-out infinite;
+}
+
+@keyframes selection-pointer-bounce {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -28px;
+  }
+}
+
 .selection-area {
   display: grid;
-  min-height: 180px;
-  margin-top: 86px;
+  min-height: 118px;
+  margin-top: 220px;
   place-items: center;
   color: #4a4a4a;
   font-size: 42px;
   font-weight: 900;
   line-height: 1.25;
   text-align: center;
-}
-
-.finger-indicator {
-  display: block;
-  color: #d39b00;
-  font-size: 86px;
-  line-height: 1;
 }
 
 .empty-selection {
