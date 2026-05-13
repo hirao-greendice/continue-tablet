@@ -193,6 +193,11 @@ function App() {
     }
   }
 
+  const exitFullscreenFromSecretMenu = async () => {
+    await exitFullscreen()
+    setSecretMenuOpen(false)
+  }
+
   const startTeam = (team: number) => {
     void enterFullscreen()
     setTeamNumber(team)
@@ -340,7 +345,7 @@ function App() {
       {secretMenuOpen && (
         <SecretMenu
           onClose={() => setSecretMenuOpen(false)}
-          onExitFullscreen={exitFullscreen}
+          onExitFullscreen={exitFullscreenFromSecretMenu}
           onGoHome={goHome}
         />
       )}
