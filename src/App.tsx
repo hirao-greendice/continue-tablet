@@ -63,6 +63,7 @@ function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [teamNumber, setTeamNumber] = useState<number | null>(null)
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null)
+  const [submittedPhotoId, setSubmittedPhotoId] = useState<number | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(getIsFullscreen)
   const [stageScale, setStageScale] = useState(getStageScale)
   const [photos, setPhotos] = useState<PhotoSlot[]>(defaultPhotos)
@@ -71,7 +72,7 @@ function App() {
   const [realtimeError, setRealtimeError] = useState('')
   const [masterNow, setMasterNow] = useState(() => Date.now())
   const [uploadStatus, setUploadStatus] = useState('')
-  const preloadedPhotoImages = useRef<HTMLImageElement[]>([])
+  const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
 
   useEffect(() => {
     const fullscreenQuery: LegacyMediaQueryList = window.matchMedia(
@@ -150,16 +151,31 @@ function App() {
       return
     }
 
-    preloadedPhotoImages.current = photos.map((photo) => {
+    photos.forEach((photo) => {
+      if (preloadedPhotoImages.current.has(photo.src)) {
+        return
+      }
+
       const image = new Image()
+      preloadedPhotoImages.current.set(photo.src, image)
+      image.addEventListener(
+        'error',
+        () => {
+          preloadedPhotoImages.current.delete(photo.src)
+        },
+        { once: true },
+      )
       image.src = photo.src
-      return image
     })
   }, [photos, screen])
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === selectedPhotoId),
     [photos, selectedPhotoId],
+  )
+  const submittedPhoto = useMemo(
+    () => photos.find((photo) => photo.id === submittedPhotoId),
+    [photos, submittedPhotoId],
   )
 
   const enterFullscreen = async () => {
@@ -171,6 +187,7 @@ function App() {
   const startTeam = (team: number) => {
     setTeamNumber(team)
     setSelectedPhotoId(null)
+    setSubmittedPhotoId(null)
     setScreen('scene1')
   }
 
@@ -204,6 +221,7 @@ function App() {
       label: getAnswerLabel(selectedPhoto.id),
       photoId: selectedPhoto.id,
     })
+    setSubmittedPhotoId(selectedPhoto.id)
   }
 
   return (
@@ -243,7 +261,9 @@ function App() {
               photos={photos}
               selectedPhoto={selectedPhoto}
               selectedPhotoId={selectedPhotoId}
+              submittedPhoto={submittedPhoto}
               onBack={() => setScreen('scene2')}
+              onRetry={() => setSubmittedPhotoId(null)}
               onSelect={setSelectedPhotoId}
               onSubmit={submitAnswer}
             />
@@ -504,7 +524,9 @@ type SceneThreeProps = {
   photos: PhotoSlot[]
   selectedPhoto: PhotoSlot | undefined
   selectedPhotoId: number | null
+  submittedPhoto: PhotoSlot | undefined
   onBack: () => void
+  onRetry: () => void
   onSelect: (photoId: number) => void
   onSubmit: () => Promise<void>
 }
@@ -513,10 +535,16 @@ function SceneThree({
   photos,
   selectedPhoto,
   selectedPhotoId,
+  submittedPhoto,
   onBack,
+  onRetry,
   onSelect,
   onSubmit,
 }: SceneThreeProps) {
+  if (submittedPhoto) {
+    return <SubmittedAnswerScreen photo={submittedPhoto} onRetry={onRetry} />
+  }
+
   return (
     <section className="story-screen scene-three">
       <div
@@ -571,6 +599,35 @@ function SceneThree({
           天使に提出する
         </button>
       </div>
+    </section>
+  )
+}
+
+type SubmittedAnswerScreenProps = {
+  photo: PhotoSlot
+  onRetry: () => void
+}
+
+function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
+  return (
+    <section className="submitted-answer-screen" aria-label="提出した回答">
+      <h1>強盗は…</h1>
+      <div className="submitted-answer-layout">
+        <div className="submitted-suspect">
+          <span className="submitted-number">{photo.id}</span>
+          <span className="submitted-label">{photo.label}</span>
+          <img src={photo.src} alt={photo.label} />
+        </div>
+        <p>だ！！</p>
+      </div>
+      <button className="retry-answer" type="button" onClick={onRetry}>
+        選び直す
+      </button>
+      <p className="submitted-note">
+        ※判定は<span>ゲーム終了時</span>に行います
+        <br />
+        この画面のままお待ちください
+      </p>
     </section>
   )
 }

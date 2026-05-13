@@ -510,6 +510,96 @@ button:focus-visible {
   opacity: 0.48;
 }
 
+.submitted-answer-screen {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  justify-items: center;
+  align-content: center;
+  gap: 76px;
+  background: #b00000;
+  color: #fff;
+}
+
+.submitted-answer-screen h1 {
+  margin: 0;
+  font-size: 104px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.submitted-answer-layout {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 74px;
+}
+
+.submitted-suspect {
+  position: relative;
+  display: grid;
+  justify-items: center;
+}
+
+.submitted-number {
+  position: absolute;
+  top: -70px;
+  left: -58px;
+  display: grid;
+  width: 92px;
+  height: 92px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e00000;
+  color: #fff;
+  font-size: 42px;
+  font-weight: 900;
+}
+
+.submitted-label {
+  min-width: 180px;
+  margin-bottom: 12px;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1.12;
+  text-align: center;
+}
+
+.submitted-suspect img {
+  width: 300px;
+  height: 520px;
+  object-fit: cover;
+  background: #7a2020;
+}
+
+.submitted-answer-layout p {
+  margin: 0;
+  font-size: 110px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.retry-answer {
+  width: 380px;
+  height: 96px;
+  background: #cfcfcf;
+  color: #fff;
+  font-size: 44px;
+  font-weight: 900;
+}
+
+.submitted-note {
+  margin: 0;
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.submitted-note span {
+  color: #f4f000;
+}
+
 .photo-manager {
   position: relative;
   width: 100%;

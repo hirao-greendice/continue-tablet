@@ -84,6 +84,29 @@ async function getCachedVideoResponse(url) {
   return response
 }
 
+async function deleteOldVersionedCacheEntries(cache, currentRequest) {
+  const currentUrl = new URL(currentRequest.url)
+
+  if (!currentUrl.searchParams.has('v')) {
+    return
+  }
+
+  const cachedRequests = await cache.keys()
+
+  await Promise.all(
+    cachedRequests.map((request) => {
+      const cachedUrl = new URL(request.url)
+      const isSameVersionedAsset =
+        cachedUrl.origin === currentUrl.origin &&
+        cachedUrl.pathname === currentUrl.pathname &&
+        cachedUrl.searchParams.has('v') &&
+        cachedUrl.href !== currentUrl.href
+
+      return isSameVersionedAsset ? cache.delete(request) : undefined
+    }),
+  )
+}
+
 async function createVideoRangeResponse(request, url) {
   const fullResponse = await getCachedVideoResponse(url)
 
@@ -164,7 +187,10 @@ self.addEventListener('fetch', (event) => {
       const fetchAndCache = fetch(event.request).then((response) => {
         if (response.ok || response.type === 'opaque') {
           const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy))
+          caches.open(CACHE_NAME).then(async (cache) => {
+            await cache.put(event.request, copy)
+            await deleteOldVersionedCacheEntries(cache, event.request)
+          })
         }
 
         return response
