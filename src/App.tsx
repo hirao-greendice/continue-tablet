@@ -300,8 +300,12 @@ function getAnswerLabel(photoId: number) {
 }
 
 function isTeamAlive(team: TeamState, now: number) {
-  if (!team.online || !team.lastSeen) {
+  if (!team.online) {
     return false
+  }
+
+  if (!team.lastSeen) {
+    return true
   }
 
   return now - team.lastSeen < TEAM_STALE_MS
