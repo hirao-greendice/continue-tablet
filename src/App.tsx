@@ -29,7 +29,7 @@ function publicAsset(path: string) {
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260513-1'
 
 const defaultPhotos: PhotoSlot[] = [
-  { id: 1, label: '雛用係の役', src: publicAsset('photos/team-photo-1.jpg') },
+  { id: 1, label: '雑用係の役', src: publicAsset('photos/team-photo-1.jpg') },
   { id: 2, label: '学芸員の役', src: publicAsset('photos/team-photo-2.jpg') },
   { id: 3, label: 'ケージーの役', src: publicAsset('photos/team-photo-3.jpg') },
 ]
