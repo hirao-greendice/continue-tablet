@@ -126,13 +126,6 @@ export function submitTeamAnswer(team: number, answer: TeamAnswer) {
   })
 }
 
-export function resetTeamAnswers() {
-  return update(
-    ref(realtimeDb),
-    Object.fromEntries(TEAM_NUMBERS.map((team) => [`teams/${team}/answer`, null])),
-  )
-}
-
 export function unsubscribeTeamStates() {
   off(ref(realtimeDb, 'teams'))
 }

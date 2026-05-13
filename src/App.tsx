@@ -11,7 +11,6 @@ import {
 } from './photoStore'
 import {
   connectTeamPresence,
-  resetTeamAnswers,
   subscribeRealtimeConnection,
   submitTeamAnswer,
   subscribeTeamStates,
@@ -80,6 +79,7 @@ function App() {
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [realtimeError, setRealtimeError] = useState('')
   const [masterNow, setMasterNow] = useState(() => Date.now())
+  const [masterAnswerResetAt, setMasterAnswerResetAt] = useState<number | null>(null)
   const [uploadStatus, setUploadStatus] = useState('')
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
@@ -272,13 +272,8 @@ function App() {
     setSubmittedPhotoId(selectedPhoto.id)
   }
 
-  const resetMasterAnswers = async () => {
-    try {
-      await resetTeamAnswers()
-      setRealtimeError('')
-    } catch (error) {
-      setRealtimeError(error instanceof Error ? error.message : String(error))
-    }
+  const resetMasterAnswers = () => {
+    setMasterAnswerResetAt(Date.now())
   }
 
   return (
@@ -332,6 +327,7 @@ function App() {
               now={masterNow}
               realtimeConnected={realtimeConnected}
               realtimeError={realtimeError}
+              answerResetAt={masterAnswerResetAt}
               teams={teamStates}
               onBack={() => setScreen('home')}
               onResetAnswers={resetMasterAnswers}
@@ -818,15 +814,17 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
 }
 
 type MasterScreenProps = {
+  answerResetAt: number | null
   now: number
   realtimeConnected: boolean
   realtimeError: string
   teams: TeamState[]
   onBack: () => void
-  onResetAnswers: () => Promise<void>
+  onResetAnswers: () => void
 }
 
 function MasterScreen({
+  answerResetAt,
   now,
   realtimeConnected,
   realtimeError,
@@ -834,12 +832,23 @@ function MasterScreen({
   onBack,
   onResetAnswers,
 }: MasterScreenProps) {
+  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
+
+  const confirmReset = () => {
+    onResetAnswers()
+    setIsResetConfirmOpen(false)
+  }
+
   return (
     <section className="master-screen" aria-label="MASTER">
       <button className="master-back" type="button" onClick={onBack}>
         戻る
       </button>
-      <button className="master-reset-answers" type="button" onClick={() => void onResetAnswers()}>
+      <button
+        className="master-reset-answers"
+        type="button"
+        onClick={() => setIsResetConfirmOpen(true)}
+      >
         リセット機能
       </button>
       <h1>MASTER</h1>
@@ -851,7 +860,10 @@ function MasterScreen({
 
       <div className="master-team-grid">
         {teams.map((team) => {
-          const answer = team.answer
+          const answer =
+            answerResetAt && (!team.answer?.submittedAt || team.answer.submittedAt <= answerResetAt)
+              ? undefined
+              : team.answer
           const isCorrect = answer?.photoId === 2 || answer?.label === '学芸員'
 
           return (
@@ -866,6 +878,27 @@ function MasterScreen({
           )
         })}
       </div>
+
+      {isResetConfirmOpen && (
+        <div
+          className="master-confirm-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="リセット確認"
+        >
+          <div className="master-confirm-panel">
+            <p>回答表示をリセットしますか</p>
+            <div className="master-confirm-actions">
+              <button type="button" onClick={confirmReset}>
+                はい
+              </button>
+              <button type="button" onClick={() => setIsResetConfirmOpen(false)}>
+                いいえ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
