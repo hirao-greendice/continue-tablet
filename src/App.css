@@ -93,7 +93,7 @@ button:focus-visible {
   align-content: center;
   justify-items: center;
   gap: 104px;
-  background: #999;
+  background: rgba(153, 153, 153, 0.5);
 }
 
 .secret-close {
@@ -376,7 +376,7 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.scene-two-back {
+.story-screen > .scene-two-back {
   position: absolute;
   top: 20px;
   left: 20px;
@@ -426,8 +426,8 @@ button:focus-visible {
 .video-box {
   position: relative;
   display: grid;
-  width: 860px;
-  height: 500px;
+  width: 1032px;
+  height: 600px;
   margin: 80px auto 0;
   place-items: center;
   background: #000;
@@ -475,17 +475,24 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.scene-one-next,
-.scene-two-next {
+.story-screen > .scene-one-next,
+.story-screen > .scene-two-next {
   position: absolute;
   left: 50%;
-  bottom: 72px;
   transform: translateX(-50%);
+}
+
+.scene-one-next {
+  bottom: 220px;
+}
+
+.scene-two-next {
+  bottom: 220px;
 }
 
 .scene-two-content {
   padding-top: 132px;
-  font-size: 29px;
+  font-size: 38px;
   line-height: 1.34;
 }
 
