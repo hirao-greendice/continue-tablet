@@ -37,6 +37,13 @@ function publicAsset(path: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260513-1'
+const CLICK_SOUND = 'sounds/click.mp3'
+const SUBMIT_SOUND = 'sounds/omaeda.mp3'
+
+function playSound(path: string) {
+  const sound = new Audio(publicAsset(path))
+  void sound.play().catch(() => undefined)
+}
 
 const defaultPhotos: PhotoSlot[] = [
   { id: 1, label: '雑用係の役', src: publicAsset('photos/team-photo-1.jpg') },
@@ -523,6 +530,8 @@ function SceneOne({ onNext }: SceneOneProps) {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
 
   const playVideo = async () => {
+    playSound(CLICK_SOUND)
+
     try {
       await videoRef.current?.play()
       setIsVideoPlaying(true)
@@ -579,7 +588,14 @@ function SceneOne({ onNext }: SceneOneProps) {
           <span>再生する</span>
         </button>
       </div>
-      <button className="primary-next scene-one-next" type="button" onClick={onNext}>
+      <button
+        className="primary-next scene-one-next"
+        type="button"
+        onClick={() => {
+          playSound(CLICK_SOUND)
+          onNext()
+        }}
+      >
         次へ
       </button>
     </section>
@@ -599,7 +615,14 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
         style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-2.jpg')}")` }}
         aria-hidden="true"
       />
-      <button className="back-button scene-two-back" type="button" onClick={onBack}>
+      <button
+        className="back-button scene-two-back"
+        type="button"
+        onClick={() => {
+          playSound(CLICK_SOUND)
+          onBack()
+        }}
+      >
         戻る
       </button>
       <div className="scene-two-content">
@@ -652,7 +675,14 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
           ちょうどゲームが終わる瞬間
         </p>
       </div>
-      <button className="primary-next scene-two-next" type="button" onClick={onNext}>
+      <button
+        className="primary-next scene-two-next"
+        type="button"
+        onClick={() => {
+          playSound(CLICK_SOUND)
+          onNext()
+        }}
+      >
         犯人が誰か突き止める
       </button>
     </section>
@@ -710,7 +740,10 @@ function SceneThree({
                 data-selected={isSelected}
                 key={photo.id}
                 type="button"
-                onClick={() => onSelect(photo.id)}
+                onClick={() => {
+                  playSound(CLICK_SOUND)
+                  onSelect(photo.id)
+                }}
               >
                 <span className="suspect-number">{photo.id}</span>
                 <span className="suspect-label">{photo.label}</span>
@@ -743,7 +776,10 @@ function SceneThree({
           className="submit-answer"
           type="button"
           disabled={!selectedPhoto}
-          onClick={() => void onSubmit()}
+          onClick={() => {
+            playSound(SUBMIT_SOUND)
+            void onSubmit()
+          }}
         >
           天使に提出する
         </button>
