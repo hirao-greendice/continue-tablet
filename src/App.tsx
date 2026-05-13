@@ -72,7 +72,10 @@ function App() {
   const [realtimeError, setRealtimeError] = useState('')
   const [masterNow, setMasterNow] = useState(() => Date.now())
   const [uploadStatus, setUploadStatus] = useState('')
+  const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
+  const secretTapCount = useRef(0)
+  const secretTapResetTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
     const fullscreenQuery: LegacyMediaQueryList = window.matchMedia(
@@ -147,7 +150,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (screen !== 'scene2') {
+    if (screen !== 'home' && screen !== 'scene2') {
       return
     }
 
@@ -184,11 +187,41 @@ function App() {
     }
   }
 
+  const exitFullscreen = async () => {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      await document.exitFullscreen().catch(() => undefined)
+    }
+  }
+
   const startTeam = (team: number) => {
+    void enterFullscreen()
     setTeamNumber(team)
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
     setScreen('scene1')
+  }
+
+  const goHome = () => {
+    setTeamNumber(null)
+    setSelectedPhotoId(null)
+    setSubmittedPhotoId(null)
+    setSecretMenuOpen(false)
+    setScreen('home')
+  }
+
+  const tapSecretHotspot = () => {
+    window.clearTimeout(secretTapResetTimer.current)
+    secretTapCount.current += 1
+
+    if (secretTapCount.current >= 5) {
+      secretTapCount.current = 0
+      setSecretMenuOpen(true)
+      return
+    }
+
+    secretTapResetTimer.current = window.setTimeout(() => {
+      secretTapCount.current = 0
+    }, 1200)
   }
 
   const updatePhoto = async (slotId: number, file: File | null) => {
@@ -240,6 +273,7 @@ function App() {
         <div className="stage-content">
           {screen === 'home' && (
             <HomeScreen
+              photos={photos}
               onStartTeam={startTeam}
               onOpenMaster={() => setScreen('master')}
               onOpenPhotos={() => setScreen('photos')}
@@ -281,11 +315,11 @@ function App() {
 
           {screen === 'photos' && (
             <PhotoManager
-            photos={photos}
-            uploadStatus={uploadStatus}
-            onBack={() => setScreen('home')}
-            onUpdatePhoto={updatePhoto}
-          />
+              photos={photos}
+              uploadStatus={uploadStatus}
+              onBack={() => setScreen('home')}
+              onUpdatePhoto={updatePhoto}
+            />
           )}
         </div>
       </div>
@@ -294,6 +328,21 @@ function App() {
         <button className="fullscreen-control" type="button" onClick={enterFullscreen}>
           全画面
         </button>
+      )}
+
+      <button
+        className="secret-hotspot"
+        type="button"
+        aria-label="管理メニュー"
+        onClick={tapSecretHotspot}
+      />
+
+      {secretMenuOpen && (
+        <SecretMenu
+          onClose={() => setSecretMenuOpen(false)}
+          onExitFullscreen={exitFullscreen}
+          onGoHome={goHome}
+        />
       )}
     </main>
   )
@@ -341,15 +390,57 @@ function isTeamAlive(team: TeamState, now: number) {
   return now - team.lastSeen < TEAM_STALE_MS
 }
 
+type SecretMenuProps = {
+  onClose: () => void
+  onExitFullscreen: () => Promise<void>
+  onGoHome: () => void
+}
+
+function SecretMenu({ onClose, onExitFullscreen, onGoHome }: SecretMenuProps) {
+  return (
+    <div className="secret-menu-backdrop" role="dialog" aria-modal="true" aria-label="管理メニュー">
+      <div className="secret-menu-panel">
+        <button className="secret-close" type="button" onClick={onClose}>
+          閉じる
+        </button>
+        <button
+          className="secret-action secret-action-blue"
+          type="button"
+          onClick={() => void onExitFullscreen()}
+        >
+          フルスクリーン
+          <br />
+          を解除する
+        </button>
+        <button className="secret-action secret-action-pink" type="button" onClick={onGoHome}>
+          ホーム
+          <br />
+          に戻る
+        </button>
+      </div>
+    </div>
+  )
+}
+
 type HomeScreenProps = {
+  photos: PhotoSlot[]
   onOpenMaster: () => void
   onStartTeam: (team: number) => void
   onOpenPhotos: () => void
 }
 
-function HomeScreen({ onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
+function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
   return (
     <section className="home-screen" aria-label="チーム選択">
+      <div className="home-photo-strip" aria-label="現在の写真">
+        {photos.map((photo) => (
+          <article className="home-photo-card" key={photo.id}>
+            <img src={photo.src} alt={`${photo.label}の現在の写真`} />
+            <span>{photo.id}. {photo.label}</span>
+          </article>
+        ))}
+      </div>
+
       <div className="team-grid" aria-label="チーム番号">
         {Array.from({ length: 8 }, (_, index) => index + 1).map((team) => (
           <button
@@ -714,7 +805,7 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
   }
 
   return (
-    <section className="photo-manager" aria-label="写真撮影">
+    <section className="photo-manager" data-scrollable="true" aria-label="写真撮影">
       <button className="back-button photo-back" type="button" onClick={onBack}>
         戻る
       </button>
@@ -789,7 +880,13 @@ function PhotoCropDialog({ draft, onCancel, onUpdate }: PhotoCropDialogProps) {
   }
 
   return (
-    <div className="crop-dialog" role="dialog" aria-modal="true" aria-label="写真の切り取り">
+    <div
+      className="crop-dialog"
+      data-scrollable="true"
+      role="dialog"
+      aria-modal="true"
+      aria-label="写真の切り取り"
+    >
       <div className="crop-panel">
         <header className="crop-header">
           <h2>{draft.slotId}. {draft.label}</h2>

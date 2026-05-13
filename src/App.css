@@ -50,8 +50,8 @@ button:focus-visible {
 
 .fullscreen-control {
   position: fixed;
-  top: max(16px, env(safe-area-inset-top));
   right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
   z-index: 20;
   padding: 16px 24px;
   border: 3px solid #fff;
@@ -61,26 +61,104 @@ button:focus-visible {
   font-weight: 800;
 }
 
+.secret-hotspot {
+  position: fixed;
+  top: max(0px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  z-index: 30;
+  width: 120px;
+  height: 120px;
+  padding: 0;
+  background: transparent;
+}
+
+.secret-hotspot:focus-visible {
+  outline: none;
+}
+
+.secret-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.secret-menu-panel {
+  position: relative;
+  display: grid;
+  width: min(1060px, calc(100vw - 64px));
+  height: min(1260px, calc(100dvh - 160px));
+  align-content: center;
+  justify-items: center;
+  gap: 104px;
+  background: #999;
+}
+
+.secret-close {
+  position: absolute;
+  top: 42px;
+  right: 48px;
+  width: 330px;
+  height: 126px;
+  background: #fff;
+  color: #050505;
+  font-size: 56px;
+  font-weight: 900;
+}
+
+.secret-action {
+  width: 380px;
+  height: 176px;
+  color: #050505;
+  font-size: 44px;
+  font-weight: 900;
+  line-height: 1.18;
+}
+
+.secret-action-blue {
+  background: #9bd7e7;
+}
+
+.secret-action-pink {
+  background: #e87eb0;
+}
+
+.stage[data-screen='photos'] {
+  width: 100vw;
+  height: 100dvh;
+  box-shadow: none;
+}
+
+.stage[data-screen='photos'] .stage-content {
+  width: 100%;
+  height: 100%;
+  transform: none;
+}
+
 .home-screen {
   display: grid;
   width: 100%;
   height: 100%;
-  align-content: center;
+  grid-template-rows: auto auto auto;
+  align-content: stretch;
   justify-items: center;
-  gap: 120px;
+  gap: 36px;
+  padding: 382px 46px 62px;
   background: #000;
 }
 
 .team-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 54px 64px;
+  gap: 24px 56px;
 }
 
 .team-button {
   display: grid;
-  width: 150px;
-  height: 150px;
+  width: 142px;
+  height: 142px;
   place-items: center;
   background: #99d513;
   color: #050505;
@@ -91,12 +169,12 @@ button:focus-visible {
 .home-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 74px;
+  gap: 62px;
 }
 
 .home-action-button {
-  width: 320px;
-  height: 128px;
+  width: 300px;
+  height: 112px;
   border: 4px solid #d9d9d9;
   background: #fff;
   color: #050505;
@@ -106,6 +184,37 @@ button:focus-visible {
 
 .home-action-button:disabled {
   opacity: 1;
+}
+
+.home-photo-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 34px;
+  width: 100%;
+  max-width: 1060px;
+}
+
+.home-photo-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  color: #fff;
+}
+
+.home-photo-card img {
+  width: 270px;
+  height: 468px;
+  border: 4px solid #d9d9d9;
+  object-fit: cover;
+  background: #222;
+}
+
+.home-photo-card span {
+  min-height: 62px;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
 }
 
 .master-screen {
@@ -774,4 +883,141 @@ button:focus-visible {
 
 .crop-update:disabled {
   opacity: 0.58;
+}
+
+@media (max-width: 760px) {
+  .stage[data-screen='photos'] {
+    width: 100vw;
+    height: 100dvh;
+  }
+
+  .photo-manager {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .photo-back {
+    top: 12px;
+    left: 12px;
+    min-width: 96px;
+    height: 54px;
+    font-size: 24px;
+  }
+
+  .photo-manager-inner {
+    height: auto;
+    min-height: 100%;
+    padding: 84px 16px 32px;
+  }
+
+  .photo-manager h1 {
+    font-size: 40px;
+  }
+
+  .photo-manager p {
+    margin: 10px 0 18px;
+    font-size: 18px;
+  }
+
+  .upload-status {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    font-size: 16px;
+  }
+
+  .photo-editor-list {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .photo-editor {
+    grid-template-columns: minmax(116px, 32vw) 1fr;
+    align-items: center;
+    justify-items: start;
+    gap: 14px;
+    padding: 14px;
+    text-align: left;
+  }
+
+  .photo-editor img {
+    width: min(150px, 32vw);
+    height: calc(min(150px, 32vw) * 1.7333);
+  }
+
+  .photo-editor h2 {
+    min-height: 0;
+    margin: 0 0 12px;
+    font-size: 20px;
+  }
+
+  .photo-input-button {
+    width: min(190px, 52vw);
+    height: 56px;
+    font-size: 20px;
+  }
+
+  .crop-panel {
+    width: calc(100vw - 20px);
+    height: calc(100dvh - 20px);
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .crop-header {
+    gap: 12px;
+  }
+
+  .crop-header h2 {
+    font-size: 22px;
+  }
+
+  .crop-cancel {
+    width: 112px;
+    height: 50px;
+    font-size: 18px;
+  }
+
+  .crop-area {
+    width: min(calc(100vw - 48px), calc((100dvh - 170px) * 15 / 26));
+  }
+
+  .crop-controls {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .crop-controls label {
+    gap: 8px;
+    font-size: 18px;
+  }
+
+  .crop-update {
+    height: 56px;
+    font-size: 22px;
+  }
+
+  .secret-hotspot {
+    width: 86px;
+    height: 86px;
+  }
+
+  .secret-menu-panel {
+    width: calc(100vw - 32px);
+    height: min(620px, calc(100dvh - 80px));
+    gap: 52px;
+  }
+
+  .secret-close {
+    top: 20px;
+    right: 24px;
+    width: 160px;
+    height: 78px;
+    font-size: 32px;
+  }
+
+  .secret-action {
+    width: 210px;
+    height: 116px;
+    font-size: 28px;
+  }
 }

@@ -4,6 +4,12 @@ import './index.css'
 import App from './App.tsx'
 
 const preventDocumentScroll = (event: TouchEvent) => {
+  const target = event.target
+
+  if (target instanceof Element && target.closest('[data-scrollable="true"]')) {
+    return
+  }
+
   if (event.cancelable) {
     event.preventDefault()
   }
