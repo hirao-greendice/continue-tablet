@@ -179,7 +179,6 @@ function App() {
           {screen === 'scene1' && (
             <SceneOne
               onNext={() => setScreen('scene2')}
-              onBack={() => setScreen('home')}
             />
           )}
 
@@ -265,11 +264,10 @@ function HomeScreen({ onStartTeam, onOpenPhotos }: HomeScreenProps) {
 }
 
 type SceneOneProps = {
-  onBack: () => void
   onNext: () => void
 }
 
-function SceneOne({ onBack, onNext }: SceneOneProps) {
+function SceneOne({ onNext }: SceneOneProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
 
@@ -289,9 +287,6 @@ function SceneOne({ onBack, onNext }: SceneOneProps) {
         style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-1.jpg')}")` }}
         aria-hidden="true"
       />
-      <button className="back-button" type="button" onClick={onBack}>
-        戻る
-      </button>
       <div className="scene-one-content">
         <div className="ribbon-title">
           <h1>天啓だよ！</h1>
@@ -346,7 +341,7 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
         style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-2.jpg')}")` }}
         aria-hidden="true"
       />
-      <button className="back-button" type="button" onClick={onBack}>
+      <button className="back-button scene-two-back" type="button" onClick={onBack}>
         戻る
       </button>
       <div className="scene-two-content">

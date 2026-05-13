@@ -142,11 +142,11 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.scene-one .back-button,
-.scene-two .back-button {
+.scene-two-back {
   position: absolute;
   top: 20px;
   left: 20px;
+  z-index: 10;
 }
 
 .scene-one-content,
