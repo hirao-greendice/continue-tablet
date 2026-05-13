@@ -531,8 +531,11 @@ button:focus-visible {
 
 .suspect-list {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 78px;
+  width: 980px;
+  grid-template-columns: repeat(3, 300px);
+  justify-content: center;
+  gap: 40px;
+  margin: 300px auto 0;
 }
 
 .suspect-card {
@@ -567,8 +570,8 @@ button:focus-visible {
 
 .suspect-label {
   min-height: 58px;
-  padding-left: 62px;
-  font-size: 24px;
+  padding-left: 70px;
+  font-size: 32px;
   font-weight: 900;
   line-height: 1.12;
 }
