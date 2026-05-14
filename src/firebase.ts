@@ -7,8 +7,14 @@ export const realtimeDatabaseUrl =
   import.meta.env.VITE_FIREBASE_DATABASE_URL ||
   'https://continue-game-default-rtdb.asia-southeast1.firebasedatabase.app'
 
+const firebaseApiKey = import.meta.env.VITE_FIREBASE_API_KEY
+
+if (!firebaseApiKey) {
+  throw new Error('Missing VITE_FIREBASE_API_KEY')
+}
+
 const firebaseConfig = {
-  apiKey: 'AIzaSyDwCogYTgY_k4JYM6dTEb2oB1NjqRF0OPg',
+  apiKey: firebaseApiKey,
   authDomain: 'continue-game.firebaseapp.com',
   databaseURL: realtimeDatabaseUrl,
   projectId: 'continue-game',
