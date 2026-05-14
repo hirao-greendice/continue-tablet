@@ -797,23 +797,24 @@ type SubmittedAnswerScreenProps = {
 function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
   return (
     <section className="submitted-answer-screen" aria-label="提出した回答">
-      <h1>強盗は…</h1>
-      <div className="submitted-answer-layout">
-        <div className="submitted-suspect">
-          <span className="submitted-number">{photo.id}</span>
-          <span className="submitted-label">{photo.label}</span>
-          <img src={photo.src} alt={photo.label} />
-        </div>
-        <p>だ！！</p>
-      </div>
-      <button className="retry-answer" type="button" onClick={onRetry}>
+      <img
+        className="submitted-answer-art"
+        src={publicAsset('images/goutou.webp')}
+        alt=""
+        aria-hidden="true"
+      />
+      <img className="submitted-file-photo" src={photo.src} alt={photo.label} />
+      <span className="submitted-file-name">{photo.label}</span>
+      <button
+        className="retry-answer"
+        type="button"
+        onClick={() => {
+          playSound(CLICK_SOUND)
+          onRetry()
+        }}
+      >
         選び直す
       </button>
-      <p className="submitted-note">
-        ※判定は<span>ゲーム終了時</span>に行います
-        <br />
-        この画面のままお待ちください
-      </p>
     </section>
   )
 }

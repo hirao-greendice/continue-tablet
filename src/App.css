@@ -710,93 +710,75 @@ button:focus-visible {
 }
 
 .submitted-answer-screen {
-  display: grid;
+  position: relative;
   width: 100%;
   height: 100%;
-  justify-items: center;
-  align-content: center;
-  gap: 76px;
-  background: #b00000;
+  overflow: hidden;
+  background: #090203;
   color: #fff;
 }
 
-.submitted-answer-screen h1 {
-  margin: 0;
-  font-size: 104px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.submitted-answer-layout {
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
-  gap: 74px;
-}
-
-.submitted-suspect {
-  position: relative;
-  display: grid;
-  justify-items: center;
-}
-
-.submitted-number {
+.submitted-answer-art {
   position: absolute;
-  top: -70px;
-  left: -58px;
-  display: grid;
-  width: 92px;
-  height: 92px;
-  place-items: center;
-  border-radius: 50%;
-  background: #e00000;
-  color: #fff;
-  font-size: 42px;
-  font-weight: 900;
-}
-
-.submitted-label {
-  min-width: 180px;
-  margin-bottom: 12px;
-  font-size: 34px;
-  font-weight: 900;
-  line-height: 1.12;
-  text-align: center;
-}
-
-.submitted-suspect img {
-  width: 300px;
-  height: 520px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  background: #7a2020;
+  object-position: center;
+  pointer-events: none;
 }
 
-.submitted-answer-layout p {
-  margin: 0;
-  font-size: 110px;
+.submitted-file-photo {
+  position: absolute;
+  top: 668px;
+  left: 147px;
+  width: 350px;
+  height: 674px;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background: #090909;
+  box-shadow: inset 0 0 0 6px rgba(0, 0, 0, 0.38);
+  object-fit: cover;
+  transform: rotate(-7.8deg);
+  transform-origin: center;
+}
+
+.submitted-file-name {
+  position: absolute;
+  top: 550px;
+  left: 10px;
+  z-index: 1;
+  display: grid;
+  width: 520px;
+  min-height: 118px;
+  place-items: center;
+  padding: 4px 14px;
+  color: #fff;
+  font-size: 68px;
   font-weight: 900;
-  line-height: 1;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow:
+    0 0 8px #000,
+    0 3px 0 #000;
+  transform: rotate(-7.8deg);
+  transform-origin: center;
 }
 
 .retry-answer {
-  width: 380px;
-  height: 96px;
-  background: #cfcfcf;
-  color: #fff;
-  font-size: 44px;
+  position: absolute;
+  top: 1494px;
+  left: 262px;
+  width: 676px;
+  height: 144px;
+  background: transparent;
+  color: transparent;
+  font-size: 1px;
   font-weight: 900;
 }
 
-.submitted-note {
-  margin: 0;
-  font-size: 36px;
-  font-weight: 900;
-  line-height: 1.35;
-  text-align: center;
-}
-
-.submitted-note span {
-  color: #f4f000;
+.retry-answer:focus-visible {
+  outline: 5px solid #fff;
+  outline-offset: -10px;
 }
 
 .photo-manager {
