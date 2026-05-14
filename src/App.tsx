@@ -525,6 +525,8 @@ type SceneOneProps = {
 function SceneOne({ onNext }: SceneOneProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
+  const [videoDuration, setVideoDuration] = useState(0)
+  const [videoProgress, setVideoProgress] = useState(0)
 
   const playVideo = async () => {
     playSound(CLICK_SOUND)
@@ -534,6 +536,27 @@ function SceneOne({ onNext }: SceneOneProps) {
       setIsVideoPlaying(true)
     } catch {
       setIsVideoPlaying(false)
+    }
+  }
+
+  const syncVideoProgress = () => {
+    const video = videoRef.current
+
+    if (!video) {
+      return
+    }
+
+    setVideoProgress(video.currentTime)
+    setVideoDuration(Number.isFinite(video.duration) ? video.duration : 0)
+  }
+
+  const seekVideo = (time: number) => {
+    const video = videoRef.current
+
+    setVideoProgress(time)
+
+    if (video) {
+      video.currentTime = time
     }
   }
 
@@ -547,7 +570,6 @@ function SceneOne({ onNext }: SceneOneProps) {
       <div className="scene-one-content">
         <div className="ribbon-title">
           <h1>天啓だよ！</h1>
-          <p>これを読んで！</p>
         </div>
         <p>
           あのスタッフは君たちを無視したわけではなく、
@@ -580,6 +602,11 @@ function SceneOne({ onNext }: SceneOneProps) {
             src={publicAsset(`videos/scene-1.mp4?v=${SCENE_ONE_VIDEO_VERSION}`)}
             preload="metadata"
             playsInline
+            onLoadedMetadata={syncVideoProgress}
+            onTimeUpdate={syncVideoProgress}
+            onPlay={() => setIsVideoPlaying(true)}
+            onPause={() => setIsVideoPlaying(false)}
+            onEnded={syncVideoProgress}
           />
           <img
             className="play-mark"
@@ -588,6 +615,17 @@ function SceneOne({ onNext }: SceneOneProps) {
             aria-hidden="true"
           />
         </button>
+        <input
+          className="video-seek"
+          type="range"
+          min="0"
+          max={videoDuration || 0}
+          step="0.01"
+          value={videoDuration ? Math.min(videoProgress, videoDuration) : 0}
+          aria-label="動画の再生位置"
+          disabled={!videoDuration}
+          onChange={(event) => seekVideo(Number(event.target.value))}
+        />
       </div>
       <button
         className="primary-next scene-one-next"

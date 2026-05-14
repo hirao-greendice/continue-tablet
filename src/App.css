@@ -565,6 +565,20 @@ button:focus-visible {
   opacity: 0;
 }
 
+.video-seek {
+  display: block;
+  width: 1032px;
+  height: 24px;
+  margin: 52px auto 0;
+  accent-color: #4d8ff0;
+  transform: scale(1.1);
+  transform-origin: center;
+}
+
+.video-seek:disabled {
+  opacity: 0.45;
+}
+
 .primary-next {
   min-width: 460px;
   min-height: 112px;
