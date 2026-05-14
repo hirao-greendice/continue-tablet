@@ -624,6 +624,7 @@ function SceneOne({ onNext }: SceneOneProps) {
           value={videoDuration ? Math.min(videoProgress, videoDuration) : 0}
           aria-label="動画の再生位置"
           disabled={!videoDuration}
+          onInput={(event) => seekVideo(Number(event.currentTarget.value))}
           onChange={(event) => seekVideo(Number(event.target.value))}
         />
       </div>
