@@ -32,8 +32,6 @@ jobs:
         run: npm ci
 
       - name: Build
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
         run: npm run build
 
       - name: Setup Pages
