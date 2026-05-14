@@ -138,6 +138,7 @@ button:focus-visible {
 }
 
 .home-screen {
+  position: relative;
   display: grid;
   width: 100%;
   height: 100%;
@@ -147,6 +148,90 @@ button:focus-visible {
   gap: 36px;
   padding: 248px 46px 62px;
   background: #000;
+}
+
+.battery-indicator {
+  position: absolute;
+  top: 42px;
+  left: 42px;
+  display: grid;
+  min-width: 254px;
+  min-height: 72px;
+  grid-template-columns: 92px auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 16px;
+  color: #fff;
+  font-weight: 900;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
+}
+
+.battery-icon {
+  position: relative;
+  display: block;
+  width: 84px;
+  height: 38px;
+  grid-row: 1 / span 2;
+  padding: 4px;
+  border: 4px solid currentColor;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.battery-icon::after {
+  position: absolute;
+  top: 9px;
+  right: -12px;
+  width: 8px;
+  height: 14px;
+  border-radius: 0 4px 4px 0;
+  content: '';
+  background: currentColor;
+}
+
+.battery-fill {
+  display: block;
+  width: var(--battery-level);
+  height: 100%;
+  border-radius: 2px;
+  background: currentColor;
+  transition: width 0.2s ease;
+}
+
+.battery-percent {
+  font-size: 34px;
+  line-height: 1;
+}
+
+.battery-state {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 22px;
+  line-height: 1;
+}
+
+.battery-indicator[data-charging='true'] .battery-fill {
+  background: #28d9ff;
+}
+
+.battery-indicator[data-charging='true'] .battery-state {
+  color: #8cedff;
+}
+
+.battery-indicator[data-low='true'] .battery-fill {
+  background: #d40000;
+}
+
+.battery-indicator[data-low='true'] .battery-state {
+  color: #ff8d8d;
+}
+
+.battery-indicator[data-supported='false'] {
+  opacity: 0.68;
+}
+
+.battery-indicator[data-supported='false'] .battery-fill {
+  width: 100%;
+  background: #b8b8b8;
 }
 
 .home-title {

@@ -58,6 +58,21 @@ type LegacyMediaQueryList = MediaQueryList & {
   removeListener?: (listener: (event: MediaQueryListEvent) => void) => void
 }
 
+type BatteryManager = EventTarget & {
+  charging: boolean
+  level: number
+}
+
+type NavigatorWithBattery = Navigator & {
+  getBattery?: () => Promise<BatteryManager>
+}
+
+type BatteryStatus = {
+  charging: boolean
+  level: number | null
+  supported: boolean
+}
+
 function getIsFullscreen() {
   return Boolean(document.fullscreenElement)
 }
@@ -430,6 +445,70 @@ function isTeamAlive(team: TeamState) {
   return Boolean(team.online)
 }
 
+function useBatteryStatus() {
+  const [batteryStatus, setBatteryStatus] = useState<BatteryStatus>(() => ({
+    charging: false,
+    level: null,
+    supported:
+      typeof navigator !== 'undefined'
+        && Boolean((navigator as NavigatorWithBattery).getBattery),
+  }))
+
+  useEffect(() => {
+    const getBattery = (navigator as NavigatorWithBattery).getBattery
+
+    if (!getBattery) {
+      return
+    }
+
+    let battery: BatteryManager | null = null
+    let isDisposed = false
+
+    const updateBatteryStatus = () => {
+      if (!battery) {
+        return
+      }
+
+      setBatteryStatus({
+        charging: battery.charging,
+        level: battery.level,
+        supported: true,
+      })
+    }
+
+    void getBattery.call(navigator)
+      .then((nextBattery) => {
+        if (isDisposed) {
+          return
+        }
+
+        battery = nextBattery
+        updateBatteryStatus()
+        battery.addEventListener('chargingchange', updateBatteryStatus)
+        battery.addEventListener('levelchange', updateBatteryStatus)
+      })
+      .catch(() => {
+        if (!isDisposed) {
+          setBatteryStatus((currentStatus) => ({
+            ...currentStatus,
+            supported: false,
+          }))
+        }
+      })
+
+    return () => {
+      isDisposed = true
+
+      if (battery) {
+        battery.removeEventListener('chargingchange', updateBatteryStatus)
+        battery.removeEventListener('levelchange', updateBatteryStatus)
+      }
+    }
+  }, [])
+
+  return batteryStatus
+}
+
 type SecretMenuProps = {
   onClose: () => void
   onExitFullscreen: () => Promise<void>
@@ -470,8 +549,11 @@ type HomeScreenProps = {
 }
 
 function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
+  const batteryStatus = useBatteryStatus()
+
   return (
     <section className="home-screen" aria-label="チーム選択">
+      <BatteryIndicator status={batteryStatus} />
       <h1 className="home-title">ゲームは続く</h1>
       <div className="home-photo-strip" aria-label="現在の写真">
         {photos.map((photo) => (
@@ -504,6 +586,45 @@ function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScr
         </button>
       </div>
     </section>
+  )
+}
+
+type BatteryIndicatorProps = {
+  status: BatteryStatus
+}
+
+function BatteryIndicator({ status }: BatteryIndicatorProps) {
+  const batteryLevel = status.level === null ? 0 : Math.round(status.level * 100)
+  const batteryPercent = status.level === null ? '--' : `${batteryLevel}%`
+  const batteryLabel = status.supported
+    ? status.charging
+      ? '充電中'
+      : '使用中'
+    : '取得不可'
+  const isLowBattery = status.supported && !status.charging && status.level !== null && status.level <= 0.2
+
+  return (
+    <div
+      className="battery-indicator"
+      data-charging={status.charging}
+      data-low={isLowBattery}
+      data-supported={status.supported}
+      aria-label={
+        status.supported && status.level !== null
+          ? `バッテリー残量 ${batteryPercent}、${status.charging ? '充電中' : '充電していません'}`
+          : 'バッテリー情報を取得できません'
+      }
+    >
+      <span
+        className="battery-icon"
+        style={{ '--battery-level': `${batteryLevel}%` } as CSSProperties}
+        aria-hidden="true"
+      >
+        <span className="battery-fill" />
+      </span>
+      <span className="battery-percent">{batteryPercent}</span>
+      <span className="battery-state">{batteryLabel}</span>
+    </div>
   )
 }
 
