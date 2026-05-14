@@ -528,8 +528,14 @@ function SceneOne({ onNext }: SceneOneProps) {
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
 
-  const playVideo = async () => {
+  const toggleVideo = async () => {
     playSound(CLICK_SOUND)
+
+    if (videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause()
+      setIsVideoPlaying(false)
+      return
+    }
 
     try {
       await videoRef.current?.play()
@@ -609,8 +615,8 @@ function SceneOne({ onNext }: SceneOneProps) {
           className="video-box"
           data-playing={isVideoPlaying}
           type="button"
-          aria-label="動画を再生"
-          onClick={() => void playVideo()}
+          aria-label={isVideoPlaying ? '動画を停止' : '動画を再生'}
+          onClick={() => void toggleVideo()}
         >
           <video
             ref={videoRef}
