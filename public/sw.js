@@ -1,9 +1,10 @@
-const CACHE_NAME = 'continue-tablet-v4'
+const CACHE_NAME = 'continue-tablet-v5'
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
   './app-icon.svg',
   './favicon.svg',
+  './images/goutou.webp',
 ]
 
 self.addEventListener('install', (event) => {
@@ -184,7 +185,11 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
-      const fetchAndCache = fetch(event.request).then((response) => {
+      if (cachedResponse) {
+        return cachedResponse
+      }
+
+      return fetch(event.request).then((response) => {
         if (response.ok || response.type === 'opaque') {
           const copy = response.clone()
           caches.open(CACHE_NAME).then(async (cache) => {
@@ -195,8 +200,6 @@ self.addEventListener('fetch', (event) => {
 
         return response
       })
-
-      return cachedResponse || fetchAndCache
     }),
   )
 })
