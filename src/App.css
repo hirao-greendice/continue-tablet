@@ -811,7 +811,7 @@ button:focus-visible {
   display: block;
   width: 620px;
   height: 150px;
-  margin: 24px auto 0;
+  margin: -16px auto 0;
   background: #ad0000;
   color: #fff;
   font-size: 46px;
@@ -820,6 +820,15 @@ button:focus-visible {
 
 .submit-answer:disabled {
   opacity: 0.48;
+}
+
+.submit-answer-note {
+  margin: 22px 0 0;
+  color: #555;
+  font-size: 32px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .submitted-answer-screen {

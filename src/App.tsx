@@ -878,6 +878,7 @@ function SceneThree({
         >
           天使に提出する
         </button>
+        <p className="submit-answer-note">※提出後でも選びなおすことができます</p>
       </div>
     </section>
   )
