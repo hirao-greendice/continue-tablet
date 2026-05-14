@@ -495,14 +495,17 @@ button:focus-visible {
 .video-box {
   position: relative;
   display: grid;
+  left: 50%;
   width: 1032px;
   height: 600px;
-  margin: 80px auto 0;
+  margin: 80px 0 0;
   place-items: center;
   background: #000;
   color: #4d4d4d;
   font-size: 38px;
   font-weight: 900;
+  transform: translateX(-50%) scale(1.1);
+  transform-origin: center;
 }
 
 .video-box video {
@@ -515,22 +518,13 @@ button:focus-visible {
 
 .play-mark {
   position: absolute;
-  width: 0;
-  height: 0;
-  border-top: 140px solid transparent;
-  border-bottom: 140px solid transparent;
-  border-left: 205px solid #fff;
-  transform: translateX(38px);
-}
-
-.video-box span:last-child {
-  position: relative;
   z-index: 1;
-  transform: translateX(8px);
+  width: 320px;
+  height: 320px;
+  object-fit: contain;
 }
 
-.video-box[data-playing='true'] .play-mark,
-.video-box[data-playing='true'] span:last-child {
+.video-box[data-playing='true'] .play-mark {
   opacity: 0;
 }
 

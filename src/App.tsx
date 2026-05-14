@@ -581,8 +581,12 @@ function SceneOne({ onNext }: SceneOneProps) {
             preload="metadata"
             playsInline
           />
-          <span className="play-mark" />
-          <span>再生する</span>
+          <img
+            className="play-mark"
+            src={publicAsset('images/play.png')}
+            alt=""
+            aria-hidden="true"
+          />
         </button>
       </div>
       <button
