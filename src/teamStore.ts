@@ -18,14 +18,12 @@ export type TeamAnswer = {
 
 export type TeamState = {
   answer?: TeamAnswer
-  connections?: Record<string, { clientSeenAt?: number; connectedAt?: number; lastSeen?: number }>
-  lastSeen?: number
+  connections?: Record<string, { connectedAt?: number }>
   online?: boolean
   team: number
 }
 
 const TEAM_NUMBERS = Array.from({ length: 8 }, (_, index) => index + 1)
-const HEARTBEAT_INTERVAL_MS = 5_000
 
 function createSessionId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -42,39 +40,24 @@ export function connectTeamPresence(team: number, onError?: (message: string) =>
   const sessionId = createSessionId()
   const sessionRef = ref(realtimeDb, `teams/${team}/connections/${sessionId}`)
 
-  const writeHeartbeat = () => {
-    void update(sessionRef, {
-      clientSeenAt: Date.now(),
-      lastSeen: serverTimestamp(),
-    }).catch((error: unknown) => {
-      onError?.(getErrorMessage(error))
-    })
-  }
-
-  void set(sessionRef, {
-    clientSeenAt: Date.now(),
-    connectedAt: serverTimestamp(),
-    lastSeen: serverTimestamp(),
-  }).catch((error: unknown) => {
-    onError?.(getErrorMessage(error))
-  })
-
-  const heartbeatTimer = window.setInterval(writeHeartbeat, HEARTBEAT_INTERVAL_MS)
-
   const unsubscribe = onValue(connectedRef, (snapshot) => {
     if (snapshot.val() !== true) {
       return
     }
 
-    void onDisconnect(sessionRef).remove().catch((error: unknown) => {
-      onError?.(getErrorMessage(error))
-    })
-
-    writeHeartbeat()
+    void onDisconnect(sessionRef)
+      .remove()
+      .then(() =>
+        set(sessionRef, {
+          connectedAt: serverTimestamp(),
+        }),
+      )
+      .catch((error: unknown) => {
+        onError?.(getErrorMessage(error))
+      })
   })
 
   return () => {
-    window.clearInterval(heartbeatTimer)
     unsubscribe()
     void onDisconnect(sessionRef).cancel().catch(() => undefined)
     void remove(sessionRef).catch(() => undefined)
@@ -97,16 +80,10 @@ export function subscribeTeamStates(
           const teamValue = value?.[team]
           const connections = teamValue?.connections ?? {}
         const connectionList = Object.values(connections)
-        const lastSeen = connectionList.reduce(
-          (latest, connection) =>
-            Math.max(latest, getTimestamp(connection.lastSeen, connection.clientSeenAt)),
-          teamValue?.lastSeen ?? 0,
-        )
 
           return {
             team,
             ...teamValue,
-            lastSeen,
             online: connectionList.length > 0,
           }
         }),
@@ -132,9 +109,4 @@ export function unsubscribeTeamStates() {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error)
-}
-
-function getTimestamp(...values: unknown[]) {
-  const timestamp = values.find((value) => typeof value === 'number')
-  return typeof timestamp === 'number' ? timestamp : 0
 }

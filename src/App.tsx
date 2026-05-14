@@ -52,7 +52,6 @@ const defaultPhotos: PhotoSlot[] = [
 
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
-const TEAM_STALE_MS = 45_000
 
 type LegacyMediaQueryList = MediaQueryList & {
   addListener?: (listener: (event: MediaQueryListEvent) => void) => void
@@ -78,7 +77,6 @@ function App() {
   const [teamStates, setTeamStates] = useState<TeamState[]>(createEmptyTeamStates)
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [realtimeError, setRealtimeError] = useState('')
-  const [masterNow, setMasterNow] = useState(() => Date.now())
   const [masterAnswerResetAt, setMasterAnswerResetAt] = useState<number | null>(null)
   const [uploadStatus, setUploadStatus] = useState('')
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
@@ -135,12 +133,20 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (screen !== 'master') {
+      return
+    }
+
     return subscribeTeamStates(setTeamStates, setRealtimeError)
-  }, [])
+  }, [screen])
 
   useEffect(() => {
+    if (screen !== 'master') {
+      return
+    }
+
     return subscribeRealtimeConnection(setRealtimeConnected)
-  }, [])
+  }, [screen])
 
   useEffect(() => {
     if (!teamNumber) {
@@ -149,14 +155,6 @@ function App() {
 
     return connectTeamPresence(teamNumber, setRealtimeError)
   }, [teamNumber])
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setMasterNow(Date.now())
-    }, 1000)
-
-    return () => window.clearInterval(timer)
-  }, [])
 
   useEffect(() => {
     if (screen !== 'home' && screen !== 'scene2') {
@@ -324,7 +322,6 @@ function App() {
 
           {screen === 'master' && (
             <MasterScreen
-              now={masterNow}
               realtimeConnected={realtimeConnected}
               realtimeError={realtimeError}
               answerResetAt={masterAnswerResetAt}
@@ -429,16 +426,8 @@ function getAnswerLabel(photoId: number) {
   return 'ケージー'
 }
 
-function isTeamAlive(team: TeamState, now: number) {
-  if (!team.online) {
-    return false
-  }
-
-  if (!team.lastSeen) {
-    return true
-  }
-
-  return now - team.lastSeen < TEAM_STALE_MS
+function isTeamAlive(team: TeamState) {
+  return Boolean(team.online)
 }
 
 type SecretMenuProps = {
@@ -916,7 +905,6 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
 
 type MasterScreenProps = {
   answerResetAt: number | null
-  now: number
   realtimeConnected: boolean
   realtimeError: string
   teams: TeamState[]
@@ -926,7 +914,6 @@ type MasterScreenProps = {
 
 function MasterScreen({
   answerResetAt,
-  now,
   realtimeConnected,
   realtimeError,
   teams,
@@ -969,7 +956,7 @@ function MasterScreen({
 
           return (
             <article className="master-team" key={team.team}>
-              <div className="master-team-number" data-alive={isTeamAlive(team, now)}>
+              <div className="master-team-number" data-alive={isTeamAlive(team)}>
                 {team.team}
               </div>
               <div className="master-team-answer" data-correct={isCorrect}>
