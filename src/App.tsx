@@ -560,6 +560,21 @@ function SceneOne({ onNext }: SceneOneProps) {
     }
   }
 
+  const seekVideoFromClientX = (track: HTMLElement, clientX: number) => {
+    if (!videoDuration) {
+      return
+    }
+
+    const rect = track.getBoundingClientRect()
+    const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1)
+
+    seekVideo(ratio * videoDuration)
+  }
+
+  const videoProgressRatio = videoDuration
+    ? Math.min(Math.max(videoProgress / videoDuration, 0), 1)
+    : 0
+
   return (
     <section className="story-screen scene-one">
       <div
@@ -615,18 +630,61 @@ function SceneOne({ onNext }: SceneOneProps) {
             aria-hidden="true"
           />
         </button>
-        <input
+        <div
           className="video-seek"
-          type="range"
-          min="0"
-          max={videoDuration || 0}
-          step="0.01"
-          value={videoDuration ? Math.min(videoProgress, videoDuration) : 0}
+          role="slider"
+          tabIndex={videoDuration ? 0 : -1}
           aria-label="動画の再生位置"
-          disabled={!videoDuration}
-          onInput={(event) => seekVideo(Number(event.currentTarget.value))}
-          onChange={(event) => seekVideo(Number(event.target.value))}
-        />
+          aria-disabled={!videoDuration}
+          aria-valuemin={0}
+          aria-valuemax={Math.round(videoDuration)}
+          aria-valuenow={Math.round(videoProgress)}
+          style={{ '--video-progress': `${videoProgressRatio * 100}%` } as CSSProperties}
+          onPointerDown={(event) => {
+            if (!videoDuration) {
+              return
+            }
+
+            event.preventDefault()
+            event.currentTarget.setPointerCapture(event.pointerId)
+            seekVideoFromClientX(event.currentTarget, event.clientX)
+          }}
+          onPointerMove={(event) => {
+            if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+              return
+            }
+
+            event.preventDefault()
+            seekVideoFromClientX(event.currentTarget, event.clientX)
+          }}
+          onPointerUp={(event) => {
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+              event.currentTarget.releasePointerCapture(event.pointerId)
+            }
+          }}
+          onKeyDown={(event) => {
+            if (!videoDuration) {
+              return
+            }
+
+            const step = videoDuration / 100
+
+            if (event.key === 'ArrowLeft') {
+              event.preventDefault()
+              seekVideo(Math.max(videoProgress - step, 0))
+            }
+
+            if (event.key === 'ArrowRight') {
+              event.preventDefault()
+              seekVideo(Math.min(videoProgress + step, videoDuration))
+            }
+          }}
+        >
+          <span className="video-seek-track" aria-hidden="true">
+            <span className="video-seek-fill" />
+            <span className="video-seek-thumb" />
+          </span>
+        </div>
       </div>
       <button
         className="primary-next scene-one-next"
