@@ -652,6 +652,7 @@ type SceneOneProps = {
 function SceneOne({ onNext }: SceneOneProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
+  const [isVideoComplete, setIsVideoComplete] = useState(false)
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
 
@@ -754,7 +755,10 @@ function SceneOne({ onNext }: SceneOneProps) {
             onTimeUpdate={syncVideoProgress}
             onPlay={() => setIsVideoPlaying(true)}
             onPause={() => setIsVideoPlaying(false)}
-            onEnded={syncVideoProgress}
+            onEnded={() => {
+              syncVideoProgress()
+              setIsVideoComplete(true)
+            }}
           />
           <img
             className="play-mark"
@@ -819,16 +823,18 @@ function SceneOne({ onNext }: SceneOneProps) {
           </span>
         </div>
       </div>
-      <button
-        className="primary-next scene-one-next"
-        type="button"
-        onClick={() => {
-          playSound(CLICK_SOUND)
-          onNext()
-        }}
-      >
-        次へ
-      </button>
+      {isVideoComplete && (
+        <button
+          className="primary-next scene-one-next"
+          type="button"
+          onClick={() => {
+            playSound(CLICK_SOUND)
+            onNext()
+          }}
+        >
+          次へ
+        </button>
+      )}
     </section>
   )
 }
