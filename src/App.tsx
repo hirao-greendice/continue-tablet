@@ -47,7 +47,8 @@ function playSound(path: string) {
 const defaultPhotos: PhotoSlot[] = [
   { id: 1, label: '雑用係の役', src: publicAsset('photos/team-photo-1.jpg') },
   { id: 2, label: '学芸員の役', src: publicAsset('photos/team-photo-2.jpg') },
-  { id: 3, label: 'ケージーの役', src: publicAsset('photos/team-photo-3.jpg') },
+  { id: 3, label: '警察役', src: publicAsset('photos/team-photo-3.jpg') },
+  { id: 4, label: 'ケージーの役', src: publicAsset('photos/team-photo-4.jpg') },
 ]
 
 const STAGE_WIDTH = 1200
@@ -382,8 +383,20 @@ function App() {
 }
 
 function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto[]) {
+  const hasFourthPhoto = storedPhotos.some((item) => item.id === 4)
+  const legacyCageyPhoto = hasFourthPhoto
+    ? undefined
+    : storedPhotos.find((item) => item.id === 3)
+
   return currentPhotos.map((photo) => {
-    const storedPhoto = storedPhotos.find((item) => item.id === photo.id)
+    const storedPhoto = photo.id === 4 && legacyCageyPhoto
+      ? legacyCageyPhoto
+      : storedPhotos.find((item) => item.id === photo.id)
+
+    if (photo.id === 3 && legacyCageyPhoto) {
+      return photo
+    }
+
     return storedPhoto
       ? {
           ...photo,
@@ -436,6 +449,10 @@ function getAnswerLabel(photoId: number) {
 
   if (photoId === 2) {
     return '学芸員'
+  }
+
+  if (photoId === 3) {
+    return '警察'
   }
 
   return 'ケージー'
@@ -1153,7 +1170,7 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
       <img className="photo-qr" src={publicAsset('QR.png')} alt="QRコード" />
       <div className="photo-manager-inner">
         <h1>写真撮影</h1>
-        <p>3枚の写真を選ぶと、最終解答の候補画像に反映されます。</p>
+        <p>4枚の写真を選ぶと、最終解答の候補画像に反映されます。</p>
         {uploadStatus && <div className="upload-status">{uploadStatus}</div>}
         <div className="photo-editor-list">
           {photos.map((photo) => (
