@@ -44,11 +44,18 @@ function playSound(path: string) {
   void sound.play().catch(() => undefined)
 }
 
+const SUSPECT_LABELS: Record<number, string> = {
+  1: '雑用係\nウーラー・カーター役',
+  2: '学芸員\nキャン・バス役',
+  3: '警備員\nカンシーガ・シーメイ役',
+  4: '刑事\nケージー・ノカン役',
+}
+
 const defaultPhotos: PhotoSlot[] = [
-  { id: 1, label: '雑用係の役', src: publicAsset('photos/team-photo-1.jpg') },
-  { id: 2, label: '学芸員の役', src: publicAsset('photos/team-photo-2.jpg') },
-  { id: 3, label: '警察役', src: publicAsset('photos/team-photo-3.jpg') },
-  { id: 4, label: 'ケージーの役', src: publicAsset('photos/team-photo-4.jpg') },
+  { id: 1, label: SUSPECT_LABELS[1], src: publicAsset('photos/team-photo-1.jpg') },
+  { id: 2, label: SUSPECT_LABELS[2], src: publicAsset('photos/team-photo-2.jpg') },
+  { id: 3, label: SUSPECT_LABELS[3], src: publicAsset('photos/team-photo-3.jpg') },
+  { id: 4, label: SUSPECT_LABELS[4], src: publicAsset('photos/team-photo-4.jpg') },
 ]
 
 const STAGE_WIDTH = 1200
@@ -443,19 +450,7 @@ function createEmptyTeamStates() {
 }
 
 function getAnswerLabel(photoId: number) {
-  if (photoId === 1) {
-    return '雑用係'
-  }
-
-  if (photoId === 2) {
-    return '学芸員'
-  }
-
-  if (photoId === 3) {
-    return '警察'
-  }
-
-  return 'ケージー'
+  return SUSPECT_LABELS[photoId] ?? ''
 }
 
 function isTeamAlive(team: TeamState) {
@@ -576,7 +571,7 @@ function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScr
         {photos.map((photo) => (
           <article className="home-photo-card" key={photo.id}>
             <img src={photo.src} alt={`${photo.label}の現在の写真`} />
-            <span>{photo.id}. {photo.label}</span>
+            <span>{photo.label}</span>
           </article>
         ))}
       </div>
@@ -973,19 +968,18 @@ function SceneThree({
                   onSelect(photo.id)
                 }}
               >
-                <span className="suspect-number">{photo.id}</span>
                 <span className="suspect-label">{photo.label}</span>
                 <span className="suspect-frame">
                   <img src={photo.src} alt={photo.label} />
-                </span>
-                <span className="selection-pointer-slot" aria-hidden="true">
-                  {isSelected && (
-                    <img
-                      className="selection-pointer"
-                      src={publicAsset('select.png')}
-                      alt=""
-                    />
-                  )}
+                  <span className="selection-pointer-slot" aria-hidden="true">
+                    {isSelected && (
+                      <img
+                        className="selection-pointer"
+                        src={publicAsset('select.png')}
+                        alt=""
+                      />
+                    )}
+                  </span>
                 </span>
               </button>
             )
