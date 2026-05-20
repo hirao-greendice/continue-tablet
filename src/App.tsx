@@ -102,6 +102,7 @@ function App() {
   const [realtimeError, setRealtimeError] = useState('')
   const [masterAnswerResetAt, setMasterAnswerResetAt] = useState<number | null>(null)
   const [uploadStatus, setUploadStatus] = useState('')
+  const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
   const secretTapCount = useRef(0)
@@ -233,6 +234,7 @@ function App() {
     setTeamNumber(team)
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
+    setHasCompletedSceneOneVideo(false)
     setScreen('scene1')
   }
 
@@ -240,6 +242,7 @@ function App() {
     setTeamNumber(null)
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
+    setHasCompletedSceneOneVideo(false)
     setSecretMenuOpen(false)
     setScreen('home')
   }
@@ -322,6 +325,8 @@ function App() {
 
           {screen === 'scene1' && (
             <SceneOne
+              isVideoComplete={hasCompletedSceneOneVideo}
+              onVideoComplete={() => setHasCompletedSceneOneVideo(true)}
               onNext={() => setScreen('scene2')}
             />
           )}
@@ -641,13 +646,14 @@ function BatteryIndicator({ status }: BatteryIndicatorProps) {
 }
 
 type SceneOneProps = {
+  isVideoComplete: boolean
+  onVideoComplete: () => void
   onNext: () => void
 }
 
-function SceneOne({ onNext }: SceneOneProps) {
+function SceneOne({ isVideoComplete, onVideoComplete, onNext }: SceneOneProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
-  const [isVideoComplete, setIsVideoComplete] = useState(false)
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
 
@@ -715,25 +721,27 @@ function SceneOne({ onNext }: SceneOneProps) {
         <div className="ribbon-title">
           <h1>天啓だよ！</h1>
         </div>
-        <p>
-          あのスタッフは君たちを無視したわけではなく、
-          <br />
-          <strong>記憶を消した</strong>だけなので安心して、
-          <br />
-          とりあえず私の話を<strong>集中</strong>してほしい。
-        </p>
-        <p>
-          ゲームが始まる前に言ったように
-          <br />
-          いまこの会場には<strong>大変なこと</strong>が起きているんだ。
-        </p>
-        <p>
-          文字で説明するより聞かせたほうがいいか。
-          <br />
-          みんながこの会場に入る前に私がみた光景を、
-          <br />
-          なるべくリアルに再現するね。
-        </p>
+        <div className="scene-one-text-panel">
+          <p>
+            あのスタッフは君たちを無視したわけではなく、
+            <br />
+            <strong>記憶を消した</strong>だけなので安心して、
+            <br />
+            とりあえず私の話を<strong>集中</strong>してほしい。
+          </p>
+          <p>
+            ゲームが始まる前に言ったように
+            <br />
+            いまこの会場には<strong>大変なこと</strong>が起きているんだ。
+          </p>
+          <p>
+            文字で説明するより聞かせたほうがいいか。
+            <br />
+            みんながこの会場に入る前に私がみた光景を、
+            <br />
+            なるべくリアルに再現するね。
+          </p>
+        </div>
         <button
           className="video-box"
           data-playing={isVideoPlaying}
@@ -752,7 +760,7 @@ function SceneOne({ onNext }: SceneOneProps) {
             onPause={() => setIsVideoPlaying(false)}
             onEnded={() => {
               syncVideoProgress()
-              setIsVideoComplete(true)
+              onVideoComplete()
             }}
           />
           <img
