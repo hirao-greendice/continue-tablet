@@ -450,6 +450,14 @@ function formatPhotoUpdatedAt(updatedAt: number | undefined) {
   return `更新日時: ${photoUpdatedAtFormatter.format(new Date(updatedAt))}`
 }
 
+function formatHomePhotoUpdatedAt(updatedAt: number | undefined) {
+  if (!updatedAt) {
+    return '未更新'
+  }
+
+  return photoUpdatedAtFormatter.format(new Date(updatedAt))
+}
+
 function createEmptyTeamStates() {
   return Array.from({ length: 8 }, (_, index) => ({ team: index + 1 }))
 }
@@ -577,6 +585,7 @@ function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScr
           <article className="home-photo-card" key={photo.id}>
             <img src={photo.src} alt={`${photo.label}の現在の写真`} />
             <span>{photo.label}</span>
+            <p className="home-photo-updated-at">{formatHomePhotoUpdatedAt(photo.updatedAt)}</p>
           </article>
         ))}
       </div>
