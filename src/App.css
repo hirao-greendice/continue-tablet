@@ -515,6 +515,18 @@ button:focus-visible {
   background: #fff;
 }
 
+.scene-sequence {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.scene-sequence::-webkit-scrollbar {
+  display: none;
+}
+
 .story-background {
   position: absolute;
   inset: 0;
@@ -529,6 +541,12 @@ button:focus-visible {
   z-index: 1;
 }
 
+.scene-one {
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
+}
+
 .back-button {
   position: relative;
   z-index: 5;
@@ -541,13 +559,6 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.story-screen > .scene-two-back {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 10;
-}
-
 .scene-one-content,
 .scene-two-content {
   color: #202020;
@@ -556,7 +567,9 @@ button:focus-visible {
 
 .scene-one-content {
   width: 100%;
+  min-height: 100%;
   padding-top: 34px;
+  padding-bottom: 132px;
   padding-inline: 44px;
   font-size: 38px;
   line-height: 1.62;
@@ -744,27 +757,21 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.story-screen > .scene-one-next,
-.story-screen > .scene-two-next {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.scene-one-next {
-  bottom: 108px;
-}
-
-.scene-two-next {
-  bottom: 108px;
+.scene-one-followup {
+  margin-top: 74px;
 }
 
 .scene-two-content {
   width: 1100px;
-  margin: 118px auto 0;
+  margin: 0 auto;
   padding: 52px 64px 48px;
   font-size: 41px;
   line-height: 1.58;
+}
+
+.scene-two-next {
+  display: block;
+  margin: 58px auto 0;
 }
 
 .scene-two-content p {

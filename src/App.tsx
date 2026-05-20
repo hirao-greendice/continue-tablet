@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Cropper, { type Area, type Point } from 'react-easy-crop'
 import './App.css'
@@ -18,7 +18,7 @@ import {
 } from './teamStore'
 import { realtimeDatabaseUrl } from './firebase'
 
-type Screen = 'home' | 'scene1' | 'scene2' | 'scene3' | 'photos' | 'master'
+type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
 type PhotoSlot = {
   id: number
   label: string
@@ -60,6 +60,7 @@ const defaultPhotos: PhotoSlot[] = [
 
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
+const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 
 type LegacyMediaQueryList = MediaQueryList & {
   addListener?: (listener: (event: MediaQueryListEvent) => void) => void
@@ -79,6 +80,33 @@ type BatteryStatus = {
   charging: boolean
   level: number | null
   supported: boolean
+}
+
+function scrollToElement(container: HTMLElement, target: HTMLElement, duration: number) {
+  const startTop = container.scrollTop
+  const targetTop = target.offsetTop
+  const distance = targetTop - startTop
+  const startTime = performance.now()
+  let frameId = 0
+
+  const easeInOutCubic = (progress: number) =>
+    progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2
+
+  const animate = (time: number) => {
+    const progress = Math.min((time - startTime) / duration, 1)
+
+    container.scrollTop = startTop + distance * easeInOutCubic(progress)
+
+    if (progress < 1) {
+      frameId = window.requestAnimationFrame(animate)
+    }
+  }
+
+  frameId = window.requestAnimationFrame(animate)
+
+  return () => window.cancelAnimationFrame(frameId)
 }
 
 function getIsFullscreen() {
@@ -105,6 +133,8 @@ function App() {
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
+  const sceneSequenceRef = useRef<HTMLDivElement>(null)
+  const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
   const secretTapCount = useRef(0)
   const secretTapResetTimer = useRef<number | undefined>(undefined)
 
@@ -181,7 +211,7 @@ function App() {
   }, [teamNumber])
 
   useEffect(() => {
-    if (screen !== 'home' && screen !== 'scene2') {
+    if (screen !== 'home' && screen !== 'scene1') {
       return
     }
 
@@ -202,6 +232,33 @@ function App() {
       image.src = photo.src
     })
   }, [photos, screen])
+
+  useEffect(() => {
+    if (screen !== 'scene1') {
+      return
+    }
+
+    if (!hasCompletedSceneOneVideo) {
+      sceneSequenceRef.current?.scrollTo({ top: 0 })
+      return
+    }
+
+    let cancelScroll: (() => void) | undefined
+    const frameId = window.requestAnimationFrame(() => {
+      if (sceneSequenceRef.current && sceneTwoPanelRef.current) {
+        cancelScroll = scrollToElement(
+          sceneSequenceRef.current,
+          sceneTwoPanelRef.current,
+          SCENE_FOLLOWUP_SCROLL_DURATION_MS,
+        )
+      }
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      cancelScroll?.()
+    }
+  }, [hasCompletedSceneOneVideo, screen])
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === selectedPhotoId),
@@ -300,6 +357,11 @@ function App() {
     setMasterAnswerResetAt(Date.now())
   }
 
+  const returnToSceneTwo = () => {
+    setHasCompletedSceneOneVideo(true)
+    setScreen('scene1')
+  }
+
   return (
     <main className="app-frame">
       <div
@@ -324,15 +386,14 @@ function App() {
           )}
 
           {screen === 'scene1' && (
-            <SceneOne
-              isVideoComplete={hasCompletedSceneOneVideo}
-              onVideoComplete={() => setHasCompletedSceneOneVideo(true)}
-              onNext={() => setScreen('scene2')}
-            />
-          )}
-
-          {screen === 'scene2' && (
-            <SceneTwo onBack={() => setScreen('scene1')} onNext={() => setScreen('scene3')} />
+            <div className="scene-sequence" ref={sceneSequenceRef}>
+              <SceneOne
+                isVideoComplete={hasCompletedSceneOneVideo}
+                sceneFollowupRef={sceneTwoPanelRef}
+                onVideoComplete={() => setHasCompletedSceneOneVideo(true)}
+                onNext={() => setScreen('scene3')}
+              />
+            </div>
           )}
 
           {screen === 'scene3' && (
@@ -341,7 +402,7 @@ function App() {
               selectedPhoto={selectedPhoto}
               selectedPhotoId={selectedPhotoId}
               submittedPhoto={submittedPhoto}
-              onBack={() => setScreen('scene2')}
+              onBack={returnToSceneTwo}
               onRetry={() => setSubmittedPhotoId(null)}
               onSelect={setSelectedPhotoId}
               onSubmit={submitAnswer}
@@ -656,11 +717,17 @@ function BatteryIndicator({ status }: BatteryIndicatorProps) {
 
 type SceneOneProps = {
   isVideoComplete: boolean
+  sceneFollowupRef: RefObject<HTMLDivElement | null>
   onVideoComplete: () => void
   onNext: () => void
 }
 
-function SceneOne({ isVideoComplete, onVideoComplete, onNext }: SceneOneProps) {
+function SceneOne({
+  isVideoComplete,
+  sceneFollowupRef,
+  onVideoComplete,
+  onNext,
+}: SceneOneProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [videoDuration, setVideoDuration] = useState(0)
@@ -834,46 +901,23 @@ function SceneOne({ isVideoComplete, onVideoComplete, onNext }: SceneOneProps) {
             <span className="video-seek-thumb" />
           </span>
         </div>
+        {isVideoComplete && (
+          <div className="scene-one-followup" ref={sceneFollowupRef}>
+            <SceneTwoContent onNext={onNext} />
+          </div>
+        )}
       </div>
-      {isVideoComplete && (
-        <button
-          className="primary-next scene-one-next"
-          type="button"
-          onClick={() => {
-            playSound(CLICK_SOUND)
-            onNext()
-          }}
-        >
-          次へ
-        </button>
-      )}
     </section>
   )
 }
 
 type SceneTwoProps = {
-  onBack: () => void
   onNext: () => void
 }
 
-function SceneTwo({ onBack, onNext }: SceneTwoProps) {
+function SceneTwoContent({ onNext }: SceneTwoProps) {
   return (
-    <section className="story-screen scene-two">
-      <div
-        className="story-background"
-        style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-2.jpg')}")` }}
-        aria-hidden="true"
-      />
-      <button
-        className="back-button scene-two-back"
-        type="button"
-        onClick={() => {
-          playSound(CLICK_SOUND)
-          onBack()
-        }}
-      >
-        戻る
-      </button>
+    <>
       <div className="scene-two-content">
         <p>
           さっきのスタッフのおかしな発言は、
@@ -925,7 +969,7 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
       >
         犯人が誰か突き止める
       </button>
-    </section>
+    </>
   )
 }
 
