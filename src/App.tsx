@@ -35,7 +35,7 @@ function publicAsset(path: string) {
   return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
 }
 
-const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260519-1'
+const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260520-1'
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
 
