@@ -727,12 +727,12 @@ function SceneOne({ isVideoComplete, onVideoComplete, onNext }: SceneOneProps) {
             <br />
             <strong>記憶を消した</strong>だけなので安心して、
             <br />
-            とりあえず私の話を<strong>集中</strong>してほしい。
+            とりあえず私の話に<strong>集中</strong>してほしい。
           </p>
           <p>
             ゲームが始まる前に言ったように
             <br />
-            いまこの会場には<strong>大変なこと</strong>が起きているんだ。
+            いまこの会場では<strong>大変なこと</strong>が起きているんだ。
           </p>
           <p>
             文字で説明するより聞かせたほうがいいか。
@@ -867,7 +867,7 @@ function SceneTwo({ onBack, onNext }: SceneTwoProps) {
       </button>
       <div className="scene-two-content">
         <p>
-          さっきのスタッフのおかしい発言は、
+          さっきのスタッフのおかしな発言は、
           <br />
           楽しんでもらうための<strong>必死の努力</strong>だったんだね。
         </p>
