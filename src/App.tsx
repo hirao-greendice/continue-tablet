@@ -983,7 +983,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         </p>
         <p className="scene-two-proposal">
           <span className="scene-two-emphasis">ここで提案！</span><br />
-          君たちが、<strong>犯人を突き止める</strong>ことができたら、
+          君たちが、<strong>犯人を突き止める</strong>ことができたら、<br />
           私が<span className="scene-two-emphasis">「改心の一撃」</span>を放してあげる！
         </p>
         <p>
