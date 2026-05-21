@@ -41,6 +41,7 @@ function publicAsset(path: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260520-1'
+const SCENE_FOUR_ART_VERSION = 'scene-4-20260521-1'
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
 
@@ -1128,7 +1129,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
     <section className="submitted-answer-screen" aria-label="提出した回答">
       <img
         className="submitted-answer-art"
-        src={publicAsset('images/goutou.webp')}
+        src={publicAsset(`images/goutou.webp?v=${SCENE_FOUR_ART_VERSION}`)}
         alt=""
         aria-hidden="true"
       />
