@@ -66,6 +66,7 @@ const defaultPhotos: PhotoSlot[] = [
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
+const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
 
 type LegacyMediaQueryList = MediaQueryList & {
   addListener?: (listener: (event: MediaQueryListEvent) => void) => void
@@ -89,7 +90,7 @@ type BatteryStatus = {
 
 function scrollToElement(container: HTMLElement, target: HTMLElement, duration: number) {
   const startTop = container.scrollTop
-  const targetTop = target.offsetTop
+  const targetTop = Math.max(target.offsetTop + SCENE_FOLLOWUP_SCROLL_OFFSET, 0)
   const distance = targetTop - startTop
   const startTime = performance.now()
   let frameId = 0
@@ -140,6 +141,7 @@ function App() {
   const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
   const sceneSequenceRef = useRef<HTMLDivElement>(null)
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
+  const shouldScrollToSceneTwoRef = useRef(false)
   const secretTapCount = useRef(0)
   const secretTapResetTimer = useRef<number | undefined>(undefined)
 
@@ -248,6 +250,13 @@ function App() {
       return
     }
 
+    if (!shouldScrollToSceneTwoRef.current) {
+      sceneSequenceRef.current?.scrollTo({ top: 0 })
+      return
+    }
+
+    shouldScrollToSceneTwoRef.current = false
+
     let cancelScroll: (() => void) | undefined
     const frameId = window.requestAnimationFrame(() => {
       if (sceneSequenceRef.current && sceneTwoPanelRef.current) {
@@ -296,6 +305,7 @@ function App() {
     setTeamNumber(team)
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
+    shouldScrollToSceneTwoRef.current = false
     setHasCompletedSceneOneVideo(false)
     setScreen('scene1')
   }
@@ -304,6 +314,7 @@ function App() {
     setTeamNumber(null)
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
+    shouldScrollToSceneTwoRef.current = false
     setHasCompletedSceneOneVideo(false)
     setSecretMenuOpen(false)
     setScreen('home')
@@ -363,8 +374,14 @@ function App() {
   }
 
   const returnToSceneTwo = () => {
+    shouldScrollToSceneTwoRef.current = false
     setHasCompletedSceneOneVideo(true)
     setScreen('scene1')
+  }
+
+  const completeSceneOneVideo = () => {
+    shouldScrollToSceneTwoRef.current = true
+    setHasCompletedSceneOneVideo(true)
   }
 
   return (
@@ -402,7 +419,7 @@ function App() {
               <SceneOne
                 isVideoComplete={hasCompletedSceneOneVideo}
                 sceneFollowupRef={sceneTwoPanelRef}
-                onVideoComplete={() => setHasCompletedSceneOneVideo(true)}
+                onVideoComplete={completeSceneOneVideo}
                 onNext={() => setScreen('scene3')}
               />
             </div>
