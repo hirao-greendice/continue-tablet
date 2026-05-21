@@ -10,6 +10,11 @@ import {
   type StoredPhoto,
 } from './photoStore'
 import {
+  PHOTO_ASPECT_HEIGHT,
+  PHOTO_ASPECT_RATIO,
+  PHOTO_ASPECT_WIDTH,
+} from './photoAspect'
+import {
   connectTeamPresence,
   subscribeRealtimeConnection,
   submitTeamAnswer,
@@ -372,6 +377,9 @@ function App() {
             '--stage-scale': stageScale,
             '--stage-width': `${STAGE_WIDTH * stageScale}px`,
             '--stage-height': `${STAGE_HEIGHT * stageScale}px`,
+            '--photo-aspect-width': `${PHOTO_ASPECT_WIDTH}`,
+            '--photo-aspect-height': `${PHOTO_ASPECT_HEIGHT}`,
+            '--photo-aspect-ratio': `${PHOTO_ASPECT_RATIO}`,
           } as CSSProperties
         }
       >
@@ -386,7 +394,11 @@ function App() {
           )}
 
           {screen === 'scene1' && (
-            <div className="scene-sequence" ref={sceneSequenceRef}>
+            <div
+              className="scene-sequence"
+              data-followup-visible={hasCompletedSceneOneVideo}
+              ref={sceneSequenceRef}
+            >
               <SceneOne
                 isVideoComplete={hasCompletedSceneOneVideo}
                 sceneFollowupRef={sceneTwoPanelRef}
@@ -790,11 +802,17 @@ function SceneOne({
     <section className="story-screen scene-one">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-1.jpg')}")` }}
+        style={{ backgroundImage: `url("${publicAsset('images/tenkei.webp')}")` }}
         aria-hidden="true"
       />
       <div className="scene-one-content">
         <div className="ribbon-title">
+          <img
+            className="ribbon-title-art"
+            src={publicAsset('images/dayo.webp')}
+            alt=""
+            aria-hidden="true"
+          />
           <h1>天啓だよ！</h1>
         </div>
         <div className="scene-one-text-panel">
@@ -967,6 +985,12 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
           onNext()
         }}
       >
+        <img
+          className="scene-two-next-art"
+          src={publicAsset('images/tukitome.webp')}
+          alt=""
+          aria-hidden="true"
+        />
         犯人が誰か突き止める
       </button>
     </>
@@ -1002,7 +1026,7 @@ function SceneThree({
     <section className="story-screen scene-three">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${publicAsset('backgrounds/scene-3.jpg')}")` }}
+        style={{ backgroundImage: `url("${publicAsset('images/hannnin.webp')}")` }}
         aria-hidden="true"
       />
       <header className="answer-header">
@@ -1029,19 +1053,19 @@ function SceneThree({
                   onSelect(photo.id)
                 }}
               >
-                <span className="suspect-label">{photo.label}</span>
                 <span className="suspect-frame">
                   <img src={photo.src} alt={photo.label} />
-                  <span className="selection-pointer-slot" aria-hidden="true">
-                    {isSelected && (
-                      <img
-                        className="selection-pointer"
-                        src={publicAsset('select.png')}
-                        alt=""
-                      />
-                    )}
-                  </span>
                 </span>
+                <span className="selection-pointer-slot" aria-hidden="true">
+                  {isSelected && (
+                    <img
+                      className="selection-pointer"
+                      src={publicAsset('select.png')}
+                      alt=""
+                    />
+                  )}
+                </span>
+                <span className="suspect-label">{photo.label}</span>
               </button>
             )
           })}
@@ -1086,7 +1110,9 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
         alt=""
         aria-hidden="true"
       />
-      <img className="submitted-file-photo" src={photo.src} alt={photo.label} />
+      <span className="submitted-file-photo-frame">
+        <img className="submitted-file-photo" src={photo.src} alt={photo.label} />
+      </span>
       <span className="submitted-file-name">{photo.label}</span>
       <button
         className="retry-answer"
@@ -1321,7 +1347,7 @@ function PhotoCropDialog({ draft, onCancel, onUpdate }: PhotoCropDialogProps) {
             image={draft.src}
             crop={crop}
             zoom={zoom}
-            aspect={15 / 26}
+            aspect={PHOTO_ASPECT_RATIO}
             objectFit="contain"
             onCropChange={setCrop}
             onCropComplete={(_, areaPixels) => setCroppedAreaPixels(areaPixels)}

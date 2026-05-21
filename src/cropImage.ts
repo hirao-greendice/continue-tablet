@@ -1,7 +1,5 @@
 import type { Area } from 'react-easy-crop'
-
-const OUTPUT_WIDTH = 900
-const OUTPUT_HEIGHT = 1560
+import { PHOTO_OUTPUT_HEIGHT, PHOTO_OUTPUT_WIDTH } from './photoAspect'
 
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -25,8 +23,8 @@ export async function createCroppedPhotoFile(
     throw new Error('Could not create canvas context.')
   }
 
-  canvas.width = OUTPUT_WIDTH
-  canvas.height = OUTPUT_HEIGHT
+  canvas.width = PHOTO_OUTPUT_WIDTH
+  canvas.height = PHOTO_OUTPUT_HEIGHT
 
   context.drawImage(
     image,
@@ -36,8 +34,8 @@ export async function createCroppedPhotoFile(
     croppedAreaPixels.height,
     0,
     0,
-    OUTPUT_WIDTH,
-    OUTPUT_HEIGHT,
+    PHOTO_OUTPUT_WIDTH,
+    PHOTO_OUTPUT_HEIGHT,
   )
 
   return new Promise<File>((resolve, reject) => {
