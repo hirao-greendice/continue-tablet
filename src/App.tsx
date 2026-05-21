@@ -741,6 +741,7 @@ function SceneOne({
   onNext,
 }: SceneOneProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [hasStartedVideo, setHasStartedVideo] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
@@ -839,6 +840,7 @@ function SceneOne({
         <button
           className="video-box"
           data-playing={isVideoPlaying}
+          data-started={hasStartedVideo}
           type="button"
           aria-label={isVideoPlaying ? '動画を停止' : '動画を再生'}
           onClick={() => void toggleVideo()}
@@ -850,7 +852,10 @@ function SceneOne({
             playsInline
             onLoadedMetadata={syncVideoProgress}
             onTimeUpdate={syncVideoProgress}
-            onPlay={() => setIsVideoPlaying(true)}
+            onPlay={() => {
+              setHasStartedVideo(true)
+              setIsVideoPlaying(true)
+            }}
             onPause={() => setIsVideoPlaying(false)}
             onEnded={() => {
               syncVideoProgress()
@@ -947,7 +952,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
           <br />
           とにかく今は<strong>ゲームが続いている</strong>ようにみせよう。
           <br />
-          先程の「忘却の一撃」は1時間に1回しか打てないので、
+          先程の「忘却の一撃」は1時間に1回しか打てなくて
           <br />
           もう使えないんだ…。
         </p>

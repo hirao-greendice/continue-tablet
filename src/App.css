@@ -556,7 +556,8 @@ button:focus-visible {
 .scene-one > .story-background {
   display: block;
   background-position: top center;
-  background-size: cover;
+  background-repeat: no-repeat;
+  background-size: 100% auto;
 }
 
 .back-button {
@@ -674,9 +675,24 @@ button:focus-visible {
   object-fit: cover;
 }
 
+.video-box::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: '';
+  background: #000;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.video-box[data-started='true']::before {
+  opacity: 0;
+}
+
 .play-mark {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   width: 320px;
   height: 320px;
   object-fit: contain;
