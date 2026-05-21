@@ -645,6 +645,7 @@ button:focus-visible {
 .scene-one-content strong {
   color: #ffd91f;
   font-weight: 900;
+  text-shadow: none;
 }
 
 .video-box {
@@ -821,14 +822,13 @@ button:focus-visible {
 .scene-two-content strong {
   color: #ffd91f;
   font-weight: 900;
+  text-shadow: none;
 }
 
 .scene-two-emphasis {
-  color: #168cff;
+  color: #ff1b55;
   font-weight: 900;
-  text-shadow:
-    0 0 14px rgba(22, 140, 255, 0.42),
-    0 3px 0 rgba(0, 0, 0, 0.4);
+  text-shadow: none;
 }
 
 .scene-two-proposal {
