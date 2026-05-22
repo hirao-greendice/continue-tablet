@@ -41,6 +41,7 @@ function publicAsset(path: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260520-1'
+const SCENE_ONE_ART_VERSION = 'scene-1-art-20260522-1'
 const SCENE_FOUR_ART_VERSION = 'scene-4-20260521-1'
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
@@ -821,7 +822,7 @@ function SceneOne({
     <section className="story-screen scene-one">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${publicAsset('images/tenkei.webp')}")` }}
+        style={{ backgroundImage: `url("${publicAsset(`images/tenkei.webp?v=${SCENE_ONE_ART_VERSION}`)}")` }}
         aria-hidden="true"
       />
       <div className="scene-one-content">

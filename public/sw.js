@@ -1,4 +1,4 @@
-const CACHE_NAME = 'continue-tablet-v6'
+const CACHE_NAME = 'continue-tablet-v7'
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
