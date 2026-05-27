@@ -1,10 +1,10 @@
-const CACHE_NAME = 'continue-tablet-v7'
+const CACHE_NAME = 'continue-tablet-v8'
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
   './app-icon.svg',
   './favicon.svg',
-  './images/goutou.webp?v=scene-4-20260521-1',
+  './images/goutou.jpeg?v=scene-4-20260521-1',
 ]
 
 self.addEventListener('install', (event) => {

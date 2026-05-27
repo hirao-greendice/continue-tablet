@@ -822,14 +822,14 @@ function SceneOne({
     <section className="story-screen scene-one">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${publicAsset(`images/tenkei.webp?v=${SCENE_ONE_ART_VERSION}`)}")` }}
+        style={{ backgroundImage: `url("${publicAsset(`images/tenkei.jpg?v=${SCENE_ONE_ART_VERSION}`)}")` }}
         aria-hidden="true"
       />
       <div className="scene-one-content">
         <div className="ribbon-title">
           <img
             className="ribbon-title-art"
-            src={publicAsset('images/dayo.webp')}
+            src={publicAsset('images/dayo.png')}
             alt=""
             aria-hidden="true"
           />
@@ -1050,7 +1050,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
       >
         <img
           className="scene-two-next-art"
-          src={publicAsset('images/tukitome.webp')}
+          src={publicAsset('images/tukitome.png')}
           alt=""
           aria-hidden="true"
         />
@@ -1089,7 +1089,7 @@ function SceneThree({
     <section className="story-screen scene-three">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${publicAsset('images/hannnin.webp')}")` }}
+        style={{ backgroundImage: `url("${publicAsset('images/hannnin.jpg')}")` }}
         aria-hidden="true"
       />
       <header className="answer-header">
@@ -1145,12 +1145,19 @@ function SceneThree({
         <button
           className="submit-answer"
           type="button"
+          aria-label="提出する"
           disabled={!selectedPhoto}
           onClick={() => {
             playSound(SUBMIT_SOUND)
             void onSubmit()
           }}
         >
+          <img
+            className="image-button-art"
+            src={publicAsset('images/teisyutu_botton.png')}
+            alt=""
+            aria-hidden="true"
+          />
           天使に提出する
         </button>
         <p className="submit-answer-note">※提出後でも選びなおすことができます</p>
@@ -1169,7 +1176,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
     <section className="submitted-answer-screen" aria-label="提出した回答">
       <img
         className="submitted-answer-art"
-        src={publicAsset(`images/goutou.webp?v=${SCENE_FOUR_ART_VERSION}`)}
+        src={publicAsset(`images/goutou.jpeg?v=${SCENE_FOUR_ART_VERSION}`)}
         alt=""
         aria-hidden="true"
       />
@@ -1180,11 +1187,18 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
       <button
         className="retry-answer"
         type="button"
+        aria-label="選び直す"
         onClick={() => {
           playSound(CLICK_SOUND)
           onRetry()
         }}
       >
+        <img
+          className="image-button-art"
+          src={publicAsset('images/erabinaosu_button.png')}
+          alt=""
+          aria-hidden="true"
+        />
         選び直す
       </button>
     </section>

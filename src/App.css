@@ -574,7 +574,6 @@ button:focus-visible {
 
 .scene-one-content,
 .scene-two-content {
-  color: #f8fbff;
   text-align: center;
 }
 
@@ -584,7 +583,9 @@ button:focus-visible {
   padding-top: 62px;
   padding-bottom: 150px;
   padding-inline: 0;
+  color: #201612;
   font-size: 43px;
+  font-weight: 800;
   line-height: 1.58;
 }
 
@@ -624,8 +625,8 @@ button:focus-visible {
   margin: 0 auto 58px;
   padding: 8px 48px 0;
   text-shadow:
-    0 0 18px rgba(2, 8, 23, 0.95),
-    0 3px 0 rgba(0, 0, 0, 0.46);
+    0 1px 0 rgba(255, 250, 232, 0.9),
+    0 2px 4px rgba(255, 244, 210, 0.52);
 }
 
 .scene-two-content p {
@@ -643,9 +644,11 @@ button:focus-visible {
 }
 
 .scene-one-content strong {
-  color: #ffd91f;
+  color: #a51055;
   font-weight: 900;
-  text-shadow: none;
+  text-shadow:
+    0 1px 0 rgba(255, 250, 232, 0.95),
+    0 2px 4px rgba(255, 232, 176, 0.48);
 }
 
 .video-box {
@@ -780,6 +783,7 @@ button:focus-visible {
   width: 1180px;
   margin: 0 auto;
   padding: 8px 48px 0;
+  color: #f8fbff;
   font-size: 43px;
   line-height: 1.58;
   text-shadow:
@@ -900,13 +904,13 @@ button:focus-visible {
 
 .suspect-list {
   position: absolute;
-  top: 344px;
+  top: 470px;
   left: 138px;
   display: grid;
   width: 936px;
   grid-template-columns: repeat(2, 424px);
   justify-content: center;
-  gap: 32px 88px;
+  gap: 38px 88px;
   margin: 0;
 }
 
@@ -914,7 +918,7 @@ button:focus-visible {
   position: relative;
   display: grid;
   width: 424px;
-  gap: 24px;
+  gap: 18px;
   justify-items: center;
   padding: 0;
   background: transparent;
@@ -945,24 +949,24 @@ button:focus-visible {
 
 .suspect-label {
   display: grid;
-  width: 250px;
-  min-height: 62px;
+  width: 380px;
+  min-height: 84px;
   place-items: center;
-  color: #ffd91f;
-  font-size: 22px;
+  color: #8d160e;
+  font-size: 32px;
   font-weight: 900;
   line-height: 1.05;
   white-space: pre-line;
   word-break: keep-all;
   text-shadow:
-    0 0 8px #000,
-    0 2px 0 #000;
+    0 2px 0 rgba(255, 246, 207, 0.92),
+    0 0 8px rgba(255, 235, 170, 0.72);
 }
 
 .suspect-frame {
   position: relative;
   display: grid;
-  width: 404px;
+  width: 360px;
   aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
   place-items: center;
   overflow: hidden;
@@ -978,7 +982,7 @@ button:focus-visible {
 
 .selection-pointer-slot {
   position: absolute;
-  top: 252px;
+  top: 225px;
   z-index: 2;
   display: grid;
   width: 190px;
@@ -1042,20 +1046,31 @@ button:focus-visible {
 
 .submit-answer {
   position: absolute;
-  top: 1698px;
-  left: 232px;
-  display: block;
-  width: 736px;
-  height: 146px;
+  top: 1682px;
+  left: 310px;
+  display: grid;
+  width: 581px;
+  height: 129px;
   margin: 0;
+  place-items: center;
   background: transparent;
   color: transparent;
-  font-size: 46px;
-  font-weight: 900;
+  font-size: 1px;
+  line-height: 0;
 }
 
 .submit-answer:disabled {
-  opacity: 1;
+  opacity: 0.52;
+}
+
+.image-button-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .submit-answer-note {
@@ -1132,14 +1147,16 @@ button:focus-visible {
 
 .retry-answer {
   position: absolute;
-  top: 1640px;
-  left: 294px;
-  width: 612px;
-  height: 116px;
+  top: 1636px;
+  left: 354px;
+  display: grid;
+  width: 492px;
+  height: 148px;
+  place-items: center;
   background: transparent;
   color: transparent;
   font-size: 1px;
-  font-weight: 900;
+  line-height: 0;
 }
 
 .retry-answer:focus-visible {
