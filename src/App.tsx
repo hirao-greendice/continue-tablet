@@ -1199,7 +1199,9 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
             <strong>チャンスは1回</strong>だけだよ！
           </p>
           <p>
-            君たちが無事、運命を変えられることを祈っているよ。
+            君たちが無事、
+            <br />
+            運命を変えられることを祈っているよ。
           </p>
         </div>
       </div>
