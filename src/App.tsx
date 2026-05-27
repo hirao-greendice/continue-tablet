@@ -1175,22 +1175,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         </div>
         <div className="scene-two-text-block">
           <p>
-            実は、机の横にあるヒントブックは
-            <br />
-            ボクが用意したものなんだ。
-            <br />
-            そして、会場で羽を付けて君たちを
-            <br />
-            見守っていたのは、<strong>ボクの仲間</strong>。
-            <br />
-            君たちにしか見えないから、困ったことがあったら、
-            <br />
-            安心してボクの仲間に聞いてね。
-          </p>
-        </div>
-        <div className="scene-two-text-block">
-          <p>
-            あと、さっきの「謎を独り占めすると退席してもらう」
+            さっきの「謎を独り占めすると退席してもらう」
             <br />
             という注意事項を思い出して、
             <br />
@@ -1207,7 +1192,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         </div>
         <div className="scene-two-text-block">
           <p>
-            「改心の一撃」がフルチャージするのは、
+            「改心の一撃」がフルチャージするのは
             <br />
             ちょうど<strong>ゲームが終わる瞬間</strong>。
             <br />
