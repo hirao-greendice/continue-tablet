@@ -40,9 +40,14 @@ function publicAsset(path: string) {
   return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
 }
 
-const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260520-1'
-const SCENE_ONE_ART_VERSION = 'scene-1-art-20260522-1'
-const SCENE_FOUR_ART_VERSION = 'scene-4-20260521-1'
+function versionedAsset(path: string, version: string) {
+  const separator = path.includes('?') ? '&' : '?'
+
+  return publicAsset(`${path}${separator}v=${version}`)
+}
+
+const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260527-1'
+const STATIC_IMAGE_VERSION = 'images-20260527-1'
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
 
@@ -981,14 +986,14 @@ function SceneOne({
     <section className="story-screen scene-one">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${publicAsset(`images/tenkei.jpg?v=${SCENE_ONE_ART_VERSION}`)}")` }}
+        style={{ backgroundImage: `url("${versionedAsset('images/tenkei.jpg', STATIC_IMAGE_VERSION)}")` }}
         aria-hidden="true"
       />
       <div className="scene-one-content">
         <div className="ribbon-title">
           <img
             className="ribbon-title-art"
-            src={publicAsset('images/dayo.png')}
+            src={versionedAsset('images/dayo.png', STATIC_IMAGE_VERSION)}
             alt=""
             aria-hidden="true"
           />
@@ -1043,7 +1048,7 @@ function SceneOne({
           />
           <img
             className="play-mark"
-            src={publicAsset('images/play.png')}
+            src={versionedAsset('images/play.png', STATIC_IMAGE_VERSION)}
             alt=""
             aria-hidden="true"
           />
@@ -1223,7 +1228,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
       >
         <img
           className="scene-two-next-art"
-          src={publicAsset('images/tukitome.png')}
+          src={versionedAsset('images/tukitome.png', STATIC_IMAGE_VERSION)}
           alt=""
           aria-hidden="true"
         />
@@ -1262,14 +1267,14 @@ function SceneThree({
     <section className="story-screen scene-three">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${publicAsset('images/hannnin.jpg')}")` }}
+        style={{ backgroundImage: `url("${versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)}")` }}
         aria-hidden="true"
       />
       <header className="answer-header">
         <button className="back-button answer-back" type="button" onClick={onBack}>
           <img
             className="answer-back-art"
-            src={publicAsset('images/back.webp')}
+            src={versionedAsset('images/back.webp', STATIC_IMAGE_VERSION)}
             alt=""
             aria-hidden="true"
           />
@@ -1302,7 +1307,7 @@ function SceneThree({
                   {isSelected && (
                     <img
                       className="selection-pointer"
-                      src={publicAsset('select.png')}
+                      src={versionedAsset('select.png', STATIC_IMAGE_VERSION)}
                       alt=""
                     />
                   )}
@@ -1333,7 +1338,7 @@ function SceneThree({
         >
           <img
             className="image-button-art"
-            src={publicAsset('images/teisyutu_botton.png')}
+            src={versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)}
             alt=""
             aria-hidden="true"
           />
@@ -1355,7 +1360,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
     <section className="submitted-answer-screen" aria-label="提出した回答">
       <img
         className="submitted-answer-art"
-        src={publicAsset(`images/goutou.jpeg?v=${SCENE_FOUR_ART_VERSION}`)}
+        src={versionedAsset('images/goutou.jpeg', STATIC_IMAGE_VERSION)}
         alt=""
         aria-hidden="true"
       />
@@ -1374,7 +1379,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
       >
         <img
           className="image-button-art"
-          src={publicAsset('images/erabinaosu_button.png')}
+          src={versionedAsset('images/erabinaosu_button.png', STATIC_IMAGE_VERSION)}
           alt=""
           aria-hidden="true"
         />
@@ -1510,7 +1515,11 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
       <button className="back-button photo-back" type="button" onClick={onBack}>
         戻る
       </button>
-      <img className="photo-qr" src={publicAsset('QR.png')} alt="QRコード" />
+      <img
+        className="photo-qr"
+        src={versionedAsset('QR.png', STATIC_IMAGE_VERSION)}
+        alt="QRコード"
+      />
       <div className="photo-manager-inner">
         <h1>写真撮影</h1>
         <p>4枚の写真を選ぶと、最終解答の候補画像に反映されます。</p>

@@ -1,10 +1,26 @@
-const CACHE_NAME = 'continue-tablet-v8'
+const CACHE_NAME = 'continue-tablet-v9'
+const STATIC_IMAGE_VERSION = 'images-20260527-1'
+
+function versionedAsset(path) {
+  return `${path}?v=${STATIC_IMAGE_VERSION}`
+}
+
 const APP_SHELL = [
   './',
   './manifest.webmanifest',
   './app-icon.svg',
   './favicon.svg',
-  './images/goutou.jpeg?v=scene-4-20260521-1',
+  versionedAsset('./QR.png'),
+  versionedAsset('./select.png'),
+  versionedAsset('./images/back.webp'),
+  versionedAsset('./images/dayo.png'),
+  versionedAsset('./images/erabinaosu_button.png'),
+  versionedAsset('./images/goutou.jpeg'),
+  versionedAsset('./images/hannnin.jpg'),
+  versionedAsset('./images/play.png'),
+  versionedAsset('./images/teisyutu_botton.png'),
+  versionedAsset('./images/tenkei.jpg'),
+  versionedAsset('./images/tukitome.png'),
 ]
 
 self.addEventListener('install', (event) => {
