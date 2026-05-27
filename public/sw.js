@@ -1,4 +1,4 @@
-const CACHE_NAME = 'continue-tablet-v9'
+const CACHE_NAME = 'continue-tablet-v10'
 const STATIC_IMAGE_VERSION = 'images-20260527-1'
 
 function versionedAsset(path) {
@@ -10,6 +10,9 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './app-icon.svg',
   './favicon.svg',
+]
+
+const WARM_IMAGE_CACHE = [
   versionedAsset('./QR.png'),
   versionedAsset('./select.png'),
   versionedAsset('./images/back.webp'),
@@ -23,10 +26,37 @@ const APP_SHELL = [
   versionedAsset('./images/tukitome.png'),
 ]
 
+async function warmImageCache() {
+  const cache = await caches.open(CACHE_NAME)
+
+  await Promise.allSettled(
+    WARM_IMAGE_CACHE.map(async (asset) => {
+      const request = new Request(asset)
+      const response = await fetch(request)
+
+      if (response.ok) {
+        await cache.put(request, response)
+      }
+    }),
+  )
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)),
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        APP_SHELL.map(async (asset) => {
+          const request = new Request(asset)
+          const response = await fetch(request)
+
+          if (response.ok) {
+            await cache.put(request, response)
+          }
+        }),
+      ),
+    ),
   )
+  warmImageCache().catch(() => undefined)
   self.skipWaiting()
 })
 
