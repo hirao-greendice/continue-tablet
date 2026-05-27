@@ -145,8 +145,14 @@ function App() {
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
   const shouldScrollToSceneTwoRef = useRef(false)
   const sceneTouchScrollRef = useRef({
+    animationFrame: 0,
+    didDrag: false,
+    lastTime: 0,
+    lastY: 0,
+    suppressClick: false,
     startScrollTop: 0,
     startY: 0,
+    velocity: 0,
   })
   const secretTapCount = useRef(0)
   const secretTapResetTimer = useRef<number | undefined>(undefined)
@@ -281,7 +287,7 @@ function App() {
   }, [hasCompletedSceneOneVideo, screen])
 
   useEffect(() => {
-    if (screen !== 'scene1') {
+    if (screen !== 'scene1' || !hasCompletedSceneOneVideo) {
       return
     }
 
@@ -294,14 +300,60 @@ function App() {
     const shouldIgnoreTouch = (target: EventTarget | null) =>
       target instanceof Element && Boolean(target.closest('.video-seek'))
 
+    const getMaxScrollTop = () =>
+      Math.max(scrollContainer.scrollHeight - scrollContainer.clientHeight, 0)
+
+    const scrollToTop = (top: number) => {
+      scrollContainer.scrollTop = Math.min(Math.max(top, 0), getMaxScrollTop())
+    }
+
+    const stopMomentum = () => {
+      if (sceneTouchScrollRef.current.animationFrame) {
+        window.cancelAnimationFrame(sceneTouchScrollRef.current.animationFrame)
+        sceneTouchScrollRef.current.animationFrame = 0
+      }
+    }
+
+    const runMomentum = () => {
+      const state = sceneTouchScrollRef.current
+
+      if (Math.abs(state.velocity) < 0.02) {
+        state.animationFrame = 0
+        return
+      }
+
+      const beforeTop = scrollContainer.scrollTop
+      scrollToTop(beforeTop + state.velocity * 16)
+
+      if (scrollContainer.scrollTop === beforeTop) {
+        state.animationFrame = 0
+        state.velocity = 0
+        return
+      }
+
+      state.velocity *= 0.92
+      state.animationFrame = window.requestAnimationFrame(runMomentum)
+    }
+
     const startTouchScroll = (event: TouchEvent) => {
       if (shouldIgnoreTouch(event.target) || event.touches.length !== 1) {
         return
       }
 
+      stopMomentum()
+
+      const touchY = event.touches[0].clientY
+      const now = performance.now()
+
       sceneTouchScrollRef.current = {
+        animationFrame: 0,
+        didDrag: false,
+        lastTime: now,
+        lastY: touchY,
+        suppressClick: false,
         startScrollTop: scrollContainer.scrollTop,
-        startY: event.touches[0].clientY,
+        startY: touchY,
+        velocity: 0,
       }
     }
 
@@ -310,24 +362,78 @@ function App() {
         return
       }
 
-      const deltaY = event.touches[0].clientY - sceneTouchScrollRef.current.startY
+      const state = sceneTouchScrollRef.current
+      const touchY = event.touches[0].clientY
+      const deltaFromStart = touchY - state.startY
 
-      if (Math.abs(deltaY) < 4) {
+      if (Math.abs(deltaFromStart) < 5 && !state.didDrag) {
         return
       }
 
-      scrollContainer.scrollTop = sceneTouchScrollRef.current.startScrollTop - deltaY
+      const now = performance.now()
+      const deltaY = touchY - state.lastY
+      const deltaTime = Math.max(now - state.lastTime, 1)
+      const scrollDelta = -deltaY / Math.max(stageScale, 0.1)
+
+      state.didDrag = true
+      state.suppressClick = true
+      state.velocity = Math.min(Math.max(scrollDelta / deltaTime, -4), 4)
+      state.lastY = touchY
+      state.lastTime = now
+
+      scrollToTop(scrollContainer.scrollTop + scrollDelta)
+      event.preventDefault()
+    }
+
+    const endTouchScroll = () => {
+      const state = sceneTouchScrollRef.current
+
+      if (!state.didDrag) {
+        return
+      }
+
+      stopMomentum()
+      state.animationFrame = window.requestAnimationFrame(runMomentum)
+    }
+
+    const suppressDraggedClick = (event: MouseEvent) => {
+      const state = sceneTouchScrollRef.current
+
+      if (!state.suppressClick) {
+        return
+      }
+
+      state.suppressClick = false
+      event.preventDefault()
+      event.stopPropagation()
+    }
+
+    const wheelScroll = (event: WheelEvent) => {
+      if (shouldIgnoreTouch(event.target)) {
+        return
+      }
+
+      scrollToTop(scrollContainer.scrollTop + event.deltaY / Math.max(stageScale, 0.1))
       event.preventDefault()
     }
 
     scrollContainer.addEventListener('touchstart', startTouchScroll, { passive: true })
     scrollContainer.addEventListener('touchmove', moveTouchScroll, { passive: false })
+    scrollContainer.addEventListener('touchend', endTouchScroll)
+    scrollContainer.addEventListener('touchcancel', endTouchScroll)
+    scrollContainer.addEventListener('click', suppressDraggedClick, true)
+    scrollContainer.addEventListener('wheel', wheelScroll, { passive: false })
 
     return () => {
+      stopMomentum()
       scrollContainer.removeEventListener('touchstart', startTouchScroll)
       scrollContainer.removeEventListener('touchmove', moveTouchScroll)
+      scrollContainer.removeEventListener('touchend', endTouchScroll)
+      scrollContainer.removeEventListener('touchcancel', endTouchScroll)
+      scrollContainer.removeEventListener('click', suppressDraggedClick, true)
+      scrollContainer.removeEventListener('wheel', wheelScroll)
     }
-  }, [screen])
+  }, [hasCompletedSceneOneVideo, screen, stageScale])
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === selectedPhotoId),
