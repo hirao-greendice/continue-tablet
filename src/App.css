@@ -1108,7 +1108,7 @@ button:focus-visible {
 
 .submitted-file-photo-frame {
   position: absolute;
-  top: 500px;
+  top: 400px;
   left: 326px;
   z-index: 1;
   display: grid;
@@ -1126,32 +1126,32 @@ button:focus-visible {
 
 .submitted-file-name {
   position: absolute;
-  top: 1188px;
-  left: 234px;
+  top: 1050px;
+  left: 180px;
   z-index: 2;
   display: grid;
-  width: 732px;
-  min-height: 128px;
+  width: 840px;
+  min-height: 150px;
   place-items: center;
   padding: 8px 28px;
-  color: #ffd91f;
-  font-size: 42px;
+  color: #f7e8d0;
+  font-size: 60px;
   font-weight: 900;
-  line-height: 1.12;
+  line-height: 1.08;
   text-align: center;
   white-space: pre-line;
   text-shadow:
-    0 0 8px #000,
-    0 3px 0 #000;
+    0 3px 0 #5e0f0a,
+    2px 5px 0 rgba(0, 0, 0, 0.56);
 }
 
 .retry-answer {
   position: absolute;
-  top: 1636px;
-  left: 354px;
+  top: 1580px;
+  left: 403px;
   display: grid;
-  width: 492px;
-  height: 148px;
+  width: 394px;
+  height: 118px;
   place-items: center;
   background: transparent;
   color: transparent;
