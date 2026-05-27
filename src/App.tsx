@@ -1108,6 +1108,12 @@ function SceneThree({
       />
       <header className="answer-header">
         <button className="back-button answer-back" type="button" onClick={onBack}>
+          <img
+            className="answer-back-art"
+            src={publicAsset('images/back.webp')}
+            alt=""
+            aria-hidden="true"
+          />
           戻る
         </button>
         <h1>ホントの最終解答</h1>
