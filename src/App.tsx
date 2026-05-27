@@ -50,9 +50,17 @@ const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260527-1'
 const STATIC_IMAGE_VERSION = 'images-20260527-1'
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
+const CLICK_SOUND_VOLUME = 0.8
+const SUBMIT_SOUND_VOLUME = 0.6
+const SCENE_ONE_VIDEO_VOLUME = 1
 
-function playSound(path: string) {
+function clampVolume(volume: number) {
+  return Math.min(Math.max(volume, 0), 1)
+}
+
+function playSound(path: string, volume = 1) {
   const sound = new Audio(publicAsset(path))
+  sound.volume = clampVolume(volume)
   void sound.play().catch(() => undefined)
 }
 
@@ -929,8 +937,14 @@ function SceneOne({
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.volume = clampVolume(SCENE_ONE_VIDEO_VOLUME)
+    }
+  }, [])
+
   const toggleVideo = async () => {
-    playSound(CLICK_SOUND)
+    playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
 
     if (videoRef.current && !videoRef.current.paused) {
       videoRef.current.pause()
@@ -939,6 +953,10 @@ function SceneOne({
     }
 
     try {
+      if (videoRef.current) {
+        videoRef.current.volume = clampVolume(SCENE_ONE_VIDEO_VOLUME)
+      }
+
       await videoRef.current?.play()
       setIsVideoPlaying(true)
     } catch {
@@ -1209,7 +1227,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         className="primary-next scene-two-next"
         type="button"
         onClick={() => {
-          playSound(CLICK_SOUND)
+          playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
           onNext()
         }}
       >
@@ -1283,7 +1301,7 @@ function SceneThree({
                 key={photo.id}
                 type="button"
                 onClick={() => {
-                  playSound(CLICK_SOUND)
+                  playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
                   onSelect(photo.id)
                 }}
               >
@@ -1319,7 +1337,7 @@ function SceneThree({
           aria-label="提出する"
           disabled={!selectedPhoto}
           onClick={() => {
-            playSound(SUBMIT_SOUND)
+            playSound(SUBMIT_SOUND, SUBMIT_SOUND_VOLUME)
             void onSubmit()
           }}
         >
@@ -1360,7 +1378,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
         type="button"
         aria-label="選び直す"
         onClick={() => {
-          playSound(CLICK_SOUND)
+          playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
           onRetry()
         }}
       >
