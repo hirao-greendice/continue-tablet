@@ -144,6 +144,10 @@ function App() {
   const sceneSequenceRef = useRef<HTMLDivElement>(null)
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
   const shouldScrollToSceneTwoRef = useRef(false)
+  const sceneTouchScrollRef = useRef({
+    startScrollTop: 0,
+    startY: 0,
+  })
   const secretTapCount = useRef(0)
   const secretTapResetTimer = useRef<number | undefined>(undefined)
 
@@ -275,6 +279,55 @@ function App() {
       cancelScroll?.()
     }
   }, [hasCompletedSceneOneVideo, screen])
+
+  useEffect(() => {
+    if (screen !== 'scene1') {
+      return
+    }
+
+    const scrollContainer = sceneSequenceRef.current
+
+    if (!scrollContainer) {
+      return
+    }
+
+    const shouldIgnoreTouch = (target: EventTarget | null) =>
+      target instanceof Element && Boolean(target.closest('.video-seek'))
+
+    const startTouchScroll = (event: TouchEvent) => {
+      if (shouldIgnoreTouch(event.target) || event.touches.length !== 1) {
+        return
+      }
+
+      sceneTouchScrollRef.current = {
+        startScrollTop: scrollContainer.scrollTop,
+        startY: event.touches[0].clientY,
+      }
+    }
+
+    const moveTouchScroll = (event: TouchEvent) => {
+      if (shouldIgnoreTouch(event.target) || event.touches.length !== 1) {
+        return
+      }
+
+      const deltaY = event.touches[0].clientY - sceneTouchScrollRef.current.startY
+
+      if (Math.abs(deltaY) < 4) {
+        return
+      }
+
+      scrollContainer.scrollTop = sceneTouchScrollRef.current.startScrollTop - deltaY
+      event.preventDefault()
+    }
+
+    scrollContainer.addEventListener('touchstart', startTouchScroll, { passive: true })
+    scrollContainer.addEventListener('touchmove', moveTouchScroll, { passive: false })
+
+    return () => {
+      scrollContainer.removeEventListener('touchstart', startTouchScroll)
+      scrollContainer.removeEventListener('touchmove', moveTouchScroll)
+    }
+  }, [screen])
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === selectedPhotoId),
