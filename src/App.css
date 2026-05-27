@@ -949,9 +949,7 @@ button:focus-visible {
 }
 
 .suspect-card[data-selected='true'] .suspect-frame {
-  box-shadow:
-    0 0 0 8px #ff0b70,
-    0 0 28px rgba(255, 11, 112, 0.78);
+  box-shadow: 0 0 0 8px #ff0b70;
 }
 
 .suspect-number {
