@@ -522,6 +522,8 @@ button:focus-visible {
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .scene-sequence::-webkit-scrollbar {
@@ -663,6 +665,7 @@ button:focus-visible {
   font-weight: 900;
   border: 3px solid rgba(255, 255, 255, 0.48);
   box-shadow: 0 0 0 2px rgba(24, 215, 246, 0.34);
+  touch-action: pan-y;
   transform: translateX(-50%) scale(1.1);
   transform-origin: center;
 }
