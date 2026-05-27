@@ -949,15 +949,16 @@ button:focus-visible {
 
 .suspect-label {
   display: grid;
-  width: 380px;
-  min-height: 84px;
+  width: 424px;
+  min-height: 96px;
   place-items: center;
   color: #8d160e;
-  font-size: 32px;
+  font-size: 38px;
   font-weight: 900;
   line-height: 1.05;
-  white-space: pre-line;
-  word-break: keep-all;
+  overflow: visible;
+  white-space: pre;
+  word-break: normal;
   text-shadow:
     0 2px 0 rgba(255, 246, 207, 0.92),
     0 0 8px rgba(255, 235, 170, 0.72);
@@ -993,13 +994,13 @@ button:focus-visible {
 }
 
 .suspect-card:nth-child(odd) .selection-pointer-slot {
-  left: -140px;
+  left: -100px;
   --pointer-bounce-x: 18px;
   --pointer-scale: 1;
 }
 
 .suspect-card:nth-child(even) .selection-pointer-slot {
-  right: -140px;
+  right: -100px;
   --pointer-bounce-x: -18px;
   --pointer-scale: -1;
 }
