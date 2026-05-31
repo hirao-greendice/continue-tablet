@@ -620,9 +620,8 @@ function App() {
 
   const isPlayerGameEnded =
     gameEnded &&
-    screen !== 'master' &&
-    screen !== 'photos' &&
-    (deviceRole === 'player' || screen === 'scene1' || screen === 'scene3')
+    deviceRole === 'player' &&
+    (screen === 'scene1' || screen === 'scene3')
 
   return (
     <main className="app-frame">
