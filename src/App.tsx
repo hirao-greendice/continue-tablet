@@ -15,8 +15,13 @@ import {
   PHOTO_ASPECT_WIDTH,
 } from './photoAspect'
 import {
+  clearTeamAnswer,
   connectTeamPresence,
+  resetAllTeamAnswers,
+  setGameEndedStatus,
+  subscribeGameControl,
   subscribeRealtimeConnection,
+  subscribeTeamAnswer,
   submitTeamAnswer,
   subscribeTeamStates,
   type TeamState,
@@ -24,6 +29,7 @@ import {
 import { realtimeDatabaseUrl } from './firebase'
 
 type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
+type DeviceRole = 'unknown' | 'master' | 'player'
 type PhotoSlot = {
   id: number
   label: string
@@ -82,6 +88,7 @@ const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
+const DEVICE_ROLE_STORAGE_KEY = 'continue-tablet-device-role'
 
 type LegacyMediaQueryList = MediaQueryList & {
   addListener?: (listener: (event: MediaQueryListEvent) => void) => void
@@ -138,8 +145,15 @@ function getStageScale() {
   return Math.min(window.innerWidth / STAGE_WIDTH, window.innerHeight / STAGE_HEIGHT)
 }
 
+function getStoredDeviceRole(): DeviceRole {
+  const storedRole = window.localStorage.getItem(DEVICE_ROLE_STORAGE_KEY)
+
+  return storedRole === 'master' || storedRole === 'player' ? storedRole : 'unknown'
+}
+
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
+  const [deviceRole, setDeviceRole] = useState<DeviceRole>(getStoredDeviceRole)
   const [teamNumber, setTeamNumber] = useState<number | null>(null)
   const [selectedPhotoId, setSelectedPhotoId] = useState<number | null>(null)
   const [submittedPhotoId, setSubmittedPhotoId] = useState<number | null>(null)
@@ -149,7 +163,7 @@ function App() {
   const [teamStates, setTeamStates] = useState<TeamState[]>(createEmptyTeamStates)
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [realtimeError, setRealtimeError] = useState('')
-  const [masterAnswerResetAt, setMasterAnswerResetAt] = useState<number | null>(null)
+  const [gameEnded, setGameEnded] = useState(false)
   const [uploadStatus, setUploadStatus] = useState('')
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
@@ -219,6 +233,10 @@ function App() {
   }, [])
 
   useEffect(() => {
+    return subscribeGameControl((state) => setGameEnded(state.gameEnded), setRealtimeError)
+  }, [])
+
+  useEffect(() => {
     if (screen !== 'master') {
       return
     }
@@ -240,6 +258,21 @@ function App() {
     }
 
     return connectTeamPresence(teamNumber, setRealtimeError)
+  }, [teamNumber])
+
+  useEffect(() => {
+    if (!teamNumber) {
+      return
+    }
+
+    return subscribeTeamAnswer(
+      teamNumber,
+      (answer) => {
+        setSubmittedPhotoId(answer?.photoId ?? null)
+        setSelectedPhotoId(answer?.photoId ?? null)
+      },
+      setRealtimeError,
+    )
   }, [teamNumber])
 
   useEffect(() => {
@@ -476,6 +509,8 @@ function App() {
 
   const startTeam = (team: number) => {
     void enterFullscreen()
+    setDeviceRole('player')
+    window.localStorage.setItem(DEVICE_ROLE_STORAGE_KEY, 'player')
     setTeamNumber(team)
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
@@ -543,8 +578,17 @@ function App() {
     setSubmittedPhotoId(selectedPhoto.id)
   }
 
-  const resetMasterAnswers = () => {
-    setMasterAnswerResetAt(Date.now())
+  const retryAnswer = async () => {
+    if (teamNumber) {
+      await clearTeamAnswer(teamNumber)
+    }
+
+    setSubmittedPhotoId(null)
+    setSelectedPhotoId(null)
+  }
+
+  const resetMasterAnswers = async () => {
+    await resetAllTeamAnswers()
   }
 
   const returnToSceneTwo = () => {
@@ -557,6 +601,24 @@ function App() {
     shouldScrollToSceneTwoRef.current = true
     setHasCompletedSceneOneVideo(true)
   }
+
+  const openMaster = () => {
+    setDeviceRole('master')
+    window.localStorage.setItem(DEVICE_ROLE_STORAGE_KEY, 'master')
+    setScreen('master')
+  }
+
+  const openPhotos = () => {
+    setDeviceRole('master')
+    window.localStorage.setItem(DEVICE_ROLE_STORAGE_KEY, 'master')
+    setScreen('photos')
+  }
+
+  const isPlayerGameEnded =
+    gameEnded &&
+    screen !== 'master' &&
+    screen !== 'photos' &&
+    (deviceRole === 'player' || screen === 'scene1' || screen === 'scene3')
 
   return (
     <main className="app-frame">
@@ -579,8 +641,8 @@ function App() {
             <HomeScreen
               photos={photos}
               onStartTeam={startTeam}
-              onOpenMaster={() => setScreen('master')}
-              onOpenPhotos={() => setScreen('photos')}
+              onOpenMaster={openMaster}
+              onOpenPhotos={openPhotos}
             />
           )}
 
@@ -606,7 +668,7 @@ function App() {
               selectedPhotoId={selectedPhotoId}
               submittedPhoto={submittedPhoto}
               onBack={returnToSceneTwo}
-              onRetry={() => setSubmittedPhotoId(null)}
+              onRetry={retryAnswer}
               onSelect={setSelectedPhotoId}
               onSubmit={submitAnswer}
             />
@@ -614,12 +676,13 @@ function App() {
 
           {screen === 'master' && (
             <MasterScreen
+              gameEnded={gameEnded}
               realtimeConnected={realtimeConnected}
               realtimeError={realtimeError}
-              answerResetAt={masterAnswerResetAt}
               teams={teamStates}
               onBack={() => setScreen('home')}
               onResetAnswers={resetMasterAnswers}
+              onSetGameEnded={setGameEndedStatus}
             />
           )}
 
@@ -633,6 +696,8 @@ function App() {
           )}
         </div>
       </div>
+
+      {isPlayerGameEnded && <GameEndedOverlay />}
 
       {!isFullscreen && (
         <button className="fullscreen-control" type="button" onClick={enterFullscreen}>
@@ -655,6 +720,14 @@ function App() {
         />
       )}
     </main>
+  )
+}
+
+function GameEndedOverlay() {
+  return (
+    <div className="game-ended-overlay" role="status" aria-live="polite">
+      <div className="game-ended-message">ゲームが終了いたしました</div>
+    </div>
   )
 }
 
@@ -1249,7 +1322,7 @@ type SceneThreeProps = {
   selectedPhotoId: number | null
   submittedPhoto: PhotoSlot | undefined
   onBack: () => void
-  onRetry: () => void
+  onRetry: () => Promise<void>
   onSelect: (photoId: number) => void
   onSubmit: () => Promise<void>
 }
@@ -1357,7 +1430,7 @@ function SceneThree({
 
 type SubmittedAnswerScreenProps = {
   photo: PhotoSlot
-  onRetry: () => void
+  onRetry: () => Promise<void>
 }
 
 function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
@@ -1379,7 +1452,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
         aria-label="選び直す"
         onClick={() => {
           playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
-          onRetry()
+          void onRetry()
         }}
       >
         <img
@@ -1395,26 +1468,28 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
 }
 
 type MasterScreenProps = {
-  answerResetAt: number | null
+  gameEnded: boolean
   realtimeConnected: boolean
   realtimeError: string
   teams: TeamState[]
   onBack: () => void
-  onResetAnswers: () => void
+  onResetAnswers: () => Promise<void>
+  onSetGameEnded: (gameEnded: boolean) => Promise<void>
 }
 
 function MasterScreen({
-  answerResetAt,
+  gameEnded,
   realtimeConnected,
   realtimeError,
   teams,
   onBack,
   onResetAnswers,
+  onSetGameEnded,
 }: MasterScreenProps) {
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
 
-  const confirmReset = () => {
-    onResetAnswers()
+  const confirmReset = async () => {
+    await onResetAnswers()
     setIsResetConfirmOpen(false)
   }
 
@@ -1430,6 +1505,29 @@ function MasterScreen({
       >
         リセット機能
       </button>
+      <div className="master-game-controls">
+        <div className="master-game-buttons">
+          <button
+            className="master-game-end"
+            data-active={gameEnded}
+            type="button"
+            onClick={() => void onSetGameEnded(true)}
+          >
+            ゲーム終了
+          </button>
+          <button
+            className="master-game-resume"
+            data-active={!gameEnded}
+            type="button"
+            onClick={() => void onSetGameEnded(false)}
+          >
+            解除
+          </button>
+        </div>
+        <div className="master-game-current-status">
+          現在：{gameEnded ? 'ゲーム終了' : 'ゲーム中'}
+        </div>
+      </div>
       <h1>MASTER</h1>
       <div className="master-connection" data-connected={realtimeConnected}>
         RTDB {realtimeConnected ? '接続中' : '未接続'}
@@ -1439,10 +1537,7 @@ function MasterScreen({
 
       <div className="master-team-grid">
         {teams.map((team) => {
-          const answer =
-            answerResetAt && (!team.answer?.submittedAt || team.answer.submittedAt <= answerResetAt)
-              ? undefined
-              : team.answer
+          const answer = team.answer
           const isCorrect = answer?.photoId === 2 || answer?.label === '学芸員'
 
           return (
@@ -1466,6 +1561,7 @@ function MasterScreen({
           aria-label="リセット確認"
         >
           <div className="master-confirm-panel">
+            <p>全プレイヤーの選択した結果をリセットしますか？</p>
             <p>回答表示をリセットしますか</p>
             <div className="master-confirm-actions">
               <button type="button" onClick={confirmReset}>

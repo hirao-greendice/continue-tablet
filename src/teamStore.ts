@@ -23,6 +23,11 @@ export type TeamState = {
   team: number
 }
 
+export type GameControlState = {
+  gameEnded: boolean
+  updatedAt?: number
+}
+
 const TEAM_NUMBERS = Array.from({ length: 8 }, (_, index) => index + 1)
 
 function createSessionId() {
@@ -100,6 +105,60 @@ export function submitTeamAnswer(team: number, answer: TeamAnswer) {
     label: answer.label,
     photoId: answer.photoId,
     submittedAt: serverTimestamp(),
+  })
+}
+
+export function subscribeTeamAnswer(
+  team: number,
+  onChange: (answer: TeamAnswer | undefined) => void,
+  onError?: (message: string) => void,
+) {
+  return onValue(
+    ref(realtimeDb, `teams/${team}/answer`),
+    (snapshot) => {
+      onChange((snapshot.val() as TeamAnswer | null) ?? undefined)
+    },
+    (error) => {
+      onError?.(error.message)
+    },
+  )
+}
+
+export function clearTeamAnswer(team: number) {
+  return remove(ref(realtimeDb, `teams/${team}/answer`))
+}
+
+export function resetAllTeamAnswers() {
+  return update(
+    ref(realtimeDb),
+    Object.fromEntries(TEAM_NUMBERS.map((team) => [`teams/${team}/answer`, null])),
+  )
+}
+
+export function subscribeGameControl(
+  onChange: (state: GameControlState) => void,
+  onError?: (message: string) => void,
+) {
+  return onValue(
+    ref(realtimeDb, 'gameControl'),
+    (snapshot) => {
+      const value = snapshot.val() as Partial<GameControlState> | null
+
+      onChange({
+        gameEnded: value?.gameEnded === true,
+        updatedAt: value?.updatedAt,
+      })
+    },
+    (error) => {
+      onError?.(error.message)
+    },
+  )
+}
+
+export function setGameEndedStatus(gameEnded: boolean) {
+  return update(ref(realtimeDb, 'gameControl'), {
+    gameEnded,
+    updatedAt: serverTimestamp(),
   })
 }
 
