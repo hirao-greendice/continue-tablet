@@ -268,8 +268,12 @@ function App() {
     return subscribeTeamAnswer(
       teamNumber,
       (answer) => {
-        setSubmittedPhotoId(answer?.photoId ?? null)
-        setSelectedPhotoId(answer?.photoId ?? null)
+        if (!answer) {
+          return
+        }
+
+        setSubmittedPhotoId(answer.photoId)
+        setSelectedPhotoId(answer.photoId)
       },
       setRealtimeError,
     )
