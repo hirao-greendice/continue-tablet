@@ -658,9 +658,10 @@ button:focus-visible {
   padding-bottom: 150px;
   padding-inline: 0;
   color: #201612;
-  font-family: 'Yu Gothic', 'YuGothic', 'Hiragino Sans', 'Meiryo', sans-serif;
+  font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
+    'Noto Serif JP', 'MS PMincho', serif;
   font-size: 43px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.58;
 }
 
@@ -721,6 +722,13 @@ button:focus-visible {
 .scene-one-content strong {
   color: #a51055;
   font-weight: 900;
+  font-size: 1.16em;
+  line-height: 1;
+}
+
+.scene-one-content .scene-alert-emphasis,
+.scene-two-content .scene-alert-emphasis {
+  color: #a51055;
 }
 
 .video-box {
@@ -851,15 +859,16 @@ button:focus-visible {
 
 .scene-two-content {
   box-sizing: border-box;
-  width: 1060px;
+  width: 1160px;
   margin: 0 auto;
   padding: 28px 12px 32px;
   border-radius: 44px;
   background: rgba(255, 255, 255, 0.72);
   color: #201612;
-  font-family: 'Yu Gothic', 'YuGothic', 'Hiragino Sans', 'Meiryo', sans-serif;
+  font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
+    'Noto Serif JP', 'MS PMincho', serif;
   font-size: 43px;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.58;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.72) inset,
@@ -873,9 +882,10 @@ button:focus-visible {
   width: 1395px;
   min-width: 0;
   min-height: 0;
-  height: 252px;
-  margin: 58px auto 0;
+  height: 175px;
+  margin: 26px auto 0;
   padding: 0;
+  overflow: hidden;
   background: transparent;
   color: transparent;
   font-size: 1px;
@@ -886,9 +896,10 @@ button:focus-visible {
 .scene-two-next-art {
   display: block;
   width: 100%;
-  height: 100%;
+  height: 252px;
   object-fit: contain;
   pointer-events: none;
+  transform: translateY(-49px);
 }
 
 .scene-two-content p {
@@ -910,19 +921,22 @@ button:focus-visible {
 .scene-two-content strong {
   color: #a51055;
   font-weight: 900;
+  font-size: 1.16em;
+  line-height: 1;
 }
 
 .scene-two-emphasis {
   color: #a51055;
   font-weight: 900;
+  font-size: 1.16em;
+  line-height: 1;
 }
 
 .scene-two-insight {
   color: #a51055;
   font-weight: 900;
-  text-decoration: underline;
-  text-decoration-thickness: 4px;
-  text-underline-offset: 5px;
+  font-size: 1.16em;
+  line-height: 1;
 }
 
 .scene-two-proposal {
@@ -1061,9 +1075,8 @@ button:focus-visible {
   aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
   place-items: center;
   overflow: hidden;
-  border: solid #fffdf6;
-  border-width: 18px 18px 34px;
-  background: #fffdf6;
+  border: 0;
+  background: transparent;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.8) inset,
     9px 12px 18px rgba(96, 54, 28, 0.24);

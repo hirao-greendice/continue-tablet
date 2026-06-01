@@ -1097,24 +1097,24 @@ function SceneOne({
           <p>
             あのスタッフは急におかしくなったのではなく、
             <br />
-            ボクが少し取り憑かせてもらっただけなので、
+            <strong>ボクが少し取り憑かせてもらっただけなので、</strong>
             <br />
             安心してボクの天啓を聞いてほしい。
           </p>
           <p>
-            ボクは<strong>天使</strong>。
+            ボクは<strong className="scene-alert-emphasis">天使</strong>。
             <br />
             運命が狂ってしまった人間を助ける使者だよ。
           </p>
           <p>
-            君たちが遊んでいる<br />「幻の秘宝コバルト・ハートの消失」<br />というナゾトキイベントでは、<br />いつもとは違う、<br />大変なことが起こっているんだ。
+            君たちが遊んでいる<br />「幻の秘宝コバルト・ハートの消失」<br />というナゾトキイベントでは、<br />いつもとは違う、<br /><strong>大変なこと</strong>が起こっているんだ。
           </p>
           <p>
             文字で説明するより見せたほうがいいか。
             <br />
             君たちがこの会場に入る前にボクがみた光景を、
             <br />
-            なるべくリアルに再現するね。
+            なるべく<strong>リアルに再現</strong>するね。
           </p>
         </div>
         <button
@@ -1224,16 +1224,16 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
       <div className="scene-two-content">
         <div className="scene-two-text-block">
           <p>
-            先ほどの<strong>はりきった</strong>というシーメイの発言は、
+            先ほどの<strong>はりきった</strong>という<strong>シーメイ</strong>の発言は、
             <br />
-            君たちに楽しんでもらうための必死の努力の
+            君たちに楽しんでもらうための
             <br />
-            アピールだったのかもね。
+            <strong>必死の努力のアピール</strong>だったのかもね。
           </p>
         </div>
         <div className="scene-two-text-block">
           <p>
-            とにかく今この会場にいる<strong>泥棒</strong>によって君たちは死ぬ運命にある。
+            とにかく今この<strong>会場にいる</strong>泥棒によって君たちは<strong className="scene-alert-emphasis">死ぬ運命</strong>にある。
             <br />
             ゲームが終わったあとの解説で、
             <br />
@@ -1248,12 +1248,12 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
             <br />
             天使の掟で<strong>「人の運命を直接変える」</strong>ことは
             <br />
-            <span className="scene-two-emphasis">禁止</span>されているんだ。
+            <strong className="scene-alert-emphasis">禁止</strong>されているんだ。
           </p>
           <p>
             ただ、安心して。
             <br />
-            あくまで禁止されているのは「直接変えること」。
+            あくまで禁止されているのは<strong>「直接変えること」</strong>。
           </p>
           <p>
             さっき神様と交渉して、君たちが助かる方法を見つけてきたよ。
@@ -1262,7 +1262,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
             <br />
             そのためには、
             <br />
-            <span className="scene-two-insight">君たちのひらめきで泥棒を突き止める</span>
+            <strong className="scene-two-insight">君たちのひらめきで泥棒を突き止める</strong>
             <br />
             必要がある。
           </p>
@@ -1277,7 +1277,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
             <br />
             って思った人、いるでしょ？
             <br />
-            そんな方法では無理！
+            <strong>そんな方法では無理</strong>！
             <br />
             チームメイトと仲良く協力して、
             <br />
