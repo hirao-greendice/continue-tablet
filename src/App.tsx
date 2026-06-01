@@ -1233,7 +1233,9 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         </div>
         <div className="scene-two-text-block">
           <p>
-            とにかく今この<strong>会場にいる</strong>泥棒によって君たちは<strong className="scene-alert-emphasis">死ぬ運命</strong>にある。
+            とにかく今この<strong>会場にいる</strong>泥棒によって
+            <br />
+            君たちは<strong className="scene-alert-emphasis">死ぬ運命</strong>にある。
             <br />
             ゲームが終わったあとの解説で、
             <br />
