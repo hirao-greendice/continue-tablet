@@ -729,10 +729,10 @@ button:focus-visible {
   padding: 46px 34px 38px;
   border: 2px solid rgba(121, 86, 53, 0.2);
   border-radius: 26px;
-  background: rgba(255, 250, 238, 0.92);
+  background: rgba(222, 218, 210, 0.9);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.88) inset,
-    0 8px 16px rgba(92, 57, 31, 0.1);
+    0 1px 0 rgba(244, 240, 232, 0.58) inset,
+    0 8px 16px rgba(45, 35, 28, 0.18);
 }
 
 .scene-two-content p {
@@ -1006,7 +1006,7 @@ button:focus-visible {
   margin: 0 auto;
   padding: 28px 12px 32px;
   border-radius: 44px;
-  background: rgba(255, 255, 255, 0.72);
+  background: rgba(222, 218, 210, 0.86);
   color: #201612;
   font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
     'Noto Serif JP', 'MS PMincho', serif;
@@ -1014,8 +1014,8 @@ button:focus-visible {
   font-weight: 700;
   line-height: 1.58;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.72) inset,
-    0 8px 18px rgba(89, 61, 35, 0.12);
+    0 1px 0 rgba(244, 240, 232, 0.5) inset,
+    0 8px 18px rgba(45, 35, 28, 0.18);
 }
 
 .scene-two-next {
