@@ -1,4 +1,12 @@
-import { type CSSProperties, type RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type RefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { createPortal, flushSync } from 'react-dom'
 import Cropper, { type Area, type Point } from 'react-easy-crop'
 import './App.css'
@@ -96,6 +104,9 @@ const STAGE_HEIGHT = 1920
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
 const SCENE_VIDEO_SCROLL_DURATION_MS = 1000
+const VIDEO_DOUBLE_TAP_MS = 320
+const VIDEO_SKIP_INDICATOR_MS = 650
+const VIDEO_SKIP_SECONDS = 5
 const DEVICE_ROLE_STORAGE_KEY = 'continue-tablet-device-role'
 
 type LegacyMediaQueryList = MediaQueryList & {
@@ -1064,14 +1075,23 @@ function SceneOne({
 }: SceneOneProps) {
   const videoBoxRef = useRef<HTMLButtonElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const videoClickTimerRef = useRef(0)
+  const videoSkipIndicatorTimerRef = useRef(0)
+  const lastVideoTapRef = useRef<{ side: 'left' | 'right'; time: number } | null>(null)
   const [hasStartedVideo, setHasStartedVideo] = useState(isVideoRevealed)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
+  const [videoSkipIndicator, setVideoSkipIndicator] = useState<'left' | 'right' | null>(null)
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.volume = clampVolume(SCENE_ONE_VIDEO_VOLUME)
+    }
+
+    return () => {
+      window.clearTimeout(videoClickTimerRef.current)
+      window.clearTimeout(videoSkipIndicatorTimerRef.current)
     }
   }, [])
 
@@ -1148,6 +1168,49 @@ function SceneOne({
     }
   }
 
+  const skipVideo = (seconds: number) => {
+    const video = videoRef.current
+
+    if (!video) {
+      return
+    }
+
+    const duration = Number.isFinite(video.duration) ? video.duration : videoDuration
+    const nextTime = Math.min(Math.max(video.currentTime + seconds, 0), duration || video.currentTime)
+
+    seekVideo(nextTime)
+  }
+
+  const showSkipIndicator = (side: 'left' | 'right') => {
+    window.clearTimeout(videoSkipIndicatorTimerRef.current)
+    setVideoSkipIndicator(side)
+    videoSkipIndicatorTimerRef.current = window.setTimeout(() => {
+      setVideoSkipIndicator(null)
+    }, VIDEO_SKIP_INDICATOR_MS)
+  }
+
+  const clickVideo = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const side = event.clientX - rect.left < rect.width / 2 ? 'left' : 'right'
+    const now = performance.now()
+    const lastTap = lastVideoTapRef.current
+
+    if (lastTap && lastTap.side === side && now - lastTap.time <= VIDEO_DOUBLE_TAP_MS) {
+      window.clearTimeout(videoClickTimerRef.current)
+      lastVideoTapRef.current = null
+      skipVideo(side === 'right' ? VIDEO_SKIP_SECONDS : -VIDEO_SKIP_SECONDS)
+      showSkipIndicator(side)
+      return
+    }
+
+    lastVideoTapRef.current = { side, time: now }
+    window.clearTimeout(videoClickTimerRef.current)
+    videoClickTimerRef.current = window.setTimeout(() => {
+      lastVideoTapRef.current = null
+      void toggleVideo()
+    }, VIDEO_DOUBLE_TAP_MS)
+  }
+
   const seekVideoFromClientX = (track: HTMLElement, clientX: number) => {
     if (!videoDuration) {
       return
@@ -1218,7 +1281,7 @@ function SceneOne({
           ref={videoBoxRef}
           type="button"
           aria-label={isVideoPlaying ? '動画を停止' : '動画を再生'}
-          onClick={() => void toggleVideo()}
+          onClick={clickVideo}
         >
           <video
             ref={videoRef}
@@ -1243,6 +1306,12 @@ function SceneOne({
             alt=""
             aria-hidden="true"
           />
+          {videoSkipIndicator && (
+            <span className="video-skip-indicator" data-side={videoSkipIndicator} aria-hidden="true">
+              <span />
+              <span />
+            </span>
+          )}
         </button>
         <div
           className="video-seek"

@@ -868,6 +868,61 @@ button:focus-visible {
   opacity: 0;
 }
 
+.video-skip-indicator {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  opacity: 0.92;
+  filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.46));
+  pointer-events: none;
+  transform: translateY(-50%);
+  animation: video-skip-flash 0.65s ease-out both;
+}
+
+.video-skip-indicator[data-side='left'] {
+  left: 180px;
+}
+
+.video-skip-indicator[data-side='right'] {
+  right: 180px;
+}
+
+.video-skip-indicator span {
+  display: block;
+  width: 0;
+  height: 0;
+  border-top: 54px solid transparent;
+  border-bottom: 54px solid transparent;
+}
+
+.video-skip-indicator[data-side='left'] span {
+  border-right: 78px solid rgba(255, 255, 255, 0.96);
+}
+
+.video-skip-indicator[data-side='right'] span {
+  border-left: 78px solid rgba(255, 255, 255, 0.96);
+}
+
+@keyframes video-skip-flash {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.82);
+  }
+
+  18% {
+    opacity: 0.92;
+    transform: translateY(-50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-50%) scale(1.08);
+  }
+}
+
 .video-seek {
   --seek-track-height: 10px;
   --seek-thumb-size: 34px;
