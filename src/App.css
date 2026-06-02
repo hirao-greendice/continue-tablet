@@ -604,7 +604,7 @@ button:focus-visible {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: auto;
   overscroll-behavior: none;
   scrollbar-width: none;
   touch-action: none;
@@ -618,7 +618,8 @@ button:focus-visible {
 }
 
 .scene-sequence[data-followup-visible='false'] {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .story-background {
@@ -786,8 +787,8 @@ button:focus-visible {
   display: grid;
   left: 50%;
   width: 1032px;
-  height: 600px;
-  margin: 46px 0 0;
+  height: 1032px;
+  margin: 94px 0 0;
   place-items: center;
   background: #0c0b0a;
   color: #f8fbff;
@@ -845,7 +846,7 @@ button:focus-visible {
   display: grid;
   width: 1032px;
   height: 52px;
-  margin: 28px auto 0;
+  margin: 72px auto 0;
   place-items: center;
   cursor: pointer;
   touch-action: none;
@@ -879,7 +880,7 @@ button:focus-visible {
   inset: 0 auto 0 0;
   width: var(--video-progress);
   border-radius: inherit;
-  background: #b88b35;
+  background: #d00000;
 }
 
 .video-seek-thumb {
@@ -890,7 +891,7 @@ button:focus-visible {
   height: var(--seek-thumb-size);
   border: 4px solid #fff;
   border-radius: 50%;
-  background: #8f1748;
+  background: #d00000;
   box-shadow: 0 3px 9px rgba(0, 0, 0, 0.26);
   transform: translate(-50%, -50%);
 }

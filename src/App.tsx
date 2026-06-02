@@ -52,7 +52,7 @@ function versionedAsset(path: string, version: string) {
   return publicAsset(`${path}${separator}v=${version}`)
 }
 
-const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260527-1'
+const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260602-1'
 const STATIC_IMAGE_VERSION = 'images-20260527-1'
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
@@ -344,7 +344,7 @@ function App() {
   }, [hasCompletedSceneOneVideo, screen])
 
   useEffect(() => {
-    if (screen !== 'scene1' || !hasCompletedSceneOneVideo) {
+    if (screen !== 'scene1') {
       return
     }
 
@@ -490,7 +490,7 @@ function App() {
       scrollContainer.removeEventListener('click', suppressDraggedClick, true)
       scrollContainer.removeEventListener('wheel', wheelScroll)
     }
-  }, [hasCompletedSceneOneVideo, screen, stageScale])
+  }, [screen, stageScale])
 
   const selectedPhoto = useMemo(
     () => photos.find((photo) => photo.id === selectedPhotoId),
