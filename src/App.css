@@ -1271,18 +1271,26 @@ button:focus-visible {
   display: grid;
   width: 442px;
   min-height: 86px;
+  gap: 3px;
   place-items: start center;
-  color: #8a1b12;
   font-size: 34px;
   font-weight: 900;
   line-height: 1.03;
   overflow: visible;
-  white-space: pre;
+  white-space: normal;
   word-break: normal;
   letter-spacing: 0.01em;
   text-shadow:
     0 1px 0 rgba(255, 246, 207, 0.9),
     0 0 5px rgba(255, 235, 170, 0.52);
+}
+
+.suspect-role-label {
+  color: #d54397;
+}
+
+.suspect-cast-label {
+  color: #8a1b12;
 }
 
 .suspect-frame {

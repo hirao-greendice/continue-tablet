@@ -1750,6 +1750,7 @@ function SceneThree({
         <div className="suspect-list">
           {photos.map((photo) => {
             const isSelected = selectedPhotoId === photo.id
+            const [roleLabel, castLabel] = photo.label.split('\n')
 
             return (
               <button
@@ -1774,7 +1775,10 @@ function SceneThree({
                     />
                   )}
                 </span>
-                <span className="suspect-label">{photo.label}</span>
+                <span className="suspect-label">
+                  <span className="suspect-role-label">{roleLabel}</span>
+                  {castLabel && <span className="suspect-cast-label">{castLabel}</span>}
+                </span>
               </button>
             )
           })}
