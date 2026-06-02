@@ -653,6 +653,7 @@ button:focus-visible {
   background-position: top center;
   background-repeat: no-repeat;
   background-size: 100% auto;
+  filter: brightness(0.72);
 }
 
 .back-button {
