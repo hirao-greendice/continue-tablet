@@ -838,6 +838,7 @@ function App() {
           {screen === 'home' && (
             <HomeScreen
               photos={photos}
+              teams={teamStates}
               onStartTeam={startTeam}
               onOpenMaster={openMaster}
               onOpenPhotos={openPhotos}
@@ -1010,6 +1011,10 @@ function isTeamAlive(team: TeamState) {
   return Boolean(team.online)
 }
 
+function getTeamConnectionCount(team: TeamState) {
+  return Object.keys(team.connections ?? {}).length
+}
+
 function useBatteryStatus() {
   const [batteryStatus, setBatteryStatus] = useState<BatteryStatus>(() => ({
     charging: false,
@@ -1114,13 +1119,18 @@ function SecretMenu({ teamNumber, onClose, onExitFullscreen, onGoHome, onReload 
 
 type HomeScreenProps = {
   photos: PhotoSlot[]
+  teams: TeamState[]
   onOpenMaster: () => void
   onStartTeam: (team: number) => void
   onOpenPhotos: () => void
 }
 
-function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
+function HomeScreen({ photos, teams, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
   const batteryStatus = useBatteryStatus()
+  const onlineTeams = useMemo(
+    () => new Set(teams.filter(isTeamAlive).map((team) => team.team)),
+    [teams],
+  )
 
   return (
     <section className="home-screen" aria-label="チーム選択">
@@ -1140,6 +1150,7 @@ function HomeScreen({ photos, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScr
         {Array.from({ length: 8 }, (_, index) => index + 1).map((team) => (
           <button
             className="team-button"
+            data-online={onlineTeams.has(team)}
             key={team}
             type="button"
             onClick={() => onStartTeam(team)}
@@ -1810,7 +1821,6 @@ function MasterScreen({
     await onSendHomeCommand()
     setIsHomeConfirmOpen(false)
   }
-
   return (
     <section className="master-screen" aria-label="MASTER">
       <button className="master-back" type="button" onClick={onBack}>
@@ -1863,12 +1873,19 @@ function MasterScreen({
       <div className="master-team-grid">
         {teams.map((team) => {
           const answer = team.answer
+          const connectionCount = getTeamConnectionCount(team)
+          const hasDuplicateConnections = connectionCount >= 2
           const isCorrect = answer?.photoId === 2 || answer?.label === '学芸員'
 
           return (
             <article className="master-team" key={team.team}>
-              <div className="master-team-number" data-alive={isTeamAlive(team)}>
-                {team.team}
+              <div
+                className="master-team-number"
+                data-alive={isTeamAlive(team)}
+                data-duplicate={hasDuplicateConnections}
+              >
+                <span>{team.team}</span>
+                {hasDuplicateConnections && <small>{connectionCount}台接続中</small>}
               </div>
               <div className="master-team-answer" data-correct={isCorrect}>
                 {answer ? SUSPECT_ROLE_LABELS[answer.photoId] ?? answer.label : ''}

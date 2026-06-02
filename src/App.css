@@ -304,6 +304,10 @@ button:focus-visible {
   font-weight: 900;
 }
 
+.team-button[data-online='true'] {
+  background: #58d7ff;
+}
+
 .home-actions {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -606,8 +610,26 @@ button:focus-visible {
   line-height: 1;
 }
 
+.master-team-number span {
+  display: block;
+}
+
+.master-team-number small {
+  display: block;
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
 .master-team-number[data-alive='true'] {
   background: #99d513;
+}
+
+.master-team-number[data-duplicate='true'] {
+  align-content: center;
+  background: #ffea00;
+  font-size: 70px;
 }
 
 .master-team-answer {
