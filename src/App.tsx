@@ -41,8 +41,13 @@ import { realtimeDatabaseUrl } from './firebase'
 type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
 type DeviceRole = 'unknown' | 'master' | 'player'
 type PhotoSlot = {
+  history?: PhotoHistoryItem[]
   id: number
   label: string
+  src: string
+  updatedAt?: number
+}
+type PhotoHistoryItem = {
   src: string
   updatedAt?: number
 }
@@ -86,6 +91,7 @@ const PRELOAD_SOUND_ASSETS = [
   { path: CLICK_SOUND, volume: CLICK_SOUND_VOLUME, poolSize: 4 },
   { path: SUBMIT_SOUND, volume: SUBMIT_SOUND_VOLUME, poolSize: 2 },
 ]
+const PHOTO_HISTORY_LIMIT = 5
 const soundPools = new Map<string, HTMLAudioElement[]>()
 
 function clampVolume(volume: number) {
@@ -752,7 +758,14 @@ function App() {
       const src = await uploadCurrentPhoto(slotId, file)
       const updatedAt = Date.now()
       const nextPhotos = photos.map((photo) =>
-        photo.id === slotId ? { ...photo, src, updatedAt } : photo,
+        photo.id === slotId
+          ? {
+              ...photo,
+              history: getPhotoHistory({ ...photo, src, updatedAt }),
+              src,
+              updatedAt,
+            }
+          : photo,
       )
 
       setPhotos(nextPhotos)
@@ -761,6 +774,22 @@ function App() {
     } catch {
       setUploadStatus('アップロードに失敗しました')
     }
+  }
+
+  const selectPhotoHistory = async (slotId: number, historyItem: PhotoHistoryItem) => {
+    const nextPhotos = photos.map((photo) =>
+      photo.id === slotId
+        ? {
+            ...photo,
+            history: getPhotoHistory({ ...photo, src: historyItem.src, updatedAt: historyItem.updatedAt }),
+            src: historyItem.src,
+            updatedAt: historyItem.updatedAt,
+          }
+        : photo,
+    )
+
+    setPhotos(nextPhotos)
+    await saveCurrentPhotos(toStoredPhotos(nextPhotos))
   }
 
   const submitAnswer = async () => {
@@ -893,6 +922,7 @@ function App() {
               photos={photos}
               uploadStatus={uploadStatus}
               onBack={() => setScreen('home')}
+              onSelectHistory={selectPhotoHistory}
               onUpdatePhoto={updatePhoto}
             />
           )}
@@ -953,6 +983,7 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
     return storedPhoto
       ? {
           ...photo,
+          history: getPhotoHistory(storedPhoto),
           src: storedPhoto.src,
           updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhoto.src),
         }
@@ -962,10 +993,32 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
 
 function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   return photos.map((photo) => ({
+    history: photo.history,
     id: photo.id,
     src: photo.src,
     updatedAt: photo.updatedAt,
   }))
+}
+
+function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
+  const history = photo.history ?? []
+  const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(photo.src)
+  const items = [
+    { src: photo.src, updatedAt: currentUpdatedAt },
+    ...history,
+  ]
+  const seen = new Set<string>()
+
+  return items
+    .filter((item) => {
+      if (!item.src || seen.has(item.src)) {
+        return false
+      }
+
+      seen.add(item.src)
+      return true
+    })
+    .slice(0, PHOTO_HISTORY_LIMIT)
 }
 
 function getPhotoVersionTimestamp(src: string) {
@@ -1945,10 +1998,17 @@ type PhotoManagerProps = {
   photos: PhotoSlot[]
   uploadStatus: string
   onBack: () => void
+  onSelectHistory: (slotId: number, historyItem: PhotoHistoryItem) => Promise<void>
   onUpdatePhoto: (slotId: number, file: File | null) => Promise<void>
 }
 
-function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoManagerProps) {
+function PhotoManager({
+  photos,
+  uploadStatus,
+  onBack,
+  onSelectHistory,
+  onUpdatePhoto,
+}: PhotoManagerProps) {
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null)
   const objectUrls = useRef<string[]>([])
 
@@ -2007,6 +2067,26 @@ function PhotoManager({ photos, uploadStatus, onBack, onUpdatePhoto }: PhotoMana
                     }}
                   />
                 </label>
+                {photo.history && photo.history.length > 0 && (
+                  <div className="photo-history" aria-label="過去の写真">
+                    {photo.history.map((historyItem) => {
+                      const isCurrent = historyItem.src === photo.src
+
+                      return (
+                        <button
+                          className="photo-history-item"
+                          data-current={isCurrent}
+                          key={historyItem.src}
+                          type="button"
+                          onClick={() => void onSelectHistory(photo.id, historyItem)}
+                        >
+                          <img src={historyItem.src} alt="" aria-hidden="true" />
+                          <span>{isCurrent ? '現在' : formatHomePhotoUpdatedAt(historyItem.updatedAt)}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             </article>
           ))}

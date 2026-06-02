@@ -1578,6 +1578,37 @@ button:focus-visible {
   pointer-events: none;
 }
 
+.photo-history {
+  display: grid;
+  grid-template-columns: repeat(5, 72px);
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.photo-history-item {
+  display: grid;
+  gap: 6px;
+  padding: 6px;
+  border: 3px solid #b8b8b8;
+  background: #eee;
+  color: #111;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.photo-history-item[data-current='true'] {
+  border-color: #ff0b70;
+  background: #fff2f8;
+}
+
+.photo-history-item img {
+  width: 100%;
+  aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
+  object-fit: cover;
+}
+
 .crop-dialog {
   position: fixed;
   inset: 0;

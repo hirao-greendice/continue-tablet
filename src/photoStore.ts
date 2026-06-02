@@ -2,7 +2,13 @@ import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { db, storage } from './firebase'
 
+export type StoredPhotoHistoryItem = {
+  src: string
+  updatedAt?: number
+}
+
 export type StoredPhoto = {
+  history?: StoredPhotoHistoryItem[]
   id: number
   src: string
   updatedAt?: number
@@ -27,7 +33,8 @@ export function subscribeCurrentPhotos(onChange: (photos: StoredPhoto[]) => void
 
 export async function uploadCurrentPhoto(slotId: number, file: File) {
   const extension = file.type.split('/')[1] || 'jpg'
-  const photoRef = ref(storage, `photos/current/photo-${slotId}.${extension}`)
+  const uploadedAt = Date.now()
+  const photoRef = ref(storage, `photos/history/photo-${slotId}-${uploadedAt}.${extension}`)
 
   await uploadBytes(photoRef, file, {
     contentType: file.type,
@@ -35,7 +42,7 @@ export async function uploadCurrentPhoto(slotId: number, file: File) {
 
   const downloadUrl = await getDownloadURL(photoRef)
   const versionedUrl = new URL(downloadUrl)
-  versionedUrl.searchParams.set('v', Date.now().toString())
+  versionedUrl.searchParams.set('v', uploadedAt.toString())
 
   return versionedUrl.toString()
 }
