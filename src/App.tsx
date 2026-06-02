@@ -209,6 +209,7 @@ function App() {
   const [realtimeError, setRealtimeError] = useState('')
   const [gameEnded, setGameEnded] = useState(false)
   const [uploadStatus, setUploadStatus] = useState('')
+  const [hasRevealedSceneOneVideo, setHasRevealedSceneOneVideo] = useState(false)
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
@@ -563,6 +564,7 @@ function App() {
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
     shouldScrollToSceneTwoRef.current = false
+    setHasRevealedSceneOneVideo(false)
     setHasCompletedSceneOneVideo(false)
     setScreen('scene1')
   }
@@ -572,6 +574,7 @@ function App() {
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
     shouldScrollToSceneTwoRef.current = false
+    setHasRevealedSceneOneVideo(false)
     setHasCompletedSceneOneVideo(false)
     setSecretMenuOpen(false)
     setScreen('home')
@@ -641,12 +644,14 @@ function App() {
 
   const returnToSceneTwo = () => {
     shouldScrollToSceneTwoRef.current = false
+    setHasRevealedSceneOneVideo(true)
     setHasCompletedSceneOneVideo(true)
     setScreen('scene1')
   }
 
   const completeSceneOneVideo = () => {
     shouldScrollToSceneTwoRef.current = true
+    setHasRevealedSceneOneVideo(true)
     setHasCompletedSceneOneVideo(true)
   }
 
@@ -701,7 +706,9 @@ function App() {
             >
               <SceneOne
                 isVideoComplete={hasCompletedSceneOneVideo}
+                isVideoRevealed={hasRevealedSceneOneVideo}
                 sceneFollowupRef={sceneTwoPanelRef}
+                onVideoReveal={() => setHasRevealedSceneOneVideo(true)}
                 onVideoComplete={completeSceneOneVideo}
                 onNext={() => setScreen('scene3')}
               />
@@ -1040,21 +1047,24 @@ function BatteryIndicator({ status }: BatteryIndicatorProps) {
 
 type SceneOneProps = {
   isVideoComplete: boolean
+  isVideoRevealed: boolean
   sceneFollowupRef: RefObject<HTMLDivElement | null>
+  onVideoReveal: () => void
   onVideoComplete: () => void
   onNext: () => void
 }
 
 function SceneOne({
   isVideoComplete,
+  isVideoRevealed,
   sceneFollowupRef,
+  onVideoReveal,
   onVideoComplete,
   onNext,
 }: SceneOneProps) {
   const videoBoxRef = useRef<HTMLButtonElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [isVideoRevealed, setIsVideoRevealed] = useState(false)
-  const [hasStartedVideo, setHasStartedVideo] = useState(false)
+  const [hasStartedVideo, setHasStartedVideo] = useState(isVideoRevealed)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
@@ -1098,7 +1108,7 @@ function SceneOne({
     playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
 
     flushSync(() => {
-      setIsVideoRevealed(true)
+      onVideoReveal()
     })
 
     await scrollVideoToCenter()
