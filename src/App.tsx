@@ -1080,7 +1080,7 @@ function SceneOne({
     <section className="story-screen scene-one">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${versionedAsset('images/tenkei.jpg', STATIC_IMAGE_VERSION)}")` }}
+        style={{ backgroundImage: `url("${versionedAsset('images/scene-parchment-bg.svg', STATIC_IMAGE_VERSION)}")` }}
         aria-hidden="true"
       />
       <div className="scene-one-content">
@@ -1233,9 +1233,9 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         </div>
         <div className="scene-two-text-block">
           <p>
-            とにかく今この<strong>会場にいる</strong>泥棒によって
+            とにかく今この<strong>会場にいる泥棒</strong>によって
             <br />
-            君たちは<strong className="scene-alert-emphasis">死ぬ運命</strong>にある。
+            君たちは<strong className="scene-alert-emphasis scene-fate-emphasis">死ぬ運命</strong>にある。
             <br />
             ゲームが終わったあとの解説で、
             <br />
@@ -1264,7 +1264,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
             <br />
             そのためには、
             <br />
-            <strong className="scene-two-insight">君たちのひらめきで泥棒を突き止める</strong>
+            <strong className="scene-two-insight scene-breakthrough-emphasis">君たちのひらめきで泥棒を突き止める</strong>
             <br />
             必要がある。
           </p>
@@ -1288,7 +1288,9 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         </div>
         <div className="scene-two-text-block">
           <p>
-            「改心の一撃」が打てるのはちょうど<strong>ゲームが終わる瞬間</strong>。
+            「改心の一撃」が打てるのは
+            <br />
+            ちょうど<strong>ゲームが終わる瞬間</strong>。
             <br />
             <strong>チャンスは1回</strong>だけだよ！
           </p>

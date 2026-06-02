@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="210" viewBox="0 0 820 210" role="img" aria-label="ここに注目！">
+  <defs>
+    <filter id="lift" x="-8%" y="-18%" width="116%" height="142%">
+      <feDropShadow dx="0" dy="14" stdDeviation="0" flood-color="#4b203d" flood-opacity=".34"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="11" flood-color="#28151f" flood-opacity=".22"/>
+    </filter>
+    <filter id="paperNoise">
+      <feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="3" seed="17"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 .06"/>
+      </feComponentTransfer>
+      <feBlend mode="multiply" in2="SourceGraphic"/>
+    </filter>
+    <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7df"/>
+      <stop offset=".55" stop-color="#f2ddb0"/>
+      <stop offset="1" stop-color="#dec18c"/>
+    </linearGradient>
+    <linearGradient id="plum" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#71316f"/>
+      <stop offset=".45" stop-color="#b7337d"/>
+      <stop offset="1" stop-color="#d94b92"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff0a4"/>
+      <stop offset=".46" stop-color="#e8bd38"/>
+      <stop offset="1" stop-color="#b87919"/>
+    </linearGradient>
+    <clipPath id="paperClip">
+      <path d="M105 70 C176 42 286 42 384 50 C490 58 608 43 700 70 C681 97 681 119 704 145 C611 171 498 156 390 163 C285 169 178 166 102 145 C122 118 122 96 105 70 Z"/>
+    </clipPath>
+  </defs>
+
+  <g filter="url(#lift)">
+    <path d="M105 70 C176 42 286 42 384 50 C490 58 608 43 700 70 C681 97 681 119 704 145 C611 171 498 156 390 163 C285 169 178 166 102 145 C122 118 122 96 105 70 Z"
+          fill="url(#paper)"
+          stroke="#5d2b54"
+          stroke-width="8"
+          stroke-linejoin="round"/>
+    <path d="M105 70 C176 42 286 42 384 50 C490 58 608 43 700 70 C681 97 681 119 704 145 C611 171 498 156 390 163 C285 169 178 166 102 145 C122 118 122 96 105 70 Z"
+          fill="url(#paper)"
+          clip-path="url(#paperClip)"
+          filter="url(#paperNoise)"
+          opacity=".8"/>
+    <path d="M142 82 C207 64 292 65 379 71 C482 79 582 66 664 84 C653 102 654 117 668 135 C579 149 487 137 390 145 C287 153 203 149 139 134 C151 115 151 99 142 82 Z"
+          fill="none"
+          stroke="#fff8dd"
+          stroke-width="5"
+          stroke-linejoin="round"
+          opacity=".95"/>
+    <path d="M155 90 C213 78 295 79 380 85 C482 93 563 80 631 91 C622 102 622 115 635 126 C559 135 477 124 390 131 C298 139 220 135 156 125 C166 114 166 101 155 90 Z"
+          fill="url(#plum)"
+          opacity=".96"/>
+    <path d="M174 91 C235 84 303 87 380 92 C470 98 542 88 609 94"
+          fill="none"
+          stroke="#ffd6eb"
+          stroke-width="3"
+          stroke-linecap="round"
+          opacity=".45"/>
+  </g>
+
+  <g fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M80 107 H132"/>
+    <path d="M688 107 H740"/>
+  </g>
+  <g fill="url(#gold)" stroke="#fff5c7" stroke-width="4" stroke-linejoin="round">
+    <path d="M92 48 L103 72 L129 83 L103 94 L92 120 L81 94 L55 83 L81 72 Z"/>
+    <path d="M725 57 L733 75 L753 83 L733 91 L725 111 L717 91 L697 83 L717 75 Z"/>
+    <circle cx="168" cy="154" r="7"/>
+    <circle cx="646" cy="151" r="7"/>
+  </g>
+
+  <text x="410" y="121"
+        text-anchor="middle"
+        fill="#fffaf5"
+        stroke="#5c214f"
+        stroke-width="2.4"
+        paint-order="stroke fill"
+        font-family="'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif"
+        font-size="59"
+        font-weight="900"
+        letter-spacing="5">ここに注目！</text>
+</svg>

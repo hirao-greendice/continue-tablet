@@ -731,6 +731,33 @@ button:focus-visible {
   color: #a51055;
 }
 
+.scene-two-content .scene-fate-emphasis,
+.scene-two-content .scene-breakthrough-emphasis {
+  display: inline-block;
+  position: relative;
+  z-index: 0;
+  box-sizing: border-box;
+  padding: 0 0.06em 0.04em;
+  line-height: 1;
+}
+
+.scene-two-content .scene-fate-emphasis {
+  color: #8f073f;
+  font-size: 1.24em;
+  text-decoration-line: underline;
+  text-decoration-color: rgba(185, 24, 88, 0.42);
+  text-decoration-thickness: 0.16em;
+  text-underline-offset: 0.03em;
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.72);
+}
+
+.scene-two-content .scene-breakthrough-emphasis {
+  color: #8a1552;
+  font-size: 1.2em;
+  background: linear-gradient(transparent 58%, rgba(242, 201, 75, 0.42) 58%);
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.8);
+}
+
 .video-box {
   position: relative;
   display: grid;
