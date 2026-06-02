@@ -783,6 +783,7 @@ function App() {
 
       {secretMenuOpen && (
         <SecretMenu
+          teamNumber={teamNumber}
           onClose={() => setSecretMenuOpen(false)}
           onExitFullscreen={exitFullscreenFromSecretMenu}
           onGoHome={goHome}
@@ -942,16 +943,18 @@ function useBatteryStatus() {
 }
 
 type SecretMenuProps = {
+  teamNumber: number | null
   onClose: () => void
   onExitFullscreen: () => Promise<void>
   onGoHome: () => void
   onReload: () => void
 }
 
-function SecretMenu({ onClose, onExitFullscreen, onGoHome, onReload }: SecretMenuProps) {
+function SecretMenu({ teamNumber, onClose, onExitFullscreen, onGoHome, onReload }: SecretMenuProps) {
   return (
     <div className="secret-menu-backdrop" role="dialog" aria-modal="true" aria-label="管理メニュー">
       <div className="secret-menu-panel">
+        <div className="secret-team-number">チーム：{teamNumber ?? '-'}</div>
         <button className="secret-close" type="button" onClick={onClose}>
           閉じる
         </button>

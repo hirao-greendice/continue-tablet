@@ -134,6 +134,20 @@ button:focus-visible {
   font-weight: 900;
 }
 
+.secret-team-number {
+  position: absolute;
+  top: 48px;
+  left: 54px;
+  min-width: 300px;
+  padding: 22px 30px;
+  background: #fff;
+  color: #050505;
+  font-size: 52px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
 .secret-action {
   width: 380px;
   height: 176px;
