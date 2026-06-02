@@ -1227,19 +1227,19 @@ button:focus-visible {
 .suspect-list {
   position: absolute;
   top: 470px;
-  left: 138px;
+  left: 120px;
   display: grid;
-  width: 936px;
-  grid-template-columns: repeat(2, 424px);
+  width: 972px;
+  grid-template-columns: repeat(2, 442px);
   justify-content: center;
-  gap: 38px 88px;
+  gap: 36px 88px;
   margin: 0;
 }
 
 .suspect-card {
   position: relative;
   display: grid;
-  width: 424px;
+  width: 442px;
   gap: 14px;
   justify-items: center;
   padding: 0;
@@ -1269,7 +1269,7 @@ button:focus-visible {
 
 .suspect-label {
   display: grid;
-  width: 424px;
+  width: 442px;
   min-height: 86px;
   place-items: start center;
   color: #8a1b12;
@@ -1288,7 +1288,7 @@ button:focus-visible {
 .suspect-frame {
   position: relative;
   display: grid;
-  width: 360px;
+  width: 378px;
   aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
   place-items: center;
   overflow: hidden;
@@ -1307,7 +1307,7 @@ button:focus-visible {
 
 .selection-pointer-slot {
   position: absolute;
-  top: 225px;
+  top: 236px;
   z-index: 2;
   display: grid;
   width: 190px;
