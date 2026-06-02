@@ -77,6 +77,13 @@ const SUSPECT_LABELS: Record<number, string> = {
   4: '刑事\nケージー・ノカン役',
 }
 
+const SUSPECT_ROLE_LABELS: Record<number, string> = {
+  1: '雑用係',
+  2: '学芸員',
+  3: '警備員',
+  4: '刑事',
+}
+
 const defaultPhotos: PhotoSlot[] = [
   { id: 1, label: SUSPECT_LABELS[1], src: publicAsset('photos/team-photo-1.jpg') },
   { id: 2, label: SUSPECT_LABELS[2], src: publicAsset('photos/team-photo-2.jpg') },
@@ -1521,10 +1528,10 @@ function MasterScreen({
             type="button"
             onClick={() => void onSetGameEnded(false)}
           >
-            解除
+            ゲーム中
           </button>
         </div>
-        <div className="master-game-current-status">
+        <div className="master-game-current-status" data-ended={gameEnded}>
           現在：{gameEnded ? 'ゲーム終了' : 'ゲーム中'}
         </div>
       </div>
@@ -1546,7 +1553,7 @@ function MasterScreen({
                 {team.team}
               </div>
               <div className="master-team-answer" data-correct={isCorrect}>
-                {answer?.label ?? ''}
+                {answer ? SUSPECT_ROLE_LABELS[answer.photoId] ?? answer.label : ''}
               </div>
             </article>
           )
