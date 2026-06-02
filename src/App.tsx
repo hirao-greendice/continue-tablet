@@ -1182,8 +1182,8 @@ type HomeScreenProps = {
 
 function HomeScreen({ photos, teams, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
   const batteryStatus = useBatteryStatus()
-  const onlineTeams = useMemo(
-    () => new Set(teams.filter(isTeamAlive).map((team) => team.team)),
+  const teamsByNumber = useMemo(
+    () => new Map(teams.map((team) => [team.team, team])),
     [teams],
   )
 
@@ -1202,17 +1202,27 @@ function HomeScreen({ photos, teams, onOpenMaster, onStartTeam, onOpenPhotos }: 
       </div>
 
       <div className="team-grid" aria-label="チーム番号">
-        {Array.from({ length: 8 }, (_, index) => index + 1).map((team) => (
-          <button
-            className="team-button"
-            data-online={onlineTeams.has(team)}
-            key={team}
-            type="button"
-            onClick={() => onStartTeam(team)}
-          >
-            {team}
-          </button>
-        ))}
+        {Array.from({ length: 8 }, (_, index) => {
+          const teamNumber = index + 1
+          const teamState = teamsByNumber.get(teamNumber)
+          const connectionCount = teamState ? getTeamConnectionCount(teamState) : 0
+          const hasDuplicateConnections = connectionCount >= 2
+
+          return (
+            <button
+              className="team-button"
+              data-duplicate={hasDuplicateConnections}
+              data-online={teamState ? isTeamAlive(teamState) : false}
+              key={teamNumber}
+              type="button"
+              onClick={() => onStartTeam(teamNumber)}
+            >
+              <span>{teamNumber}</span>
+              {hasDuplicateConnections && <small>{connectionCount}台接続中</small>}
+              {!hasDuplicateConnections && teamState && isTeamAlive(teamState) && <small>接続済み</small>}
+            </button>
+          )
+        })}
       </div>
 
       <div className="home-actions">

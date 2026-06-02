@@ -302,10 +302,34 @@ button:focus-visible {
   color: #050505;
   font-size: 76px;
   font-weight: 900;
+  line-height: 1;
+}
+
+.team-button span {
+  display: block;
+}
+
+.team-button small {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.05;
 }
 
 .team-button[data-online='true'] {
   background: #58d7ff;
+}
+
+.team-button[data-online='true']:has(small) {
+  align-content: center;
+  font-size: 56px;
+}
+
+.team-button[data-duplicate='true'] {
+  align-content: center;
+  background: #ffea00;
+  font-size: 56px;
 }
 
 .home-actions {
