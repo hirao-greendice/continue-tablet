@@ -1641,6 +1641,7 @@ button:focus-visible {
 }
 
 .photo-history-item {
+  position: relative;
   display: grid;
   gap: 6px;
   padding: 6px;
@@ -1661,6 +1662,19 @@ button:focus-visible {
   border-color: #00a9ff;
   background: #e7f7ff;
   box-shadow: 0 0 0 3px rgba(0, 169, 255, 0.28);
+}
+
+.photo-history-item[data-selected='true']::after {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 5px 8px;
+  background: #00a9ff;
+  color: #fff;
+  content: '選択中';
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .photo-history-item img {
@@ -1898,21 +1912,42 @@ button:focus-visible {
   }
 
   .photo-history {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+    padding: 14px;
+    border: 3px solid #d54397;
+    background: #fff7fc;
   }
 
   .photo-history-item {
-    padding: 4px;
-    border-width: 2px;
-    font-size: 10px;
+    gap: 8px;
+    padding: 8px;
+    border-width: 3px;
+    font-size: 14px;
+  }
+
+  .photo-history-item[data-selected='true'] {
+    box-shadow: 0 0 0 4px rgba(0, 169, 255, 0.28);
+  }
+
+  .photo-history-item[data-selected='true']::after {
+    top: 8px;
+    right: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+
+  .photo-history-item span {
+    min-height: 32px;
+    display: grid;
+    place-items: center;
   }
 
   .photo-history-confirm {
     width: 100%;
-    height: 58px;
-    font-size: 21px;
+    height: 68px;
+    font-size: 25px;
   }
 
   .crop-panel {
@@ -2012,5 +2047,22 @@ button:focus-visible {
 
   .photo-history-toggle {
     width: 100%;
+  }
+
+  .photo-history {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .photo-history-item {
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .photo-history-item[data-selected='true']::after {
+    top: 6px;
+    right: 6px;
+    padding: 6px 8px;
+    font-size: 11px;
   }
 }
