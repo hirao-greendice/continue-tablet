@@ -672,7 +672,7 @@ button:focus-visible {
   width: 100%;
   min-height: 100%;
   padding-top: 112px;
-  padding-bottom: 150px;
+  padding-bottom: 340px;
   padding-inline: 0;
   color: #201612;
   font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
@@ -719,7 +719,7 @@ button:focus-visible {
   z-index: 2;
   box-sizing: border-box;
   width: 1128px;
-  margin: 188px auto 34px;
+  margin: 260px auto 34px;
   padding: 46px 34px 38px;
   border: 2px solid rgba(121, 86, 53, 0.2);
   border-radius: 26px;
@@ -757,9 +757,12 @@ button:focus-visible {
 
 .scene-reenact-button {
   display: block;
+  position: absolute;
+  bottom: 200px;
+  left: 50%;
   min-width: 460px;
   min-height: 116px;
-  margin: 84px auto 0;
+  margin: 0;
   padding: 0 56px;
   border: 0;
   border-radius: 999px;
@@ -773,6 +776,7 @@ button:focus-visible {
   box-shadow:
     0 0 0 2px rgba(255, 255, 255, 0.8) inset,
     0 14px 0 rgba(0, 0, 0, 0.26);
+  transform: translateX(-50%);
 }
 
 .scene-two-content .scene-fate-emphasis,
