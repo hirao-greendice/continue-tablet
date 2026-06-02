@@ -68,7 +68,7 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260602-1'
-const STATIC_IMAGE_VERSION = 'images-20260602-1'
+const STATIC_IMAGE_VERSION = 'images-20260602-2'
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
 const CLICK_SOUND_VOLUME = 0.8
