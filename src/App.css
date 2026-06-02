@@ -151,6 +151,10 @@ button:focus-visible {
   background: #e87eb0;
 }
 
+.secret-action-green {
+  background: #99d513;
+}
+
 .stage[data-screen='photos'] {
   width: 100vw;
   height: 100dvh;

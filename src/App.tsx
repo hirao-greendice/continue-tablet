@@ -591,6 +591,10 @@ function App() {
     setScreen('home')
   }
 
+  const reloadApp = () => {
+    window.location.reload()
+  }
+
   const tapSecretHotspot = () => {
     window.clearTimeout(secretTapResetTimer.current)
     secretTapCount.current += 1
@@ -782,6 +786,7 @@ function App() {
           onClose={() => setSecretMenuOpen(false)}
           onExitFullscreen={exitFullscreenFromSecretMenu}
           onGoHome={goHome}
+          onReload={reloadApp}
         />
       )}
     </main>
@@ -940,9 +945,10 @@ type SecretMenuProps = {
   onClose: () => void
   onExitFullscreen: () => Promise<void>
   onGoHome: () => void
+  onReload: () => void
 }
 
-function SecretMenu({ onClose, onExitFullscreen, onGoHome }: SecretMenuProps) {
+function SecretMenu({ onClose, onExitFullscreen, onGoHome, onReload }: SecretMenuProps) {
   return (
     <div className="secret-menu-backdrop" role="dialog" aria-modal="true" aria-label="管理メニュー">
       <div className="secret-menu-panel">
@@ -957,6 +963,9 @@ function SecretMenu({ onClose, onExitFullscreen, onGoHome }: SecretMenuProps) {
           フルスクリーン
           <br />
           を解除する
+        </button>
+        <button className="secret-action secret-action-green" type="button" onClick={onReload}>
+          リロード
         </button>
         <button className="secret-action secret-action-pink" type="button" onClick={onGoHome}>
           ホーム
