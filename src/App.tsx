@@ -931,7 +931,7 @@ function App() {
 
       {isPlayerGameEnded && <GameEndedOverlay />}
 
-      {!isFullscreen && (
+      {!isFullscreen && screen !== 'photos' && (
         <button className="fullscreen-control" type="button" onClick={enterFullscreen}>
           全画面
         </button>
