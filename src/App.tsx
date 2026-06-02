@@ -2010,6 +2010,7 @@ function PhotoManager({
   onUpdatePhoto,
 }: PhotoManagerProps) {
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null)
+  const [openHistorySlotId, setOpenHistorySlotId] = useState<number | null>(null)
   const objectUrls = useRef<string[]>([])
 
   useEffect(() => {
@@ -2067,7 +2068,19 @@ function PhotoManager({
                     }}
                   />
                 </label>
-                {photo.history && photo.history.length > 0 && (
+                <button
+                  className="photo-history-toggle"
+                  disabled={!photo.history?.length}
+                  type="button"
+                  onClick={() =>
+                    setOpenHistorySlotId((currentSlotId) =>
+                      currentSlotId === photo.id ? null : photo.id,
+                    )
+                  }
+                >
+                  過去の写真
+                </button>
+                {openHistorySlotId === photo.id && photo.history && photo.history.length > 0 && (
                   <div className="photo-history" aria-label="過去の写真">
                     {photo.history.map((historyItem) => {
                       const isCurrent = historyItem.src === photo.src

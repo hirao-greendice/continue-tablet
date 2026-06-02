@@ -1566,8 +1566,13 @@ button:focus-visible {
   place-items: center;
   background: #99d513;
   color: #050505;
-  font-size: 32px;
+  font-size: 0;
   font-weight: 900;
+}
+
+.photo-input-button::before {
+  content: '写真を撮る';
+  font-size: 32px;
 }
 
 .photo-input-button input {
@@ -1576,6 +1581,31 @@ button:focus-visible {
   height: 1px;
   opacity: 0;
   pointer-events: none;
+}
+
+.photo-history-toggle {
+  display: inline-grid;
+  width: min(100%, 280px);
+  height: 86px;
+  margin-top: 14px;
+  place-items: center;
+  border: 0;
+  background: #d54397;
+  color: #fff;
+  font-size: 0;
+  font-weight: 900;
+  box-shadow: 0 8px 0 rgba(85, 47, 66, 0.42);
+}
+
+.photo-history-toggle::before {
+  content: '選択する';
+  font-size: 32px;
+}
+
+.photo-history-toggle:disabled {
+  background: #b8b8b8;
+  color: #656565;
+  box-shadow: none;
 }
 
 .photo-history {
@@ -1750,18 +1780,25 @@ button:focus-visible {
     font-size: 24px;
   }
 
+  .photo-qr {
+    display: none;
+  }
+
   .photo-manager-inner {
     width: calc(100% - 32px);
-    padding: 84px 16px 32px;
+    padding: 78px 16px 36px;
   }
 
   .photo-manager h1 {
-    font-size: 40px;
+    font-size: 34px;
+    text-align: center;
   }
 
   .photo-manager p {
-    margin: 10px 0 18px;
-    font-size: 18px;
+    margin: 8px 0 18px;
+    font-size: 16px;
+    line-height: 1.45;
+    text-align: center;
   }
 
   .upload-status {
@@ -1771,19 +1808,23 @@ button:focus-visible {
   }
 
   .photo-editor {
-    grid-template-columns: minmax(116px, 32vw) 1fr;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
     gap: 14px;
-    padding: 14px;
+    padding: 16px;
+    border-width: 3px;
+    text-align: center;
   }
 
   .photo-editor img {
-    width: min(150px, 32vw);
+    justify-self: center;
+    width: min(100%, 260px);
     aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
   }
 
   .photo-editor h2 {
     min-height: 0;
-    margin: 0 0 12px;
+    margin: 0 0 8px;
     font-size: 20px;
   }
 
@@ -1793,9 +1834,32 @@ button:focus-visible {
   }
 
   .photo-input-button {
-    width: min(190px, 52vw);
-    height: 56px;
-    font-size: 20px;
+    width: 100%;
+    height: 60px;
+  }
+
+  .photo-input-button::before,
+  .photo-history-toggle::before {
+    font-size: 21px;
+  }
+
+  .photo-history-toggle {
+    width: 100%;
+    height: 60px;
+    margin-top: 10px;
+    box-shadow: 0 5px 0 rgba(85, 47, 66, 0.42);
+  }
+
+  .photo-history {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .photo-history-item {
+    padding: 4px;
+    border-width: 2px;
+    font-size: 10px;
   }
 
   .crop-panel {
@@ -1873,12 +1937,12 @@ button:focus-visible {
   }
 
   .photo-editor {
-    grid-template-columns: 112px 1fr;
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
   .photo-editor img {
-    width: 112px;
+    width: min(100%, 230px);
   }
 
   .photo-editor h2 {
@@ -1890,7 +1954,10 @@ button:focus-visible {
   }
 
   .photo-input-button {
-    width: min(176px, 100%);
-    font-size: 18px;
+    width: 100%;
+  }
+
+  .photo-history-toggle {
+    width: 100%;
   }
 }
