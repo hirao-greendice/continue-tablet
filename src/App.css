@@ -802,7 +802,7 @@ button:focus-visible {
   padding: 46px 34px 38px;
   border: 2px solid rgba(121, 86, 53, 0.2);
   border-radius: 26px;
-  background: rgba(222, 218, 210, 0.9);
+  background: rgba(232, 228, 220, 0.92);
   box-shadow:
     0 1px 0 rgba(244, 240, 232, 0.58) inset,
     0 8px 16px rgba(45, 35, 28, 0.18);
@@ -1079,7 +1079,7 @@ button:focus-visible {
   margin: 0 auto;
   padding: 28px 12px 32px;
   border-radius: 44px;
-  background: rgba(222, 218, 210, 0.86);
+  background: rgba(232, 228, 220, 0.9);
   color: #201612;
   font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
     'Noto Serif JP', 'MS PMincho', serif;
