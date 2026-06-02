@@ -667,7 +667,7 @@ button:focus-visible {
 }
 
 .master-team-answer[data-correct='true'] {
-  color: #58d7ff;
+  color: #ffea00;
 }
 
 .story-screen {
