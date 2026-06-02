@@ -669,13 +669,13 @@ button:focus-visible {
 .ribbon-title {
   position: absolute;
   top: 20px;
-  left: 54px;
+  left: 50%;
   z-index: 4;
-  width: 350px;
-  height: 110px;
+  width: 525px;
+  height: 165px;
   margin: 0;
   pointer-events: none;
-  transform: rotate(-2deg);
+  transform: translateX(-50%);
   transform-origin: center;
 }
 
@@ -703,8 +703,8 @@ button:focus-visible {
   z-index: 2;
   box-sizing: border-box;
   width: 1128px;
-  margin: 0 auto 34px;
-  padding: 68px 34px 38px;
+  margin: 78px auto 34px;
+  padding: 46px 34px 38px;
   border: 2px solid rgba(121, 86, 53, 0.2);
   border-radius: 26px;
   background: rgba(255, 250, 238, 0.92);

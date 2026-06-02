@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="138" viewBox="0 0 820 138" role="img" aria-label="天啓だよ！">
+  <defs>
+    <linearGradient id="plate" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="0.55" stop-color="#ffe9ba"/>
+      <stop offset="1" stop-color="#fff8e8"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" x2="1">
+      <stop offset="0" stop-color="#b47a2e"/>
+      <stop offset="0.5" stop-color="#f1cd78"/>
+      <stop offset="1" stop-color="#a86c25"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-12%" y="-24%" width="124%" height="152%">
+      <feDropShadow dx="0" dy="5" stdDeviation="3.5" flood-color="#6f451e" flood-opacity="0.23"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#soft-shadow)">
+    <ellipse cx="410" cy="20" rx="45" ry="9" fill="none" stroke="url(#gold)" stroke-width="5"/>
+    <ellipse cx="410" cy="20" rx="31" ry="5" fill="none" stroke="#fff1b6" stroke-width="2.5" opacity="0.9"/>
+
+    <g opacity="0.92">
+      <path d="M257 45c-63-13-122-11-178 4 48 7 95 12 142 18-58 5-111 16-159 34 65-4 126-15 184-32-34 18-65 35-93 52 54-14 100-33 136-61Z" fill="#fff7e7"/>
+      <path d="M242 50c-48-4-91 0-129 12 39 4 80 8 123 13-41 6-80 17-116 31 48-5 91-16 130-31-22 15-42 28-60 42 36-11 67-27 94-48Z" fill="#f7dfb6"/>
+      <path d="M563 45c63-13 122-11 178 4-48 7-95 12-142 18 58 5 111 16 159 34-65-4-126-15-184-32 34 18 65 35 93 52-54-14-100-33-136-61Z" fill="#fff7e7"/>
+      <path d="M578 50c48-4 91 0 129 12-39 4-80 8-123 13 41 6 80 17 116 31-48-5-91-16-130-31 22 15 42 28 60 42-36-11-67-27-94-48Z" fill="#f7dfb6"/>
+      <path d="M96 60c64 0 122 8 176 24M724 60c-64 0-122 8-176 24" fill="none" stroke="#d2a062" stroke-width="4" stroke-linecap="round" opacity="0.58"/>
+    </g>
+
+    <path d="M250 42c27-14 77-22 160-22s133 8 160 22v55c-31 13-83 19-160 19s-129-6-160-19Z" fill="url(#plate)" stroke="url(#gold)" stroke-width="5"/>
+    <path d="M272 51c35-8 82-12 138-12s103 4 138 12v38c-36 7-82 10-138 10s-102-3-138-10Z" fill="rgba(255,255,255,0.48)" stroke="#d8a45b" stroke-width="2.5"/>
+
+    <path d="M274 39c-13-12-28-17-45-15 8 10 12 19 12 29-14-1-28 1-43 6 17 6 34 12 50 18" fill="#fff4d6" stroke="#c89245" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M546 39c13-12 28-17 45-15-8 10-12 19-12 29 14-1 28 1 43 6-17 6-34 12-50 18" fill="#fff4d6" stroke="#c89245" stroke-width="4" stroke-linejoin="round"/>
+
+    <text x="410" y="71" text-anchor="middle" dominant-baseline="middle"
+      font-family="'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Noto Serif JP', serif"
+      font-size="42" font-weight="900" fill="#a51f43" stroke="#fff8e8" stroke-width="5" paint-order="stroke">
+      天啓だよ！
+    </text>
+  </g>
+
+  <g fill="#d79a37" opacity="0.82">
+    <path d="M342 18l4 9 9 3-9 4-4 9-4-9-9-4 9-3Z"/>
+    <path d="M611 30l3 7 7 3-7 3-3 7-3-7-7-3 7-3Z"/>
+    <circle cx="581" cy="20" r="3"/>
+    <circle cx="316" cy="32" r="2.6"/>
+  </g>
+</svg>
