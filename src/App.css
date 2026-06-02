@@ -652,7 +652,7 @@ button:focus-visible {
   display: block;
   background-position: top center;
   background-repeat: no-repeat;
-  background-size: 100% 100%;
+  background-size: 100% auto;
 }
 
 .back-button {
