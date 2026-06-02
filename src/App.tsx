@@ -1,5 +1,5 @@
 import { type CSSProperties, type RefObject, useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { createPortal, flushSync } from 'react-dom'
 import Cropper, { type Area, type Point } from 'react-easy-crop'
 import './App.css'
 import { createCroppedPhotoFile } from './cropImage'
@@ -95,6 +95,7 @@ const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
+const SCENE_VIDEO_SCROLL_DURATION_MS = 1000
 const DEVICE_ROLE_STORAGE_KEY = 'continue-tablet-device-role'
 
 type LegacyMediaQueryList = MediaQueryList & {
@@ -142,6 +143,42 @@ function scrollToElement(container: HTMLElement, target: HTMLElement, duration: 
   frameId = window.requestAnimationFrame(animate)
 
   return () => window.cancelAnimationFrame(frameId)
+}
+
+function scrollToCenteredElement(container: HTMLElement, target: HTMLElement, duration: number) {
+  return new Promise<void>((resolve) => {
+    const startTop = container.scrollTop
+    const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0)
+    const targetTop = target.offsetTop - (container.clientHeight - target.offsetHeight) / 2
+    const distance = Math.min(Math.max(targetTop, 0), maxScrollTop) - startTop
+
+    if (Math.abs(distance) < 1) {
+      resolve()
+      return
+    }
+
+    const startTime = performance.now()
+
+    const easeInOutCubic = (progress: number) =>
+      progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2
+
+    const animate = (time: number) => {
+      const progress = Math.min((time - startTime) / duration, 1)
+
+      container.scrollTop = startTop + distance * easeInOutCubic(progress)
+
+      if (progress < 1) {
+        window.requestAnimationFrame(animate)
+        return
+      }
+
+      resolve()
+    }
+
+    window.requestAnimationFrame(animate)
+  })
 }
 
 function getIsFullscreen() {
@@ -1014,7 +1051,9 @@ function SceneOne({
   onVideoComplete,
   onNext,
 }: SceneOneProps) {
+  const videoBoxRef = useRef<HTMLButtonElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [isVideoRevealed, setIsVideoRevealed] = useState(false)
   const [hasStartedVideo, setHasStartedVideo] = useState(false)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const [videoDuration, setVideoDuration] = useState(0)
@@ -1026,6 +1065,46 @@ function SceneOne({
     }
   }, [])
 
+  const playVideo = async (restart = false) => {
+    try {
+      if (videoRef.current) {
+        videoRef.current.volume = clampVolume(SCENE_ONE_VIDEO_VOLUME)
+
+        if (restart) {
+          videoRef.current.currentTime = 0
+          setVideoProgress(0)
+        }
+      }
+
+      await videoRef.current?.play()
+      setIsVideoPlaying(true)
+    } catch {
+      setIsVideoPlaying(false)
+    }
+  }
+
+  const scrollVideoToCenter = async () => {
+    const videoBox = videoBoxRef.current
+    const scrollContainer = videoBox?.closest('.scene-sequence') as HTMLElement | null
+
+    if (!videoBox || !scrollContainer) {
+      return
+    }
+
+    await scrollToCenteredElement(scrollContainer, videoBox, SCENE_VIDEO_SCROLL_DURATION_MS)
+  }
+
+  const startReenactment = async () => {
+    playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
+
+    flushSync(() => {
+      setIsVideoRevealed(true)
+    })
+
+    await scrollVideoToCenter()
+    await playVideo(true)
+  }
+
   const toggleVideo = async () => {
     playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
 
@@ -1035,16 +1114,7 @@ function SceneOne({
       return
     }
 
-    try {
-      if (videoRef.current) {
-        videoRef.current.volume = clampVolume(SCENE_ONE_VIDEO_VOLUME)
-      }
-
-      await videoRef.current?.play()
-      setIsVideoPlaying(true)
-    } catch {
-      setIsVideoPlaying(false)
-    }
+    await playVideo()
   }
 
   const syncVideoProgress = () => {
@@ -1124,10 +1194,18 @@ function SceneOne({
             なるべく<strong>リアルに再現</strong>するね。
           </p>
         </div>
-        <button
+        {!isVideoRevealed && (
+          <button className="scene-reenact-button" type="button" onClick={startReenactment}>
+            再現する
+          </button>
+        )}
+        {isVideoRevealed && (
+          <>
+            <button
           className="video-box"
           data-playing={isVideoPlaying}
           data-started={hasStartedVideo}
+          ref={videoBoxRef}
           type="button"
           aria-label={isVideoPlaying ? '動画を停止' : '動画を再生'}
           onClick={() => void toggleVideo()}
@@ -1211,6 +1289,8 @@ function SceneOne({
             <span className="video-seek-thumb" />
           </span>
         </div>
+          </>
+        )}
         {isVideoComplete && (
           <div className="scene-one-followup" ref={sceneFollowupRef}>
             <SceneTwoContent onNext={onNext} />
