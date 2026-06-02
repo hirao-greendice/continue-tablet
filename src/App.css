@@ -430,7 +430,7 @@ button:focus-visible {
 
 .master-reset-answers {
   position: absolute;
-  bottom: 38px;
+  bottom: 118px;
   left: 38px;
   width: 270px;
   height: 92px;
@@ -443,7 +443,7 @@ button:focus-visible {
 
 .master-game-controls {
   position: absolute;
-  bottom: 190px;
+  bottom: 330px;
   left: 50%;
   display: grid;
   justify-items: center;
@@ -550,10 +550,11 @@ button:focus-visible {
 .master-team-grid {
   display: grid;
   grid-template-columns: repeat(4, 174px);
-  align-content: center;
+  align-content: start;
   gap: 190px 72px;
   width: fit-content;
-  padding-bottom: 160px;
+  margin-top: 170px;
+  padding-bottom: 0;
 }
 
 .master-team {
