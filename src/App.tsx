@@ -692,10 +692,8 @@ function App() {
     setScreen('scene1')
   }
 
-  const goHome = (options: { keepTeamNumber?: boolean } = {}) => {
-    if (!options.keepTeamNumber) {
-      setTeamNumber(null)
-    }
+  const goHome = () => {
+    setTeamNumber(null)
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
     shouldScrollToSceneTwoRef.current = false
@@ -729,7 +727,7 @@ function App() {
       lastHomeCommandIdRef.current = command.id
 
       if (deviceRole !== 'master') {
-        goHome({ keepTeamNumber: true })
+        goHome()
       }
     }, setRealtimeError)
   }, [deviceRole])
@@ -1218,7 +1216,7 @@ function HomeScreen({ photos, teams, onOpenMaster, onStartTeam, onOpenPhotos }: 
               onClick={() => onStartTeam(teamNumber)}
             >
               <span>{teamNumber}</span>
-              {hasDuplicateConnections && <small>{connectionCount}台接続中</small>}
+              {hasDuplicateConnections && <small>{connectionCount}台接続済</small>}
               {!hasDuplicateConnections && teamState && isTeamAlive(teamState) && <small>接続済み</small>}
             </button>
           )
@@ -1950,7 +1948,7 @@ function MasterScreen({
                 data-duplicate={hasDuplicateConnections}
               >
                 <span>{team.team}</span>
-                {hasDuplicateConnections && <small>{connectionCount}台接続中</small>}
+                {hasDuplicateConnections && <small>{connectionCount}台接続済</small>}
               </div>
               <div className="master-team-answer" data-correct={isCorrect}>
                 {answer ? SUSPECT_ROLE_LABELS[answer.photoId] ?? answer.label : ''}

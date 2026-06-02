@@ -168,9 +168,12 @@ export function setGameEndedStatus(gameEnded: boolean) {
 }
 
 export function sendHomeCommand() {
-  return set(ref(realtimeDb, 'navigationCommand/home'), {
-    id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    issuedAt: serverTimestamp(),
+  return update(ref(realtimeDb), {
+    'navigationCommand/home': {
+      id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      issuedAt: serverTimestamp(),
+    },
+    ...Object.fromEntries(TEAM_NUMBERS.map((team) => [`teams/${team}/connections`, null])),
   })
 }
 
