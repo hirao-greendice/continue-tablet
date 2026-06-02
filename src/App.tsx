@@ -405,7 +405,7 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (screen !== 'master') {
+    if (screen !== 'master' && screen !== 'home') {
       return
     }
 
@@ -692,8 +692,10 @@ function App() {
     setScreen('scene1')
   }
 
-  const goHome = () => {
-    setTeamNumber(null)
+  const goHome = (options: { keepTeamNumber?: boolean } = {}) => {
+    if (!options.keepTeamNumber) {
+      setTeamNumber(null)
+    }
     setSelectedPhotoId(null)
     setSubmittedPhotoId(null)
     shouldScrollToSceneTwoRef.current = false
@@ -727,7 +729,7 @@ function App() {
       lastHomeCommandIdRef.current = command.id
 
       if (deviceRole !== 'master') {
-        goHome()
+        goHome({ keepTeamNumber: true })
       }
     }, setRealtimeError)
   }, [deviceRole])
