@@ -26,8 +26,10 @@ import {
   clearTeamAnswer,
   connectTeamPresence,
   resetAllTeamAnswers,
+  sendHomeCommand,
   setGameEndedStatus,
   subscribeGameControl,
+  subscribeHomeCommand,
   subscribeRealtimeConnection,
   subscribeTeamAnswer,
   submitTeamAnswer,
@@ -67,14 +69,81 @@ const SUBMIT_SOUND = 'sounds/omaeda.mp3'
 const CLICK_SOUND_VOLUME = 0.8
 const SUBMIT_SOUND_VOLUME = 0.6
 const SCENE_ONE_VIDEO_VOLUME = 1
+const PRELOAD_IMAGE_ASSETS = [
+  'QR.png',
+  'select.png',
+  'images/back.webp',
+  'images/dayo.png',
+  'images/erabinaosu_button.png',
+  'images/goutou.jpeg',
+  'images/hannnin.jpg',
+  'images/play.png',
+  'images/teisyutu_botton.png',
+  'images/tenkei.png',
+  'images/tukitome.png',
+]
+const PRELOAD_SOUND_ASSETS = [
+  { path: CLICK_SOUND, volume: CLICK_SOUND_VOLUME, poolSize: 4 },
+  { path: SUBMIT_SOUND, volume: SUBMIT_SOUND_VOLUME, poolSize: 2 },
+]
+const soundPools = new Map<string, HTMLAudioElement[]>()
 
 function clampVolume(volume: number) {
   return Math.min(Math.max(volume, 0), 1)
 }
 
-function playSound(path: string, volume = 1) {
+function createSound(path: string, volume: number) {
   const sound = new Audio(publicAsset(path))
+  sound.preload = 'auto'
   sound.volume = clampVolume(volume)
+  sound.load()
+
+  return sound
+}
+
+function preloadSoundPool(path: string, volume: number, poolSize: number) {
+  if (soundPools.has(path)) {
+    return
+  }
+
+  soundPools.set(
+    path,
+    Array.from({ length: poolSize }, () => createSound(path, volume)),
+  )
+}
+
+function unlockPreloadedSounds() {
+  soundPools.forEach((pool) => {
+    pool.forEach((sound) => {
+      const previousMuted = sound.muted
+
+      sound.muted = true
+      void sound
+        .play()
+        .then(() => {
+          sound.pause()
+          sound.currentTime = 0
+          sound.muted = previousMuted
+        })
+        .catch(() => {
+          sound.muted = previousMuted
+        })
+    })
+  })
+}
+
+function playSound(path: string, volume = 1) {
+  let pool = soundPools.get(path)
+
+  if (!pool) {
+    preloadSoundPool(path, volume, 2)
+    pool = soundPools.get(path)
+  }
+
+  const sound = pool?.find((candidate) => candidate.paused || candidate.ended) ?? createSound(path, volume)
+
+  sound.volume = clampVolume(volume)
+  sound.currentTime = 0
   void sound.play().catch(() => undefined)
 }
 
@@ -227,6 +296,8 @@ function App() {
   const sceneSequenceRef = useRef<HTMLDivElement>(null)
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
   const shouldScrollToSceneTwoRef = useRef(false)
+  const hasSeenHomeCommandRef = useRef(false)
+  const lastHomeCommandIdRef = useRef<string | null>(null)
   const sceneTouchScrollRef = useRef({
     animationFrame: 0,
     didDrag: false,
@@ -239,6 +310,41 @@ function App() {
   })
   const secretTapCount = useRef(0)
   const secretTapResetTimer = useRef<number | undefined>(undefined)
+
+  useEffect(() => {
+    PRELOAD_IMAGE_ASSETS.forEach((path) => {
+      const src = versionedAsset(path, STATIC_IMAGE_VERSION)
+
+      if (preloadedPhotoImages.current.has(src)) {
+        return
+      }
+
+      const image = new Image()
+      preloadedPhotoImages.current.set(src, image)
+      image.addEventListener(
+        'error',
+        () => {
+          preloadedPhotoImages.current.delete(src)
+        },
+        { once: true },
+      )
+      image.src = src
+    })
+
+    PRELOAD_SOUND_ASSETS.forEach(({ path, volume, poolSize }) => {
+      preloadSoundPool(path, volume, poolSize)
+    })
+
+    const unlockAudio = () => {
+      unlockPreloadedSounds()
+    }
+
+    window.addEventListener('pointerdown', unlockAudio, { once: true, passive: true })
+
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio)
+    }
+  }, [])
 
   useEffect(() => {
     const fullscreenQuery: LegacyMediaQueryList = window.matchMedia(
@@ -595,6 +701,31 @@ function App() {
     window.location.reload()
   }
 
+  useEffect(() => {
+    return subscribeHomeCommand((command) => {
+      if (!command?.id) {
+        hasSeenHomeCommandRef.current = true
+        return
+      }
+
+      if (!hasSeenHomeCommandRef.current) {
+        hasSeenHomeCommandRef.current = true
+        lastHomeCommandIdRef.current = command.id
+        return
+      }
+
+      if (lastHomeCommandIdRef.current === command.id) {
+        return
+      }
+
+      lastHomeCommandIdRef.current = command.id
+
+      if (deviceRole !== 'master') {
+        goHome()
+      }
+    }, setRealtimeError)
+  }, [deviceRole])
+
   const tapSecretHotspot = () => {
     window.clearTimeout(secretTapResetTimer.current)
     secretTapCount.current += 1
@@ -751,6 +882,7 @@ function App() {
               teams={teamStates}
               onBack={() => setScreen('home')}
               onResetAnswers={resetMasterAnswers}
+              onSendHomeCommand={sendHomeCommand}
               onSetGameEnded={setGameEndedStatus}
             />
           )}
@@ -1652,6 +1784,7 @@ type MasterScreenProps = {
   teams: TeamState[]
   onBack: () => void
   onResetAnswers: () => Promise<void>
+  onSendHomeCommand: () => Promise<void>
   onSetGameEnded: (gameEnded: boolean) => Promise<void>
 }
 
@@ -1662,13 +1795,20 @@ function MasterScreen({
   teams,
   onBack,
   onResetAnswers,
+  onSendHomeCommand,
   onSetGameEnded,
 }: MasterScreenProps) {
+  const [isHomeConfirmOpen, setIsHomeConfirmOpen] = useState(false)
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false)
 
   const confirmReset = async () => {
     await onResetAnswers()
     setIsResetConfirmOpen(false)
+  }
+
+  const confirmSendHome = async () => {
+    await onSendHomeCommand()
+    setIsHomeConfirmOpen(false)
   }
 
   return (
@@ -1682,6 +1822,13 @@ function MasterScreen({
         onClick={() => setIsResetConfirmOpen(true)}
       >
         リセット機能
+      </button>
+      <button
+        className="master-send-home"
+        type="button"
+        onClick={() => setIsHomeConfirmOpen(true)}
+      >
+        全端末ホーム
       </button>
       <div className="master-game-controls">
         <div className="master-game-buttons">
@@ -1730,6 +1877,27 @@ function MasterScreen({
           )
         })}
       </div>
+
+      {isHomeConfirmOpen && (
+        <div
+          className="master-confirm-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="全端末ホーム確認"
+        >
+          <div className="master-confirm-panel">
+            <p>MASTER以外の全端末をホームに戻しますか？</p>
+            <div className="master-confirm-actions">
+              <button type="button" onClick={confirmSendHome}>
+                はい
+              </button>
+              <button type="button" onClick={() => setIsHomeConfirmOpen(false)}>
+                いいえ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isResetConfirmOpen && (
         <div

@@ -459,6 +459,19 @@ button:focus-visible {
   font-weight: 900;
 }
 
+.master-send-home {
+  position: absolute;
+  right: 38px;
+  bottom: 118px;
+  width: 330px;
+  height: 92px;
+  border: 4px solid #d9d9d9;
+  background: #ad0000;
+  color: #fff;
+  font-size: 31px;
+  font-weight: 900;
+}
+
 .master-game-controls {
   position: absolute;
   bottom: 330px;

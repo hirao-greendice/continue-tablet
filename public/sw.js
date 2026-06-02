@@ -1,5 +1,5 @@
-const CACHE_NAME = 'continue-tablet-v11'
-const STATIC_IMAGE_VERSION = 'images-20260527-1'
+const CACHE_NAME = 'continue-tablet-v12'
+const STATIC_IMAGE_VERSION = 'images-20260602-1'
 
 function versionedAsset(path) {
   return `${path}?v=${STATIC_IMAGE_VERSION}`
@@ -12,7 +12,7 @@ const APP_SHELL = [
   './favicon.svg',
 ]
 
-const WARM_IMAGE_CACHE = [
+const WARM_ASSET_CACHE = [
   versionedAsset('./QR.png'),
   versionedAsset('./select.png'),
   versionedAsset('./images/back.webp'),
@@ -22,15 +22,17 @@ const WARM_IMAGE_CACHE = [
   versionedAsset('./images/hannnin.jpg'),
   versionedAsset('./images/play.png'),
   versionedAsset('./images/teisyutu_botton.png'),
-  versionedAsset('./images/tenkei.jpg'),
+  versionedAsset('./images/tenkei.png'),
   versionedAsset('./images/tukitome.png'),
+  './sounds/click.mp3',
+  './sounds/omaeda.mp3',
 ]
 
-async function warmImageCache() {
+async function warmAssetCache() {
   const cache = await caches.open(CACHE_NAME)
 
   await Promise.allSettled(
-    WARM_IMAGE_CACHE.map(async (asset) => {
+    WARM_ASSET_CACHE.map(async (asset) => {
       const request = new Request(asset)
       const response = await fetch(request)
 
@@ -56,7 +58,7 @@ self.addEventListener('install', (event) => {
       ),
     ),
   )
-  warmImageCache().catch(() => undefined)
+  warmAssetCache().catch(() => undefined)
   self.skipWaiting()
 })
 
@@ -223,9 +225,13 @@ self.addEventListener('fetch', (event) => {
     ['script', 'style', 'font', 'image', 'manifest'].includes(
       event.request.destination,
     )
+  const isStaticAudio =
+    url.origin === self.location.origin &&
+    event.request.destination === 'audio'
+
   const isRemoteImage = event.request.destination === 'image'
 
-  if (!isStaticAsset && !isRemoteImage) {
+  if (!isStaticAsset && !isStaticAudio && !isRemoteImage) {
     return
   }
 

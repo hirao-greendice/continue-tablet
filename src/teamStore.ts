@@ -28,6 +28,11 @@ export type GameControlState = {
   updatedAt?: number
 }
 
+export type HomeCommandState = {
+  id: string
+  issuedAt?: number
+}
+
 const TEAM_NUMBERS = Array.from({ length: 8 }, (_, index) => index + 1)
 
 function createSessionId() {
@@ -160,6 +165,28 @@ export function setGameEndedStatus(gameEnded: boolean) {
     gameEnded,
     updatedAt: serverTimestamp(),
   })
+}
+
+export function sendHomeCommand() {
+  return set(ref(realtimeDb, 'navigationCommand/home'), {
+    id: crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    issuedAt: serverTimestamp(),
+  })
+}
+
+export function subscribeHomeCommand(
+  onChange: (command: HomeCommandState | undefined) => void,
+  onError?: (message: string) => void,
+) {
+  return onValue(
+    ref(realtimeDb, 'navigationCommand/home'),
+    (snapshot) => {
+      onChange((snapshot.val() as HomeCommandState | null) ?? undefined)
+    },
+    (error) => {
+      onError?.(error.message)
+    },
+  )
 }
 
 export function unsubscribeTeamStates() {
