@@ -1633,10 +1633,33 @@ button:focus-visible {
   background: #fff2f8;
 }
 
+.photo-history-item[data-selected='true'] {
+  border-color: #00a9ff;
+  background: #e7f7ff;
+  box-shadow: 0 0 0 3px rgba(0, 169, 255, 0.28);
+}
+
 .photo-history-item img {
   width: 100%;
   aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
   object-fit: cover;
+}
+
+.photo-history-confirm {
+  grid-column: 1 / -1;
+  width: min(100%, 280px);
+  height: 70px;
+  justify-self: center;
+  border: 0;
+  background: #99d513;
+  color: #050505;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.photo-history-confirm:disabled {
+  background: #d5d5d5;
+  color: #777;
 }
 
 .crop-dialog {
@@ -1860,6 +1883,12 @@ button:focus-visible {
     padding: 4px;
     border-width: 2px;
     font-size: 10px;
+  }
+
+  .photo-history-confirm {
+    width: 100%;
+    height: 58px;
+    font-size: 21px;
   }
 
   .crop-panel {

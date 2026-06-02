@@ -2011,6 +2011,7 @@ function PhotoManager({
 }: PhotoManagerProps) {
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null)
   const [openHistorySlotId, setOpenHistorySlotId] = useState<number | null>(null)
+  const [selectedHistorySrcBySlot, setSelectedHistorySrcBySlot] = useState<Record<number, string>>({})
   const objectUrls = useRef<string[]>([])
 
   useEffect(() => {
@@ -2050,7 +2051,12 @@ function PhotoManager({
         <p>4枚の写真を選ぶと、最終解答の候補画像に反映されます。</p>
         {uploadStatus && <div className="upload-status">{uploadStatus}</div>}
         <div className="photo-editor-list">
-          {photos.map((photo) => (
+          {photos.map((photo) => {
+            const selectedHistorySrc = selectedHistorySrcBySlot[photo.id] ?? photo.src
+            const selectedHistoryItem =
+              photo.history?.find((historyItem) => historyItem.src === selectedHistorySrc) ?? null
+
+            return (
             <article className="photo-editor" key={photo.id}>
               <img src={photo.src} alt={`${photo.label}の現在の写真`} />
               <div>
@@ -2084,25 +2090,49 @@ function PhotoManager({
                   <div className="photo-history" aria-label="過去の写真">
                     {photo.history.map((historyItem) => {
                       const isCurrent = historyItem.src === photo.src
+                      const isSelected = historyItem.src === selectedHistorySrc
 
                       return (
                         <button
                           className="photo-history-item"
                           data-current={isCurrent}
+                          data-selected={isSelected}
                           key={historyItem.src}
                           type="button"
-                          onClick={() => void onSelectHistory(photo.id, historyItem)}
+                          onClick={() =>
+                            setSelectedHistorySrcBySlot((currentSelections) => ({
+                              ...currentSelections,
+                              [photo.id]: historyItem.src,
+                            }))
+                          }
                         >
                           <img src={historyItem.src} alt="" aria-hidden="true" />
                           <span>{isCurrent ? '現在' : formatHomePhotoUpdatedAt(historyItem.updatedAt)}</span>
                         </button>
                       )
                     })}
+                    <button
+                      className="photo-history-confirm"
+                      disabled={!selectedHistoryItem || selectedHistoryItem.src === photo.src}
+                      type="button"
+                      onClick={() => {
+                        if (!selectedHistoryItem) {
+                          return
+                        }
+
+                        void onSelectHistory(photo.id, selectedHistoryItem).then(() => {
+                          setOpenHistorySlotId(null)
+                        })
+                      }}
+                    >
+                      決定
+                    </button>
                   </div>
                 )}
               </div>
             </article>
-          ))}
+            )
+          })}
         </div>
       </div>
       {cropDraft &&
