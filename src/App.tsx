@@ -39,7 +39,7 @@ import {
 } from './teamStore'
 import { realtimeDatabaseUrl } from './firebase'
 
-type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
+type Screen = 'home' | 'scene0' | 'scene1' | 'scene3' | 'photos' | 'master'
 type DeviceRole = 'unknown' | 'master' | 'player'
 type PhotoSlot = {
   history?: PhotoHistoryItem[]
@@ -84,6 +84,8 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/goutou.jpeg',
   'images/hannnin.jpg',
   'images/konohito.png',
+  'images/0.png',
+  'images/0-1.png',
   'images/play.png',
   'images/teisyutu_botton.png',
   'images/tenkei.png',
@@ -924,7 +926,7 @@ function App() {
     shouldScrollToSceneTwoRef.current = false
     setHasRevealedSceneOneVideo(false)
     setHasCompletedSceneOneVideo(false)
-    setScreen('scene1')
+    setScreen('scene0')
   }
 
   const goHome = () => {
@@ -1070,6 +1072,10 @@ function App() {
     setHasCompletedSceneOneVideo(true)
   }
 
+  const startSceneOne = () => {
+    setScreen('scene1')
+  }
+
   const openMaster = () => {
     void enterFullscreen()
     setDeviceRole('master')
@@ -1112,7 +1118,7 @@ function App() {
   const isPlayerGameEnded =
     gameEnded &&
     deviceRole === 'player' &&
-    (screen === 'scene1' || screen === 'scene3')
+    (screen === 'scene0' || screen === 'scene1' || screen === 'scene3')
 
   return (
     <main className="app-frame">
@@ -1142,6 +1148,10 @@ function App() {
               onOpenMaster={openMaster}
               onOpenPhotos={openPhotos}
             />
+          )}
+
+          {screen === 'scene0' && (
+            <SceneZero onNext={startSceneOne} />
           )}
 
           {screen === 'scene1' && (
@@ -1594,6 +1604,45 @@ type SceneOneProps = {
   onVideoReveal: () => void
   onVideoComplete: () => void
   onNext: () => void
+}
+
+type SceneZeroProps = {
+  onNext: () => void
+}
+
+function SceneZero({ onNext }: SceneZeroProps) {
+  return (
+    <section className="story-screen scene-zero" aria-label="天使からの手紙">
+      <div
+        className="story-background"
+        style={{ backgroundImage: `url("${versionedAsset('images/0.png', STATIC_IMAGE_VERSION)}")` }}
+        aria-hidden="true"
+      />
+      <div className="scene-zero-content">
+        <img
+          className="scene-zero-letter"
+          src={versionedAsset('images/0-1.png', STATIC_IMAGE_VERSION)}
+          alt=""
+          aria-hidden="true"
+        />
+        <p className="scene-zero-message">
+          席に戻ってまずは、
+          <br />
+          タブレットを確認しよう！
+        </p>
+        <button
+          className="scene-zero-next"
+          type="button"
+          onClick={() => {
+            playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
+            onNext()
+          }}
+        >
+          進む
+        </button>
+      </div>
+    </section>
+  )
 }
 
 function SceneOne({
