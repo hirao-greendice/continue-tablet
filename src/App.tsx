@@ -1918,11 +1918,9 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
       <div className="scene-two-content">
         <div className="scene-two-text-block">
           <p>
-            先ほどの<strong>はりきった</strong>という<strong>シーメイ</strong>の発言は、
+            先程のシーメイの<strong>はりきっちゃた</strong>という
             <br />
-            君たちに楽しんでもらうための
-            <br />
-            <strong>必死の努力のアピール</strong>だったのかもね。
+            発言は何かの<strong>アピール</strong>だったのかもね。
           </p>
         </div>
         <div className="scene-two-text-block">
@@ -1973,7 +1971,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
             <br />
             って思った人、いるでしょ？
             <br />
-            <strong>そんな方法では無理</strong>！
+            <strong>そんな方法では無理！</strong>
             <br />
             チームメイトと仲良く協力して、
             <br />
@@ -1991,9 +1989,9 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
         </div>
         <div className="scene-two-text-block">
           <p>
-            <strong>この内容は別の紙にまとめておいたから</strong>
+            <strong>この内容は一緒に渡した紙にまとめたから、</strong>
             <br />
-            <strong>ひっくり返して確認してね！</strong>
+            <strong>開けて確認してね！</strong>
           </p>
         </div>
       </div>
