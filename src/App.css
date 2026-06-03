@@ -334,9 +334,8 @@ button:focus-visible {
 
 .home-actions {
   display: grid;
-  grid-template-columns: repeat(3, auto);
-  gap: 28px 42px;
-  justify-content: center;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 62px;
 }
 
 .home-action-button {
@@ -349,26 +348,8 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.home-action-button-wide {
-  width: 340px;
-  font-size: 38px;
-  line-height: 1.05;
-}
-
 .home-action-button:disabled {
-  opacity: 0.62;
-}
-
-.home-action-status {
-  grid-column: 1 / -1;
-  order: 10;
-  min-height: 36px;
-  margin: -8px 0 0;
-  color: #fff;
-  font-size: 30px;
-  font-weight: 900;
-  line-height: 1.2;
-  text-align: center;
+  opacity: 1;
 }
 
 .home-photo-strip {

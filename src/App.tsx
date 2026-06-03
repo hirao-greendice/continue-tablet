@@ -41,7 +41,6 @@ import { realtimeDatabaseUrl } from './firebase'
 type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
 type DeviceRole = 'unknown' | 'master' | 'player'
 type PhotoSlot = {
-  exportSrc?: string
   history?: PhotoHistoryItem[]
   id: number
   label: string
@@ -49,7 +48,6 @@ type PhotoSlot = {
   updatedAt?: number
 }
 type PhotoHistoryItem = {
-  exportSrc?: string
   src: string
   updatedAt?: number
 }
@@ -178,13 +176,6 @@ const defaultPhotos: PhotoSlot[] = [
 
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
-const SLIDE_EXPORT_CROP = {
-  x: 0,
-  y: 265,
-  width: STAGE_WIDTH,
-  height: 1420,
-}
-const SLIDE_EXPORT_QUALITY = 0.92
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
 const SCENE_VIDEO_SCROLL_DURATION_MS = 1000
@@ -290,240 +281,6 @@ function getStoredDeviceRole(): DeviceRole {
   return storedRole === 'master' || storedRole === 'player' ? storedRole : 'unknown'
 }
 
-function loadCanvasImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image()
-
-    image.crossOrigin = 'anonymous'
-    image.addEventListener('load', () => resolve(image), { once: true })
-    image.addEventListener('error', () => reject(new Error(`Failed to load image: ${src}`)), {
-      once: true,
-    })
-    image.src = src
-  })
-}
-
-async function loadOptionalCanvasImage(src: string) {
-  try {
-    return await loadCanvasImage(src)
-  } catch (error) {
-    console.warn(error)
-    return null
-  }
-}
-
-function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
-  return new Promise<Blob>((resolve, reject) => {
-    try {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(blob)
-            return
-          }
-
-          reject(new Error('Failed to create image blob'))
-        },
-        type,
-        quality,
-      )
-    } catch (error) {
-      reject(error)
-    }
-  })
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-
-  link.href = url
-  link.download = filename
-  document.body.append(link)
-  link.click()
-  link.remove()
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-
-    reader.addEventListener('load', () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result)
-        return
-      }
-
-      reject(new Error('Failed to read photo data URL'))
-    })
-    reader.addEventListener('error', () => reject(reader.error ?? new Error('Failed to read photo')))
-    reader.readAsDataURL(file)
-  })
-}
-
-function drawImageCover(
-  context: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)
-  const sourceWidth = width / scale
-  const sourceHeight = height / scale
-  const sourceX = (image.naturalWidth - sourceWidth) / 2
-  const sourceY = (image.naturalHeight - sourceHeight) / 2
-
-  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height)
-}
-
-function drawImageContain(
-  context: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight)
-  const drawWidth = image.naturalWidth * scale
-  const drawHeight = image.naturalHeight * scale
-  const drawX = x + (width - drawWidth) / 2
-  const drawY = y + (height - drawHeight) / 2
-
-  context.drawImage(image, drawX, drawY, drawWidth, drawHeight)
-}
-
-function drawPhotoPlaceholder(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  context.save()
-  context.fillStyle = '#d8d8d8'
-  context.fillRect(x, y, width, height)
-  context.strokeStyle = '#9a9a9a'
-  context.lineWidth = 8
-  context.beginPath()
-  context.moveTo(x + width * 0.18, y + height * 0.18)
-  context.lineTo(x + width * 0.82, y + height * 0.82)
-  context.moveTo(x + width * 0.82, y + height * 0.18)
-  context.lineTo(x + width * 0.18, y + height * 0.82)
-  context.stroke()
-  context.fillStyle = '#555'
-  context.font = '900 34px "Yu Gothic", "YuGothic", "Hiragino Sans", Meiryo, sans-serif'
-  context.textAlign = 'center'
-  context.textBaseline = 'middle'
-  context.fillText('NO PHOTO', x + width / 2, y + height / 2)
-  context.restore()
-}
-
-function drawSceneThreeLabel(
-  context: CanvasRenderingContext2D,
-  label: string,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-) {
-  const [roleLabel, castLabel] = label.split('\n')
-  const lines = castLabel ? [roleLabel, castLabel] : [roleLabel]
-  const lineHeight = 35
-  const totalHeight = lines.length * lineHeight + Math.max(lines.length - 1, 0) * 3
-  let lineY = y + (height - totalHeight) / 2
-
-  context.save()
-  context.font = '900 34px "Yu Gothic", "YuGothic", "Hiragino Sans", Meiryo, sans-serif'
-  context.textAlign = 'center'
-  context.textBaseline = 'top'
-  context.shadowColor = 'rgba(255, 235, 170, 0.52)'
-  context.shadowBlur = 5
-  context.shadowOffsetX = 0
-  context.shadowOffsetY = 0
-
-  lines.forEach((line, index) => {
-    context.fillStyle = index === 0 ? '#d54397' : '#8a1b12'
-    context.fillText(line, x + width / 2, lineY, width)
-    lineY += lineHeight + 3
-  })
-
-  context.restore()
-}
-
-async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
-  await document.fonts?.ready
-
-  const [backgroundImage, submitButtonImage, backButtonImage, ...photoImages] = await Promise.all([
-    loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
-    loadCanvasImage(versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)),
-    loadCanvasImage(versionedAsset('images/back.webp', STATIC_IMAGE_VERSION)),
-    ...photos.map((photo) => loadOptionalCanvasImage(photo.exportSrc ?? photo.src)),
-  ])
-  const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
-
-  canvas.width = SLIDE_EXPORT_CROP.width
-  canvas.height = SLIDE_EXPORT_CROP.height
-
-  if (!context) {
-    throw new Error('Canvas is not supported')
-  }
-
-  context.save()
-  context.translate(-SLIDE_EXPORT_CROP.x, -SLIDE_EXPORT_CROP.y)
-  context.fillStyle = '#020817'
-  context.fillRect(0, 0, STAGE_WIDTH, STAGE_HEIGHT)
-  drawImageCover(context, backgroundImage, 0, 0, STAGE_WIDTH, STAGE_HEIGHT)
-
-  photos.forEach((photo, index) => {
-    const column = index % 2
-    const row = Math.floor(index / 2)
-    const cardX = 120 + column * (442 + 88)
-    const cardY = 470 + row * (472 + 14 + 86 + 36)
-    const frameX = cardX + 32
-    const frameY = cardY
-    const frameWidth = 378
-    const frameHeight = frameWidth / PHOTO_ASPECT_RATIO
-    const labelY = frameY + frameHeight + 14
-
-    context.save()
-    context.shadowColor = 'rgba(96, 54, 28, 0.24)'
-    context.shadowBlur = 18
-    context.shadowOffsetX = 9
-    context.shadowOffsetY = 12
-    context.fillStyle = 'rgba(255, 255, 255, 0.01)'
-    context.fillRect(frameX, frameY, frameWidth, frameHeight)
-    context.restore()
-
-    if (photoImages[index]) {
-      drawImageCover(context, photoImages[index], frameX, frameY, frameWidth, frameHeight)
-    } else {
-      drawPhotoPlaceholder(context, frameX, frameY, frameWidth, frameHeight)
-    }
-
-    context.save()
-    context.strokeStyle = 'rgba(255, 255, 255, 0.8)'
-    context.lineWidth = 2
-    context.strokeRect(frameX + 1, frameY + 1, frameWidth - 2, frameHeight - 2)
-    context.restore()
-
-    drawSceneThreeLabel(context, photo.label, cardX, labelY, 442, 86)
-  })
-
-  drawImageContain(context, backButtonImage, 40, 1670, 204, 155)
-  context.save()
-  context.globalAlpha = 0.52
-  drawImageContain(context, submitButtonImage, 310, 1682, 581, 129)
-  context.restore()
-  context.restore()
-
-  return canvasToBlob(canvas, 'image/jpeg', SLIDE_EXPORT_QUALITY)
-}
-
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [deviceRole, setDeviceRole] = useState<DeviceRole>(getStoredDeviceRole)
@@ -538,8 +295,6 @@ function App() {
   const [realtimeError, setRealtimeError] = useState('')
   const [gameEnded, setGameEnded] = useState(false)
   const [uploadStatus, setUploadStatus] = useState('')
-  const [isSlideExporting, setIsSlideExporting] = useState(false)
-  const [slideExportStatus, setSlideExportStatus] = useState('')
   const [hasRevealedSceneOneVideo, setHasRevealedSceneOneVideo] = useState(false)
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
@@ -1000,17 +755,13 @@ function App() {
     setUploadStatus('アップロード中...')
 
     try {
-      const [src, exportSrc] = await Promise.all([
-        uploadCurrentPhoto(slotId, file),
-        readFileAsDataUrl(file),
-      ])
+      const src = await uploadCurrentPhoto(slotId, file)
       const updatedAt = Date.now()
       const nextPhotos = photos.map((photo) =>
         photo.id === slotId
           ? {
               ...photo,
-              exportSrc,
-              history: getPhotoHistory({ ...photo, exportSrc, src, updatedAt }),
+              history: getPhotoHistory({ ...photo, src, updatedAt }),
               src,
               updatedAt,
             }
@@ -1030,13 +781,7 @@ function App() {
       photo.id === slotId
         ? {
             ...photo,
-            exportSrc: historyItem.exportSrc,
-            history: getPhotoHistory({
-              ...photo,
-              exportSrc: historyItem.exportSrc,
-              src: historyItem.src,
-              updatedAt: historyItem.updatedAt,
-            }),
+            history: getPhotoHistory({ ...photo, src: historyItem.src, updatedAt: historyItem.updatedAt }),
             src: historyItem.src,
             updatedAt: historyItem.updatedAt,
           }
@@ -1097,28 +842,6 @@ function App() {
     setScreen('photos')
   }
 
-  const exportSlideImage = async () => {
-    if (isSlideExporting) {
-      return
-    }
-
-    setIsSlideExporting(true)
-    setSlideExportStatus('出力中...')
-
-    try {
-      const blob = await createSceneThreeSlideBlob(photos)
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-
-      downloadBlob(blob, `scene3-slide-${timestamp}.jpg`)
-      setSlideExportStatus('出力しました')
-    } catch (error) {
-      console.error('Failed to export scene 3 slide image', error)
-      setSlideExportStatus('出力に失敗しました')
-    } finally {
-      setIsSlideExporting(false)
-    }
-  }
-
   const isPlayerGameEnded =
     gameEnded &&
     deviceRole === 'player' &&
@@ -1144,10 +867,7 @@ function App() {
           {screen === 'home' && (
             <HomeScreen
               photos={photos}
-              isSlideExporting={isSlideExporting}
-              slideExportStatus={slideExportStatus}
               teams={teamStates}
-              onExportSlideImage={exportSlideImage}
               onStartTeam={startTeam}
               onOpenMaster={openMaster}
               onOpenPhotos={openPhotos}
@@ -1263,7 +983,6 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
     return storedPhoto
       ? {
           ...photo,
-          exportSrc: storedPhoto.exportSrc,
           history: getPhotoHistory(storedPhoto),
           src: storedPhoto.src,
           updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhoto.src),
@@ -1274,7 +993,6 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
 
 function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   return photos.map((photo) => ({
-    exportSrc: photo.exportSrc,
     history: photo.history,
     id: photo.id,
     src: photo.src,
@@ -1282,11 +1000,11 @@ function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   }))
 }
 
-function getPhotoHistory(photo: Pick<PhotoSlot, 'exportSrc' | 'history' | 'src' | 'updatedAt'>) {
+function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
   const history = photo.history ?? []
   const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(photo.src)
   const items = [
-    { exportSrc: photo.exportSrc, src: photo.src, updatedAt: currentUpdatedAt },
+    { src: photo.src, updatedAt: currentUpdatedAt },
     ...history,
   ]
   const seen = new Set<string>()
@@ -1453,26 +1171,14 @@ function SecretMenu({ teamNumber, onClose, onExitFullscreen, onGoHome, onReload 
 }
 
 type HomeScreenProps = {
-  isSlideExporting: boolean
   photos: PhotoSlot[]
-  slideExportStatus: string
   teams: TeamState[]
-  onExportSlideImage: () => void
   onOpenMaster: () => void
   onStartTeam: (team: number) => void
   onOpenPhotos: () => void
 }
 
-function HomeScreen({
-  isSlideExporting,
-  photos,
-  slideExportStatus,
-  teams,
-  onExportSlideImage,
-  onOpenMaster,
-  onStartTeam,
-  onOpenPhotos,
-}: HomeScreenProps) {
+function HomeScreen({ photos, teams, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
   const batteryStatus = useBatteryStatus()
   const teamsByNumber = useMemo(
     () => new Map(teams.map((team) => [team.team, team])),
@@ -1521,17 +1227,6 @@ function HomeScreen({
         <button className="home-action-button" type="button" onClick={onOpenMaster}>
           MASTER
         </button>
-        <button
-          className="home-action-button home-action-button-wide"
-          disabled={isSlideExporting}
-          type="button"
-          onClick={onExportSlideImage}
-        >
-          スライド
-          <br />
-          画像出力
-        </button>
-        {slideExportStatus && <p className="home-action-status">{slideExportStatus}</p>}
         <button className="home-action-button" type="button" onClick={onOpenPhotos}>
           写真撮影
         </button>
