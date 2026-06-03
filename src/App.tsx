@@ -301,9 +301,27 @@ function loadCanvasImage(src: string) {
   })
 }
 
+function loadDisplayImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+
+    image.addEventListener('load', () => resolve(image), { once: true })
+    image.addEventListener('error', () => reject(new Error(`Failed to load image: ${src}`)), {
+      once: true,
+    })
+    image.src = src
+  })
+}
+
 async function loadOptionalCanvasImage(src: string) {
   try {
     return await loadCanvasImage(src)
+  } catch (error) {
+    console.warn(error)
+  }
+
+  try {
+    return await loadDisplayImage(src)
   } catch (error) {
     console.warn(error)
     return null
