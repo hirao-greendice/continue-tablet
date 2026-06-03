@@ -74,7 +74,7 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260603-2'
-const APP_CACHE_NAME = 'continue-tablet-v15'
+const APP_CACHE_NAME = 'continue-tablet-v16'
 const STATIC_IMAGE_VERSION = 'images-20260603-1'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260603-2'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
@@ -450,6 +450,50 @@ function hasCrossOriginPhotos(photos: PhotoSlot[]) {
   return photos.some((photo) => isCrossOriginUrl(photo.src))
 }
 
+function preloadDecodedImage(src: string, cache: Map<string, Promise<HTMLImageElement>>) {
+  const cachedImage = cache.get(src)
+
+  if (cachedImage) {
+    return cachedImage
+  }
+
+  const imagePromise = new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+
+    image.decoding = 'async'
+    image.addEventListener(
+      'load',
+      () => {
+        void decodeImage(image).then(() => resolve(image))
+      },
+      { once: true },
+    )
+    image.addEventListener(
+      'error',
+      () => reject(new Error(`Failed to preload image: ${src}`)),
+      { once: true },
+    )
+    image.src = src
+  })
+
+  const trackedImagePromise = imagePromise.catch((error) => {
+    cache.delete(src)
+    throw error
+  })
+
+  cache.set(src, trackedImagePromise)
+
+  return trackedImagePromise
+}
+
+async function decodeImage(image: HTMLImageElement) {
+  try {
+    await image.decode?.()
+  } catch {
+    // Some browsers can report decode failures for already usable images.
+  }
+}
+
 function loadCanvasImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image()
@@ -458,7 +502,13 @@ function loadCanvasImage(src: string) {
       image.crossOrigin = 'anonymous'
     }
 
-    image.addEventListener('load', () => resolve(image), { once: true })
+    image.addEventListener(
+      'load',
+      () => {
+        void decodeImage(image).then(() => resolve(image))
+      },
+      { once: true },
+    )
     image.addEventListener('error', () => reject(new Error(`Failed to load image: ${src}`)), {
       once: true,
     })
@@ -679,8 +729,9 @@ function App() {
   const [slideExportStatus, setSlideExportStatus] = useState('')
   const [hasRevealedSceneOneVideo, setHasRevealedSceneOneVideo] = useState(false)
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
+  const [isPreparingSceneThree, setIsPreparingSceneThree] = useState(false)
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
-  const preloadedPhotoImages = useRef<Map<string, HTMLImageElement>>(new Map())
+  const decodedImageCache = useRef<Map<string, Promise<HTMLImageElement>>>(new Map())
   const sceneSequenceRef = useRef<HTMLDivElement>(null)
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
   const shouldScrollToSceneTwoRef = useRef(false)
@@ -703,20 +754,7 @@ function App() {
     PRELOAD_IMAGE_ASSETS.forEach((path) => {
       const src = versionedAsset(path, STATIC_IMAGE_VERSION)
 
-      if (preloadedPhotoImages.current.has(src)) {
-        return
-      }
-
-      const image = new Image()
-      preloadedPhotoImages.current.set(src, image)
-      image.addEventListener(
-        'error',
-        () => {
-          preloadedPhotoImages.current.delete(src)
-        },
-        { once: true },
-      )
-      image.src = src
+      void preloadDecodedImage(src, decodedImageCache.current).catch(() => undefined)
     })
 
     PRELOAD_SOUND_ASSETS.forEach(({ path, volume, poolSize }) => {
@@ -745,6 +783,11 @@ function App() {
 
         setBackupPhotosBySlot(loadedBackupPhotosBySlot)
         void warmBackupPhotoCache(loadedBackupPhotosBySlot)
+        Object.values(loadedBackupPhotosBySlot).forEach((backupPhotos) => {
+          backupPhotos.forEach((backupPhoto) => {
+            void preloadDecodedImage(backupPhoto.src, decodedImageCache.current).catch(() => undefined)
+          })
+        })
       })
       .catch(() => undefined)
 
@@ -830,27 +873,10 @@ function App() {
   }, [teamNumber])
 
   useEffect(() => {
-    if (screen !== 'home' && screen !== 'scene1') {
-      return
-    }
-
     photos.forEach((photo) => {
-      if (preloadedPhotoImages.current.has(photo.src)) {
-        return
-      }
-
-      const image = new Image()
-      preloadedPhotoImages.current.set(photo.src, image)
-      image.addEventListener(
-        'error',
-        () => {
-          preloadedPhotoImages.current.delete(photo.src)
-        },
-        { once: true },
-      )
-      image.src = photo.src
+      void preloadDecodedImage(photo.src, decodedImageCache.current).catch(() => undefined)
     })
-  }, [photos, screen])
+  }, [photos])
 
   useEffect(() => {
     if (screen !== 'scene1') {
@@ -1247,6 +1273,35 @@ function App() {
     setScreen('scene1')
   }
 
+  const openSceneThree = async () => {
+    if (isPreparingSceneThree) {
+      return
+    }
+
+    setIsPreparingSceneThree(true)
+
+    try {
+      const sceneThreeImageSrcs = [
+        versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION),
+        versionedAsset('images/back.webp', STATIC_IMAGE_VERSION),
+        versionedAsset('select.png', STATIC_IMAGE_VERSION),
+        versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION),
+        versionedAsset('images/goutou.jpeg', STATIC_IMAGE_VERSION),
+        versionedAsset('images/erabinaosu_button.png', STATIC_IMAGE_VERSION),
+        ...photos.map((photo) => photo.src),
+      ]
+
+      await Promise.allSettled(
+        sceneThreeImageSrcs.map((src) =>
+          preloadDecodedImage(src, decodedImageCache.current),
+        ),
+      )
+      setScreen('scene3')
+    } finally {
+      setIsPreparingSceneThree(false)
+    }
+  }
+
   const openMaster = () => {
     void enterFullscreen()
     setDeviceRole('master')
@@ -1332,12 +1387,15 @@ function App() {
               ref={sceneSequenceRef}
             >
               <SceneOne
+                isPreparingNext={isPreparingSceneThree}
                 isVideoComplete={hasCompletedSceneOneVideo}
                 isVideoRevealed={hasRevealedSceneOneVideo}
                 sceneFollowupRef={sceneTwoPanelRef}
                 onVideoReveal={() => setHasRevealedSceneOneVideo(true)}
                 onVideoComplete={completeSceneOneVideo}
-                onNext={() => setScreen('scene3')}
+                onNext={() => {
+                  void openSceneThree()
+                }}
               />
             </div>
           )}
@@ -1771,6 +1829,7 @@ function BatteryIndicator({ status }: BatteryIndicatorProps) {
 }
 
 type SceneOneProps = {
+  isPreparingNext: boolean
   isVideoComplete: boolean
   isVideoRevealed: boolean
   sceneFollowupRef: RefObject<HTMLDivElement | null>
@@ -1819,6 +1878,7 @@ function SceneZero({ onNext }: SceneZeroProps) {
 }
 
 function SceneOne({
+  isPreparingNext,
   isVideoComplete,
   isVideoRevealed,
   sceneFollowupRef,
@@ -2129,7 +2189,7 @@ function SceneOne({
         )}
         {isVideoComplete && (
           <div className="scene-one-followup" ref={sceneFollowupRef}>
-            <SceneTwoContent onNext={onNext} />
+            <SceneTwoContent isPreparingNext={isPreparingNext} onNext={onNext} />
           </div>
         )}
       </div>
@@ -2138,10 +2198,11 @@ function SceneOne({
 }
 
 type SceneTwoProps = {
+  isPreparingNext: boolean
   onNext: () => void
 }
 
-function SceneTwoContent({ onNext }: SceneTwoProps) {
+function SceneTwoContent({ isPreparingNext, onNext }: SceneTwoProps) {
   return (
     <>
       <div className="scene-two-content">
@@ -2226,8 +2287,13 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
       </div>
       <button
         className="primary-next scene-two-next"
+        disabled={isPreparingNext}
         type="button"
         onClick={() => {
+          if (isPreparingNext) {
+            return
+          }
+
           playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
           onNext()
         }}
@@ -2308,7 +2374,7 @@ function SceneThree({
                 }}
               >
                 <span className="suspect-frame">
-                  <img src={photo.src} alt={photo.label} />
+                  <img src={photo.src} alt={photo.label} decoding="sync" loading="eager" />
                 </span>
                 <span className="selection-pointer-slot" aria-hidden="true">
                   {isSelected && (
@@ -2375,7 +2441,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
         aria-hidden="true"
       />
       <span className="submitted-file-photo-frame">
-        <img className="submitted-file-photo" src={photo.src} alt={photo.label} />
+        <img className="submitted-file-photo" src={photo.src} alt={photo.label} decoding="sync" loading="eager" />
       </span>
       <span className="submitted-file-name">{photo.label}</span>
       <button

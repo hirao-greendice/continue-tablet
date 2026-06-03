@@ -1212,6 +1212,11 @@ button:focus-visible {
   transform: translateX(-50%);
 }
 
+.scene-two-next:disabled {
+  cursor: default;
+  opacity: 0.82;
+}
+
 .scene-two-next-art {
   display: block;
   width: 100%;

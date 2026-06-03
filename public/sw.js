@@ -1,4 +1,4 @@
-const CACHE_NAME = 'continue-tablet-v15'
+const CACHE_NAME = 'continue-tablet-v16'
 const STATIC_IMAGE_VERSION = 'images-20260603-1'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260603-2'
 
@@ -232,7 +232,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   const isStaticAsset =
-    url.origin === self.location.origin &&
+    (url.origin === self.location.origin ||
+      event.request.destination === 'image') &&
     ['script', 'style', 'font', 'image', 'manifest'].includes(
       event.request.destination,
     )
