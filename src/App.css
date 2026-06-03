@@ -792,7 +792,7 @@ button:focus-visible {
     drop-shadow(0 22px 28px rgba(102, 74, 35, 0.22))
     drop-shadow(0 0 28px rgba(255, 244, 196, 0.55));
   pointer-events: none;
-  transform: translateY(-70px);
+  transform: translate(-30px, -70px);
 }
 
 .scene-zero-message {
