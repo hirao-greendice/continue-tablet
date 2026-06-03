@@ -181,7 +181,7 @@ const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
 const SLIDE_EXPORT_CROP = {
   x: 0,
-  y: 250,
+  y: 265,
   width: STAGE_WIDTH,
   height: 1420,
 }
