@@ -1,5 +1,5 @@
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { db, storage } from './firebase'
 
 export type StoredPhotoHistoryItem = {
@@ -47,6 +47,25 @@ export async function uploadCurrentPhoto(slotId: number, file: File) {
   return versionedUrl.toString()
 }
 
+export async function deletePhotoFiles(urls: string[]) {
+  const paths = Array.from(new Set(urls))
+    .map(getPhotoStoragePath)
+    .filter((path): path is string => Boolean(path))
+
+  if (paths.length === 0) {
+    return
+  }
+
+  const results = await Promise.allSettled(
+    paths.map((path) => deleteObject(ref(storage, path))),
+  )
+  const failedResults = results.filter((result) => result.status === 'rejected')
+
+  if (failedResults.length > 0) {
+    console.warn('Failed to delete old photo files', failedResults)
+  }
+}
+
 export async function saveCurrentPhotos(photos: StoredPhoto[]) {
   await setDoc(
     currentPhotosRef,
@@ -56,4 +75,22 @@ export async function saveCurrentPhotos(photos: StoredPhoto[]) {
     },
     { merge: true },
   )
+}
+
+function getPhotoStoragePath(src: string) {
+  try {
+    const url = new URL(src)
+    const objectPrefix = '/o/'
+    const objectStart = url.pathname.indexOf(objectPrefix)
+
+    if (objectStart === -1) {
+      return null
+    }
+
+    const path = decodeURIComponent(url.pathname.slice(objectStart + objectPrefix.length))
+
+    return path.startsWith('photos/history/') ? path : null
+  } catch {
+    return null
+  }
 }

@@ -12,6 +12,7 @@ import Cropper, { type Area, type Point } from 'react-easy-crop'
 import './App.css'
 import { createCroppedPhotoFile } from './cropImage'
 import {
+  deletePhotoFiles,
   saveCurrentPhotos,
   subscribeCurrentPhotos,
   uploadCurrentPhoto,
@@ -989,6 +990,7 @@ function App() {
     try {
       const src = await uploadCurrentPhoto(slotId, file)
       const updatedAt = Date.now()
+      const previousPhotos = photos
       const nextPhotos = photos.map((photo) =>
         photo.id === slotId
           ? {
@@ -1002,6 +1004,7 @@ function App() {
 
       setPhotos(nextPhotos)
       await saveCurrentPhotos(toStoredPhotos(nextPhotos))
+      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
       setUploadStatus('更新しました')
     } catch (error) {
       console.error('Failed to update photo', error)
@@ -1010,6 +1013,7 @@ function App() {
   }
 
   const selectPhotoHistory = async (slotId: number, historyItem: PhotoHistoryItem) => {
+    const previousPhotos = photos
     const nextPhotos = photos.map((photo) =>
       photo.id === slotId
         ? {
@@ -1023,6 +1027,7 @@ function App() {
 
     setPhotos(nextPhotos)
     await saveCurrentPhotos(toStoredPhotos(nextPhotos))
+    await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
   }
 
   const submitAnswer = async () => {
@@ -1263,6 +1268,25 @@ function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
     src: photo.src,
     updatedAt: photo.updatedAt,
   }))
+}
+
+function getUnreferencedPhotoSrcs(previousPhotos: PhotoSlot[], nextPhotos: PhotoSlot[]) {
+  const nextSrcs = getPhotoSrcs(nextPhotos)
+
+  return Array.from(getPhotoSrcs(previousPhotos)).filter((src) => !nextSrcs.has(src))
+}
+
+function getPhotoSrcs(photos: PhotoSlot[]) {
+  const srcs = new Set<string>()
+
+  photos.forEach((photo) => {
+    srcs.add(photo.src)
+    photo.history?.forEach((historyItem) => {
+      srcs.add(historyItem.src)
+    })
+  })
+
+  return srcs
 }
 
 function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
@@ -1963,6 +1987,13 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
             ちょうど<strong>ゲームが終わる瞬間</strong>。
             <br />
             <strong>チャンスは1回</strong>だけだよ！
+          </p>
+        </div>
+        <div className="scene-two-text-block">
+          <p>
+            <strong>この内容は別の紙にまとめておいたから</strong>
+            <br />
+            <strong>ひっくり返して確認してね！</strong>
           </p>
         </div>
       </div>
