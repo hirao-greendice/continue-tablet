@@ -1594,6 +1594,13 @@ button:focus-visible {
   background: #ddd;
 }
 
+.photo-editor > div {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  min-width: 0;
+}
+
 .photo-editor h2 {
   min-height: 76px;
   margin: 0 0 12px;
@@ -1660,21 +1667,25 @@ button:focus-visible {
 
 .photo-history {
   display: grid;
-  grid-template-columns: repeat(5, 72px);
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   justify-content: center;
-  gap: 10px;
+  width: min(100%, 680px);
+  gap: 14px;
   margin-top: 22px;
+  padding: 16px;
+  border: 3px solid #d54397;
+  background: #fff7fc;
 }
 
 .photo-history-item {
   position: relative;
   display: grid;
-  gap: 6px;
-  padding: 6px;
+  gap: 8px;
+  padding: 8px;
   border: 3px solid #b8b8b8;
   background: #eee;
   color: #111;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
   line-height: 1.05;
 }
@@ -1711,7 +1722,7 @@ button:focus-visible {
 
 .photo-history-confirm {
   grid-column: 1 / -1;
-  width: min(100%, 280px);
+  width: min(100%, 360px);
   height: 70px;
   justify-self: center;
   border: 0;
