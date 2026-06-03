@@ -1784,7 +1784,7 @@ function SceneOne({
             <br />
             <strong>ボクが少し取り憑かせてもらっただけなので、</strong>
             <br />
-            安心してボクの天啓を聞いてほしい。
+            安心してボクの天啓を読んでほしい。
           </p>
           <p>
             ボクは<strong className="scene-alert-emphasis">天使</strong>。
