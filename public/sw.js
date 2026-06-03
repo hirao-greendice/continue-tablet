@@ -1,4 +1,4 @@
-const CACHE_NAME = 'continue-tablet-v12'
+const CACHE_NAME = 'continue-tablet-v13'
 const STATIC_IMAGE_VERSION = 'images-20260602-2'
 
 function versionedAsset(path) {
@@ -36,7 +36,7 @@ async function warmAssetCache() {
       const request = new Request(asset)
       const response = await fetch(request)
 
-      if (response.ok) {
+      if (response.status === 200) {
         await cache.put(request, response)
       }
     }),
@@ -51,7 +51,7 @@ self.addEventListener('install', (event) => {
           const request = new Request(asset)
           const response = await fetch(request)
 
-          if (response.ok) {
+          if (response.status === 200) {
             await cache.put(request, response)
           }
         }),
@@ -113,7 +113,7 @@ async function getCachedVideoResponse(url) {
 
   const response = await fetch(cacheRequest)
 
-  if (response.ok) {
+  if (response.status === 200) {
     await cache.put(cacheRequest, response.clone())
     const cachedRequests = await cache.keys()
 
@@ -212,7 +212,9 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((response) => {
           const copy = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put('./', copy))
+          if (response.status === 200) {
+            caches.open(CACHE_NAME).then((cache) => cache.put('./', copy))
+          }
           return response
         })
         .catch(() => caches.match('./')),
@@ -229,9 +231,7 @@ self.addEventListener('fetch', (event) => {
     url.origin === self.location.origin &&
     event.request.destination === 'audio'
 
-  const isRemoteImage = event.request.destination === 'image'
-
-  if (!isStaticAsset && !isStaticAudio && !isRemoteImage) {
+  if (!isStaticAsset && !isStaticAudio) {
     return
   }
 
@@ -242,7 +242,7 @@ self.addEventListener('fetch', (event) => {
       }
 
       return fetch(event.request).then((response) => {
-        if (response.ok || response.type === 'opaque') {
+        if (response.status === 200 || response.type === 'opaque') {
           const copy = response.clone()
           caches.open(CACHE_NAME).then(async (cache) => {
             await cache.put(event.request, copy)

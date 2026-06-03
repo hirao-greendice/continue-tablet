@@ -41,6 +41,7 @@ import { realtimeDatabaseUrl } from './firebase'
 type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
 type DeviceRole = 'unknown' | 'master' | 'player'
 type PhotoSlot = {
+  exportSrc?: string
   history?: PhotoHistoryItem[]
   id: number
   label: string
@@ -48,6 +49,7 @@ type PhotoSlot = {
   updatedAt?: number
 }
 type PhotoHistoryItem = {
+  exportSrc?: string
   src: string
   updatedAt?: number
 }
@@ -82,6 +84,7 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/erabinaosu_button.png',
   'images/goutou.jpeg',
   'images/hannnin.jpg',
+  'images/konohito.png',
   'images/play.png',
   'images/teisyutu_botton.png',
   'images/tenkei.png',
@@ -167,15 +170,28 @@ const SUSPECT_ROLE_LABELS: Record<number, string> = {
   4: '刑事',
 }
 
+const DEFAULT_PHOTO_SRC = versionedAsset('images/konohito.png', STATIC_IMAGE_VERSION)
+
 const defaultPhotos: PhotoSlot[] = [
-  { id: 1, label: SUSPECT_LABELS[1], src: publicAsset('photos/team-photo-1.jpg') },
-  { id: 2, label: SUSPECT_LABELS[2], src: publicAsset('photos/team-photo-2.jpg') },
-  { id: 3, label: SUSPECT_LABELS[3], src: publicAsset('photos/team-photo-3.jpg') },
-  { id: 4, label: SUSPECT_LABELS[4], src: publicAsset('photos/team-photo-4.jpg') },
+  { exportSrc: DEFAULT_PHOTO_SRC, id: 1, label: SUSPECT_LABELS[1], src: DEFAULT_PHOTO_SRC },
+  { exportSrc: DEFAULT_PHOTO_SRC, id: 2, label: SUSPECT_LABELS[2], src: DEFAULT_PHOTO_SRC },
+  { exportSrc: DEFAULT_PHOTO_SRC, id: 3, label: SUSPECT_LABELS[3], src: DEFAULT_PHOTO_SRC },
+  { exportSrc: DEFAULT_PHOTO_SRC, id: 4, label: SUSPECT_LABELS[4], src: DEFAULT_PHOTO_SRC },
 ]
 
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
+const SLIDE_EXPORT_CROP = {
+  x: 0,
+  y: 250,
+  width: STAGE_WIDTH,
+  height: 1420,
+}
+const SLIDE_EXPORT_QUALITY = 0.92
+const SLIDE_EXPORT_PHOTO_WIDTH = 640
+const SLIDE_EXPORT_PHOTO_HEIGHT = Math.round(
+  SLIDE_EXPORT_PHOTO_WIDTH * (PHOTO_ASPECT_HEIGHT / PHOTO_ASPECT_WIDTH),
+)
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
 const SCENE_VIDEO_SCROLL_DURATION_MS = 1000
@@ -281,6 +297,275 @@ function getStoredDeviceRole(): DeviceRole {
   return storedRole === 'master' || storedRole === 'player' ? storedRole : 'unknown'
 }
 
+function isCrossOriginUrl(src: string) {
+  const url = new URL(src, window.location.href)
+
+  return url.protocol !== 'data:' && url.protocol !== 'blob:' && url.origin !== window.location.origin
+}
+
+function getPhotoExportSource(photo: PhotoSlot) {
+  if (photo.exportSrc) {
+    return photo.exportSrc
+  }
+
+  return photo.src
+}
+
+function hasCrossOriginPhotosWithoutExportSource(photos: PhotoSlot[]) {
+  return photos.some((photo) => !photo.exportSrc && isCrossOriginUrl(photo.src))
+}
+
+function loadCanvasImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image()
+
+    if (isCrossOriginUrl(src)) {
+      image.crossOrigin = 'anonymous'
+    }
+
+    image.addEventListener('load', () => resolve(image), { once: true })
+    image.addEventListener('error', () => reject(new Error(`Failed to load image: ${src}`)), {
+      once: true,
+    })
+    image.src = src
+  })
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
+  return new Promise<Blob>((resolve, reject) => {
+    try {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob)
+            return
+          }
+
+          reject(new Error('Failed to create image blob'))
+        },
+        type,
+        quality,
+      )
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+
+    reader.addEventListener('load', () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result)
+        return
+      }
+
+      reject(new Error('Failed to read image data'))
+    })
+    reader.addEventListener('error', () => reject(reader.error ?? new Error('Failed to read image data')))
+    reader.readAsDataURL(blob)
+  })
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = url
+  link.download = filename
+  document.body.append(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function drawImageCover(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight)
+  const sourceWidth = width / scale
+  const sourceHeight = height / scale
+  const sourceX = (image.naturalWidth - sourceWidth) / 2
+  const sourceY = (image.naturalHeight - sourceHeight) / 2
+
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height)
+}
+
+function drawImageContain(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight)
+  const drawWidth = image.naturalWidth * scale
+  const drawHeight = image.naturalHeight * scale
+  const drawX = x + (width - drawWidth) / 2
+  const drawY = y + (height - drawHeight) / 2
+
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight)
+}
+
+function drawPhotoPlaceholder(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  context.save()
+  context.fillStyle = '#d8d8d8'
+  context.fillRect(x, y, width, height)
+  context.strokeStyle = '#777'
+  context.lineWidth = 8
+  context.beginPath()
+  context.moveTo(x + width * 0.18, y + height * 0.18)
+  context.lineTo(x + width * 0.82, y + height * 0.82)
+  context.moveTo(x + width * 0.82, y + height * 0.18)
+  context.lineTo(x + width * 0.18, y + height * 0.82)
+  context.stroke()
+  context.fillStyle = '#555'
+  context.font = '900 34px "Yu Gothic", "YuGothic", "Hiragino Sans", Meiryo, sans-serif'
+  context.textAlign = 'center'
+  context.textBaseline = 'middle'
+  context.fillText('NO PHOTO', x + width / 2, y + height / 2)
+  context.restore()
+}
+
+function drawSceneThreeLabel(
+  context: CanvasRenderingContext2D,
+  label: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const [roleLabel, castLabel] = label.split('\n')
+  const lines = castLabel ? [roleLabel, castLabel] : [roleLabel]
+  const lineHeight = 35
+  const totalHeight = lines.length * lineHeight + Math.max(lines.length - 1, 0) * 3
+  let lineY = y + (height - totalHeight) / 2
+
+  context.save()
+  context.font = '900 34px "Yu Gothic", "YuGothic", "Hiragino Sans", Meiryo, sans-serif'
+  context.textAlign = 'center'
+  context.textBaseline = 'top'
+  context.shadowColor = 'rgba(255, 235, 170, 0.52)'
+  context.shadowBlur = 5
+
+  lines.forEach((line, index) => {
+    context.fillStyle = index === 0 ? '#d54397' : '#8a1b12'
+    context.fillText(line, x + width / 2, lineY, width)
+    lineY += lineHeight + 3
+  })
+
+  context.restore()
+}
+
+async function createExportPhotoDataUrl(file: File) {
+  const objectUrl = URL.createObjectURL(file)
+
+  try {
+    const image = await loadCanvasImage(objectUrl)
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      throw new Error('Canvas is not supported')
+    }
+
+    canvas.width = SLIDE_EXPORT_PHOTO_WIDTH
+    canvas.height = SLIDE_EXPORT_PHOTO_HEIGHT
+    drawImageCover(context, image, 0, 0, canvas.width, canvas.height)
+
+    const blob = await canvasToBlob(canvas, 'image/jpeg', 0.82)
+
+    return blobToDataUrl(blob)
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
+async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
+  await document.fonts?.ready
+
+  const [backgroundImage, backButtonImage, submitButtonImage, ...photoImages] = await Promise.all([
+    loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
+    loadCanvasImage(versionedAsset('images/back.webp', STATIC_IMAGE_VERSION)),
+    loadCanvasImage(versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)),
+    ...photos.map((photo) => loadCanvasImage(getPhotoExportSource(photo))),
+  ])
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+
+  canvas.width = SLIDE_EXPORT_CROP.width
+  canvas.height = SLIDE_EXPORT_CROP.height
+
+  if (!context) {
+    throw new Error('Canvas is not supported')
+  }
+
+  context.save()
+  context.translate(-SLIDE_EXPORT_CROP.x, -SLIDE_EXPORT_CROP.y)
+  context.fillStyle = '#020817'
+  context.fillRect(0, 0, STAGE_WIDTH, STAGE_HEIGHT)
+  drawImageCover(context, backgroundImage, 0, 0, STAGE_WIDTH, STAGE_HEIGHT)
+
+  photos.forEach((photo, index) => {
+    const column = index % 2
+    const row = Math.floor(index / 2)
+    const cardX = 120 + column * (442 + 88)
+    const cardY = 470 + row * (378 / PHOTO_ASPECT_RATIO + 14 + 86 + 36)
+    const frameX = cardX + 32
+    const frameY = cardY
+    const frameWidth = 378
+    const frameHeight = frameWidth / PHOTO_ASPECT_RATIO
+    const labelY = frameY + frameHeight + 14
+    const photoImage = photoImages[index]
+
+    context.save()
+    context.shadowColor = 'rgba(96, 54, 28, 0.24)'
+    context.shadowBlur = 18
+    context.shadowOffsetX = 9
+    context.shadowOffsetY = 12
+    context.fillStyle = 'rgba(255, 255, 255, 0.01)'
+    context.fillRect(frameX, frameY, frameWidth, frameHeight)
+    context.restore()
+
+    if (photoImage) {
+      drawImageCover(context, photoImage, frameX, frameY, frameWidth, frameHeight)
+    } else {
+      drawPhotoPlaceholder(context, frameX, frameY, frameWidth, frameHeight)
+    }
+
+    context.save()
+    context.strokeStyle = 'rgba(255, 255, 255, 0.8)'
+    context.lineWidth = 2
+    context.strokeRect(frameX + 1, frameY + 1, frameWidth - 2, frameHeight - 2)
+    context.restore()
+
+    drawSceneThreeLabel(context, photo.label, cardX, labelY, 442, 86)
+  })
+
+  drawImageContain(context, backButtonImage, 40, 1670, 204, 155)
+  context.save()
+  context.globalAlpha = 0.52
+  drawImageContain(context, submitButtonImage, 310, 1682, 581, 129)
+  context.restore()
+  context.restore()
+
+  return canvasToBlob(canvas, 'image/jpeg', SLIDE_EXPORT_QUALITY)
+}
+
 function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [deviceRole, setDeviceRole] = useState<DeviceRole>(getStoredDeviceRole)
@@ -295,6 +580,8 @@ function App() {
   const [realtimeError, setRealtimeError] = useState('')
   const [gameEnded, setGameEnded] = useState(false)
   const [uploadStatus, setUploadStatus] = useState('')
+  const [isSlideExporting, setIsSlideExporting] = useState(false)
+  const [slideExportStatus, setSlideExportStatus] = useState('')
   const [hasRevealedSceneOneVideo, setHasRevealedSceneOneVideo] = useState(false)
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
@@ -755,13 +1042,17 @@ function App() {
     setUploadStatus('アップロード中...')
 
     try {
-      const src = await uploadCurrentPhoto(slotId, file)
+      const [src, exportSrc] = await Promise.all([
+        uploadCurrentPhoto(slotId, file),
+        createExportPhotoDataUrl(file),
+      ])
       const updatedAt = Date.now()
       const nextPhotos = photos.map((photo) =>
         photo.id === slotId
           ? {
               ...photo,
-              history: getPhotoHistory({ ...photo, src, updatedAt }),
+              exportSrc,
+              history: getPhotoHistory({ ...photo, exportSrc, src, updatedAt }),
               src,
               updatedAt,
             }
@@ -781,7 +1072,13 @@ function App() {
       photo.id === slotId
         ? {
             ...photo,
-            history: getPhotoHistory({ ...photo, src: historyItem.src, updatedAt: historyItem.updatedAt }),
+            exportSrc: historyItem.exportSrc,
+            history: getPhotoHistory({
+              ...photo,
+              exportSrc: historyItem.exportSrc,
+              src: historyItem.src,
+              updatedAt: historyItem.updatedAt,
+            }),
             src: historyItem.src,
             updatedAt: historyItem.updatedAt,
           }
@@ -842,6 +1139,32 @@ function App() {
     setScreen('photos')
   }
 
+  const exportSlideImage = async () => {
+    if (isSlideExporting) {
+      return
+    }
+
+    setIsSlideExporting(true)
+    setSlideExportStatus('出力中...')
+
+    try {
+      const blob = await createSceneThreeSlideBlob(photos)
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+
+      downloadBlob(blob, `scene3-slide-${timestamp}.jpg`)
+      setSlideExportStatus('出力しました')
+    } catch (error) {
+      console.error('Failed to export scene 3 slide image', error)
+      setSlideExportStatus(
+        hasCrossOriginPhotosWithoutExportSource(photos)
+          ? '古い写真URLはCORSで出力できません'
+          : '出力に失敗しました',
+      )
+    } finally {
+      setIsSlideExporting(false)
+    }
+  }
+
   const isPlayerGameEnded =
     gameEnded &&
     deviceRole === 'player' &&
@@ -867,7 +1190,10 @@ function App() {
           {screen === 'home' && (
             <HomeScreen
               photos={photos}
+              isSlideExporting={isSlideExporting}
+              slideExportStatus={slideExportStatus}
               teams={teamStates}
+              onExportSlideImage={exportSlideImage}
               onStartTeam={startTeam}
               onOpenMaster={openMaster}
               onOpenPhotos={openPhotos}
@@ -983,6 +1309,7 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
     return storedPhoto
       ? {
           ...photo,
+          exportSrc: storedPhoto.exportSrc,
           history: getPhotoHistory(storedPhoto),
           src: storedPhoto.src,
           updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhoto.src),
@@ -993,18 +1320,22 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
 
 function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   return photos.map((photo) => ({
-    history: photo.history,
+    exportSrc: photo.exportSrc,
+    history: photo.history?.map((historyItem) => ({
+      src: historyItem.src,
+      updatedAt: historyItem.updatedAt,
+    })),
     id: photo.id,
     src: photo.src,
     updatedAt: photo.updatedAt,
   }))
 }
 
-function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
+function getPhotoHistory(photo: Pick<PhotoSlot, 'exportSrc' | 'history' | 'src' | 'updatedAt'>) {
   const history = photo.history ?? []
   const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(photo.src)
   const items = [
-    { src: photo.src, updatedAt: currentUpdatedAt },
+    { exportSrc: photo.exportSrc, src: photo.src, updatedAt: currentUpdatedAt },
     ...history,
   ]
   const seen = new Set<string>()
@@ -1171,14 +1502,26 @@ function SecretMenu({ teamNumber, onClose, onExitFullscreen, onGoHome, onReload 
 }
 
 type HomeScreenProps = {
+  isSlideExporting: boolean
   photos: PhotoSlot[]
+  slideExportStatus: string
   teams: TeamState[]
+  onExportSlideImage: () => void
   onOpenMaster: () => void
   onStartTeam: (team: number) => void
   onOpenPhotos: () => void
 }
 
-function HomeScreen({ photos, teams, onOpenMaster, onStartTeam, onOpenPhotos }: HomeScreenProps) {
+function HomeScreen({
+  isSlideExporting,
+  photos,
+  slideExportStatus,
+  teams,
+  onExportSlideImage,
+  onOpenMaster,
+  onStartTeam,
+  onOpenPhotos,
+}: HomeScreenProps) {
   const batteryStatus = useBatteryStatus()
   const teamsByNumber = useMemo(
     () => new Map(teams.map((team) => [team.team, team])),
@@ -1227,9 +1570,18 @@ function HomeScreen({ photos, teams, onOpenMaster, onStartTeam, onOpenPhotos }: 
         <button className="home-action-button" type="button" onClick={onOpenMaster}>
           MASTER
         </button>
+        <button
+          className="home-action-button home-action-slide"
+          disabled={isSlideExporting}
+          type="button"
+          onClick={onExportSlideImage}
+        >
+          スライド用画像
+        </button>
         <button className="home-action-button" type="button" onClick={onOpenPhotos}>
           写真撮影
         </button>
+        {slideExportStatus && <p className="home-action-status">{slideExportStatus}</p>}
       </div>
     </section>
   )

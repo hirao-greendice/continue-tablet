@@ -3,11 +3,13 @@ import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { db, storage } from './firebase'
 
 export type StoredPhotoHistoryItem = {
+  exportSrc?: string
   src: string
   updatedAt?: number
 }
 
 export type StoredPhoto = {
+  exportSrc?: string
   history?: StoredPhotoHistoryItem[]
   id: number
   src: string
