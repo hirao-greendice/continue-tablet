@@ -1093,7 +1093,7 @@ function App() {
       console.error('Failed to export scene 3 slide image', error)
       setSlideExportStatus(
         hasCrossOriginPhotos(photos)
-          ? '古い写真URLはCORSで出力できません'
+          ? 'Firebase StorageのCORS設定を確認してください'
           : '出力に失敗しました',
       )
     } finally {
