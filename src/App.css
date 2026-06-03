@@ -1812,6 +1812,110 @@ button:focus-visible {
   opacity: 0.58;
 }
 
+@media (min-width: 761px) and (max-width: 1280px) and (min-height: 1000px) {
+  .photo-manager-inner {
+    width: min(1080px, calc(100% - 72px));
+    padding-top: 96px;
+    padding-bottom: 56px;
+  }
+
+  .photo-manager h1 {
+    font-size: 56px;
+  }
+
+  .photo-manager p {
+    margin: 14px 0 28px;
+    font-size: 24px;
+  }
+
+  .upload-status {
+    margin: -10px 0 22px;
+    font-size: 24px;
+  }
+
+  .photo-editor-list {
+    gap: 24px;
+  }
+
+  .photo-editor {
+    gap: 18px;
+    padding: 18px 16px 22px;
+  }
+
+  .photo-editor img {
+    width: min(100%, 250px);
+  }
+
+  .photo-editor h2 {
+    min-height: 64px;
+    margin-bottom: 10px;
+    font-size: 25px;
+  }
+
+  .photo-manager .photo-updated-at {
+    margin-bottom: 16px;
+    font-size: 18px;
+  }
+
+  .photo-input-button,
+  .photo-history-toggle {
+    width: min(100%, 240px);
+    height: 72px;
+  }
+
+  .photo-input-button::before,
+  .photo-history-toggle::before {
+    font-size: 28px;
+  }
+
+  .photo-history {
+    grid-template-columns: repeat(5, 62px);
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .photo-history-item {
+    gap: 5px;
+    padding: 5px;
+    border-width: 2px;
+    font-size: 11px;
+  }
+
+  .photo-history-item[data-selected='true']::after {
+    top: 4px;
+    right: 4px;
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+
+  .photo-history-confirm {
+    width: min(100%, 240px);
+    height: 62px;
+    font-size: 24px;
+  }
+
+  .crop-panel {
+    width: min(1040px, calc(100vw - 64px));
+    height: min(1760px, calc(100dvh - 64px));
+    gap: 22px;
+    padding: 34px;
+  }
+
+  .crop-header h2 {
+    font-size: 36px;
+  }
+
+  .crop-cancel {
+    width: 190px;
+    height: 76px;
+    font-size: 28px;
+  }
+
+  .crop-area {
+    width: min(720px, calc((100dvh - 310px) * var(--photo-aspect-ratio, 0.8)), calc(100vw - 132px));
+  }
+}
+
 @media (max-width: 1100px) {
   .photo-manager-inner {
     width: min(820px, calc(100% - 56px));

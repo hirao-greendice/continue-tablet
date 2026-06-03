@@ -92,7 +92,7 @@ const PRELOAD_SOUND_ASSETS = [
   { path: CLICK_SOUND, volume: CLICK_SOUND_VOLUME, poolSize: 4 },
   { path: SUBMIT_SOUND, volume: SUBMIT_SOUND_VOLUME, poolSize: 2 },
 ]
-const PHOTO_HISTORY_LIMIT = 5
+const PHOTO_HISTORY_LIMIT = 10
 const soundPools = new Map<string, HTMLAudioElement[]>()
 
 function clampVolume(volume: number) {
