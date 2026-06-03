@@ -1998,7 +1998,7 @@ function SceneTwoContent({ onNext }: SceneTwoProps) {
           <p>
             <strong>この内容は一緒に渡した紙にまとめたから、</strong>
             <br />
-            <strong>開けて確認してね！</strong>
+            <strong>開いて確認してね！</strong>
           </p>
         </div>
       </div>
