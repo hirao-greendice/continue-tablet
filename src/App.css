@@ -2555,8 +2555,8 @@ button:focus-visible {
 
 .photo-preview-frame img {
   display: block;
-  width: min(100%, 720px, calc((100dvh - 320px) * var(--photo-aspect-ratio, 0.8)));
-  max-height: calc(100dvh - 320px);
+  width: min(100%, 760px);
+  max-height: none;
   aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
   border: 5px solid #151a21;
   border-radius: 8px;
@@ -2756,8 +2756,8 @@ button:focus-visible {
   }
 
   .photo-preview-frame img {
-    width: min(100%, 650px, calc((100dvh - 310px) * var(--photo-aspect-ratio, 0.8)));
-    max-height: calc(100dvh - 310px);
+    width: min(100%, 700px);
+    max-height: none;
   }
 }
 
@@ -2948,6 +2948,6 @@ button:focus-visible {
 
 @media (min-width: 1281px) and (min-height: 1050px) {
   .photo-preview-frame img {
-    width: min(100%, 780px, calc((100dvh - 330px) * var(--photo-aspect-ratio, 0.8)));
+    width: min(100%, 820px);
   }
 }
