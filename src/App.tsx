@@ -41,7 +41,6 @@ import { realtimeDatabaseUrl } from './firebase'
 type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
 type DeviceRole = 'unknown' | 'master' | 'player'
 type PhotoSlot = {
-  exportSrc?: string
   history?: PhotoHistoryItem[]
   id: number
   label: string
@@ -49,7 +48,6 @@ type PhotoSlot = {
   updatedAt?: number
 }
 type PhotoHistoryItem = {
-  exportSrc?: string
   src: string
   updatedAt?: number
 }
@@ -173,10 +171,10 @@ const SUSPECT_ROLE_LABELS: Record<number, string> = {
 const DEFAULT_PHOTO_SRC = versionedAsset('images/konohito.png', STATIC_IMAGE_VERSION)
 
 const defaultPhotos: PhotoSlot[] = [
-  { exportSrc: DEFAULT_PHOTO_SRC, id: 1, label: SUSPECT_LABELS[1], src: DEFAULT_PHOTO_SRC },
-  { exportSrc: DEFAULT_PHOTO_SRC, id: 2, label: SUSPECT_LABELS[2], src: DEFAULT_PHOTO_SRC },
-  { exportSrc: DEFAULT_PHOTO_SRC, id: 3, label: SUSPECT_LABELS[3], src: DEFAULT_PHOTO_SRC },
-  { exportSrc: DEFAULT_PHOTO_SRC, id: 4, label: SUSPECT_LABELS[4], src: DEFAULT_PHOTO_SRC },
+  { id: 1, label: SUSPECT_LABELS[1], src: DEFAULT_PHOTO_SRC },
+  { id: 2, label: SUSPECT_LABELS[2], src: DEFAULT_PHOTO_SRC },
+  { id: 3, label: SUSPECT_LABELS[3], src: DEFAULT_PHOTO_SRC },
+  { id: 4, label: SUSPECT_LABELS[4], src: DEFAULT_PHOTO_SRC },
 ]
 
 const STAGE_WIDTH = 1200
@@ -188,10 +186,6 @@ const SLIDE_EXPORT_CROP = {
   height: 1420,
 }
 const SLIDE_EXPORT_QUALITY = 0.92
-const SLIDE_EXPORT_PHOTO_WIDTH = 640
-const SLIDE_EXPORT_PHOTO_HEIGHT = Math.round(
-  SLIDE_EXPORT_PHOTO_WIDTH * (PHOTO_ASPECT_HEIGHT / PHOTO_ASPECT_WIDTH),
-)
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
 const SCENE_VIDEO_SCROLL_DURATION_MS = 1000
@@ -303,16 +297,8 @@ function isCrossOriginUrl(src: string) {
   return url.protocol !== 'data:' && url.protocol !== 'blob:' && url.origin !== window.location.origin
 }
 
-function getPhotoExportSource(photo: PhotoSlot) {
-  if (photo.exportSrc) {
-    return photo.exportSrc
-  }
-
-  return photo.src
-}
-
-function hasCrossOriginPhotosWithoutExportSource(photos: PhotoSlot[]) {
-  return photos.some((photo) => !photo.exportSrc && isCrossOriginUrl(photo.src))
+function hasCrossOriginPhotos(photos: PhotoSlot[]) {
+  return photos.some((photo) => isCrossOriginUrl(photo.src))
 }
 
 function loadCanvasImage(src: string) {
@@ -349,23 +335,6 @@ function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) 
     } catch (error) {
       reject(error)
     }
-  })
-}
-
-function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-
-    reader.addEventListener('load', () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result)
-        return
-      }
-
-      reject(new Error('Failed to read image data'))
-    })
-    reader.addEventListener('error', () => reject(reader.error ?? new Error('Failed to read image data')))
-    reader.readAsDataURL(blob)
   })
 }
 
@@ -471,39 +440,6 @@ function drawSceneThreeLabel(
   context.restore()
 }
 
-async function createExportPhotoDataUrl(file: File) {
-  const objectUrl = URL.createObjectURL(file)
-
-  try {
-    const image = await loadCanvasImage(objectUrl)
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
-
-    if (!context) {
-      throw new Error('Canvas is not supported')
-    }
-
-    canvas.width = SLIDE_EXPORT_PHOTO_WIDTH
-    canvas.height = SLIDE_EXPORT_PHOTO_HEIGHT
-    drawImageCover(context, image, 0, 0, canvas.width, canvas.height)
-
-    const blob = await canvasToBlob(canvas, 'image/jpeg', 0.82)
-
-    return blobToDataUrl(blob)
-  } finally {
-    URL.revokeObjectURL(objectUrl)
-  }
-}
-
-async function tryCreateExportPhotoDataUrl(file: File) {
-  try {
-    return await createExportPhotoDataUrl(file)
-  } catch (error) {
-    console.warn('Failed to create slide export photo data', error)
-    return undefined
-  }
-}
-
 async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
   await document.fonts?.ready
 
@@ -511,7 +447,7 @@ async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
     loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
     loadCanvasImage(versionedAsset('images/back.webp', STATIC_IMAGE_VERSION)),
     loadCanvasImage(versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)),
-    ...photos.map((photo) => loadCanvasImage(getPhotoExportSource(photo))),
+    ...photos.map((photo) => loadCanvasImage(photo.src)),
   ])
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
@@ -1051,40 +987,22 @@ function App() {
     setUploadStatus('アップロード中...')
 
     try {
-      const exportSrcPromise = tryCreateExportPhotoDataUrl(file)
       const src = await uploadCurrentPhoto(slotId, file)
-      const exportSrc = await exportSrcPromise
       const updatedAt = Date.now()
-      const createNextPhotos = (photoExportSrc: string | undefined) => photos.map((photo) =>
+      const nextPhotos = photos.map((photo) =>
         photo.id === slotId
           ? {
               ...photo,
-              exportSrc: photoExportSrc,
-              history: getPhotoHistory({ ...photo, exportSrc: photoExportSrc, src, updatedAt }),
+              history: getPhotoHistory({ ...photo, src, updatedAt }),
               src,
               updatedAt,
             }
           : photo,
       )
-      const nextPhotos = createNextPhotos(exportSrc)
 
-      try {
-        await saveCurrentPhotos(toStoredPhotos(nextPhotos))
-        setPhotos(nextPhotos)
-        setUploadStatus(exportSrc ? '更新しました' : '写真は更新しました（スライド用データなし）')
-      } catch (error) {
-        if (!exportSrc) {
-          throw error
-        }
-
-        console.warn('Retrying photo save without slide export data', error)
-
-        const fallbackPhotos = createNextPhotos(undefined)
-
-        await saveCurrentPhotos(toStoredPhotos(fallbackPhotos))
-        setPhotos(fallbackPhotos)
-        setUploadStatus('写真は更新しました（スライド用データなし）')
-      }
+      setPhotos(nextPhotos)
+      await saveCurrentPhotos(toStoredPhotos(nextPhotos))
+      setUploadStatus('更新しました')
     } catch (error) {
       console.error('Failed to update photo', error)
       setUploadStatus('アップロードに失敗しました')
@@ -1096,13 +1014,7 @@ function App() {
       photo.id === slotId
         ? {
             ...photo,
-            exportSrc: historyItem.exportSrc,
-            history: getPhotoHistory({
-              ...photo,
-              exportSrc: historyItem.exportSrc,
-              src: historyItem.src,
-              updatedAt: historyItem.updatedAt,
-            }),
+            history: getPhotoHistory({ ...photo, src: historyItem.src, updatedAt: historyItem.updatedAt }),
             src: historyItem.src,
             updatedAt: historyItem.updatedAt,
           }
@@ -1180,7 +1092,7 @@ function App() {
     } catch (error) {
       console.error('Failed to export scene 3 slide image', error)
       setSlideExportStatus(
-        hasCrossOriginPhotosWithoutExportSource(photos)
+        hasCrossOriginPhotos(photos)
           ? '古い写真URLはCORSで出力できません'
           : '出力に失敗しました',
       )
@@ -1333,7 +1245,6 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
     return storedPhoto
       ? {
           ...photo,
-          exportSrc: storedPhoto.exportSrc,
           history: getPhotoHistory(storedPhoto),
           src: storedPhoto.src,
           updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhoto.src),
@@ -1344,7 +1255,6 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
 
 function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   return photos.map((photo) => ({
-    exportSrc: photo.exportSrc,
     history: photo.history?.map((historyItem) => ({
       src: historyItem.src,
       updatedAt: historyItem.updatedAt,
@@ -1355,11 +1265,11 @@ function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   }))
 }
 
-function getPhotoHistory(photo: Pick<PhotoSlot, 'exportSrc' | 'history' | 'src' | 'updatedAt'>) {
+function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
   const history = photo.history ?? []
   const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(photo.src)
   const items = [
-    { exportSrc: photo.exportSrc, src: photo.src, updatedAt: currentUpdatedAt },
+    { src: photo.src, updatedAt: currentUpdatedAt },
     ...history,
   ]
   const seen = new Set<string>()
