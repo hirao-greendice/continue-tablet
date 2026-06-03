@@ -744,7 +744,7 @@ button:focus-visible {
   background-position: top center;
   background-repeat: no-repeat;
   background-size: 100% auto;
-  filter: brightness(0.72);
+  filter: brightness(0.84);
 }
 
 .back-button {
@@ -797,14 +797,15 @@ button:focus-visible {
 .scene-zero-message {
   width: 980px;
   max-width: calc(100% - 120px);
-  margin: -118px 0 34px;
+  margin: -118px 0 14px;
   color: #7b3f08;
   font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
     'Noto Serif JP', 'MS PMincho', serif;
-  font-size: 56px;
+  font-size: 64px;
   font-weight: 900;
   line-height: 1.28;
   text-align: center;
+  transform: translateY(-32px);
   text-shadow:
     0 2px 0 rgba(255, 255, 255, 0.85),
     0 0 12px rgba(255, 247, 206, 0.92),
