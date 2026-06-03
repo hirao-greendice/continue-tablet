@@ -777,7 +777,7 @@ button:focus-visible {
   grid-template-rows: 1fr auto auto;
   justify-items: center;
   align-items: center;
-  padding: 110px 0 420px;
+  padding: 110px 0 500px;
 }
 
 .scene-zero-letter {
@@ -792,20 +792,21 @@ button:focus-visible {
     drop-shadow(0 22px 28px rgba(102, 74, 35, 0.22))
     drop-shadow(0 0 28px rgba(255, 244, 196, 0.55));
   pointer-events: none;
+  transform: translateY(-70px);
 }
 
 .scene-zero-message {
   width: 980px;
   max-width: calc(100% - 120px);
-  margin: -118px 0 14px;
+  margin: -118px 0 -18px;
   color: #7b3f08;
   font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
     'Noto Serif JP', 'MS PMincho', serif;
-  font-size: 64px;
+  font-size: 76px;
   font-weight: 900;
   line-height: 1.28;
   text-align: center;
-  transform: translateY(-32px);
+  transform: translateY(-82px);
   text-shadow:
     0 2px 0 rgba(255, 255, 255, 0.85),
     0 0 12px rgba(255, 247, 206, 0.92),
