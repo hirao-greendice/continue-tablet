@@ -495,6 +495,15 @@ async function createExportPhotoDataUrl(file: File) {
   }
 }
 
+async function tryCreateExportPhotoDataUrl(file: File) {
+  try {
+    return await createExportPhotoDataUrl(file)
+  } catch (error) {
+    console.warn('Failed to create slide export photo data', error)
+    return undefined
+  }
+}
+
 async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
   await document.fonts?.ready
 
@@ -1042,27 +1051,42 @@ function App() {
     setUploadStatus('アップロード中...')
 
     try {
-      const [src, exportSrc] = await Promise.all([
-        uploadCurrentPhoto(slotId, file),
-        createExportPhotoDataUrl(file),
-      ])
+      const exportSrcPromise = tryCreateExportPhotoDataUrl(file)
+      const src = await uploadCurrentPhoto(slotId, file)
+      const exportSrc = await exportSrcPromise
       const updatedAt = Date.now()
-      const nextPhotos = photos.map((photo) =>
+      const createNextPhotos = (photoExportSrc: string | undefined) => photos.map((photo) =>
         photo.id === slotId
           ? {
               ...photo,
-              exportSrc,
-              history: getPhotoHistory({ ...photo, exportSrc, src, updatedAt }),
+              exportSrc: photoExportSrc,
+              history: getPhotoHistory({ ...photo, exportSrc: photoExportSrc, src, updatedAt }),
               src,
               updatedAt,
             }
           : photo,
       )
+      const nextPhotos = createNextPhotos(exportSrc)
 
-      setPhotos(nextPhotos)
-      await saveCurrentPhotos(toStoredPhotos(nextPhotos))
-      setUploadStatus('更新しました')
-    } catch {
+      try {
+        await saveCurrentPhotos(toStoredPhotos(nextPhotos))
+        setPhotos(nextPhotos)
+        setUploadStatus(exportSrc ? '更新しました' : '写真は更新しました（スライド用データなし）')
+      } catch (error) {
+        if (!exportSrc) {
+          throw error
+        }
+
+        console.warn('Retrying photo save without slide export data', error)
+
+        const fallbackPhotos = createNextPhotos(undefined)
+
+        await saveCurrentPhotos(toStoredPhotos(fallbackPhotos))
+        setPhotos(fallbackPhotos)
+        setUploadStatus('写真は更新しました（スライド用データなし）')
+      }
+    } catch (error) {
+      console.error('Failed to update photo', error)
       setUploadStatus('アップロードに失敗しました')
     }
   }
