@@ -2379,7 +2379,7 @@ function PhotoManager({
       <div className="photo-manager-inner">
         <h1>写真撮影</h1>
         <p>4枚の写真を選ぶと、最終解答の候補画像に反映されます。</p>
-        {uploadStatus && <div className="upload-status">{uploadStatus}</div>}
+        {uploadStatus && <div className="upload-status" role="status">{uploadStatus}</div>}
         <div className="photo-editor-list">
           {photos.map((photo) => {
             const selectedHistorySrc = selectedHistorySrcBySlot[photo.id] ?? photo.src
@@ -2410,6 +2410,8 @@ function PhotoManager({
                 </label>
                 <button
                   className="photo-history-toggle"
+                  aria-controls={`photo-history-${photo.id}`}
+                  aria-expanded={openHistorySlotId === photo.id}
                   disabled={!photo.history?.length}
                   type="button"
                   onClick={() =>
@@ -2421,7 +2423,11 @@ function PhotoManager({
                   過去の写真
                 </button>
                 {openHistorySlotId === photo.id && photo.history && photo.history.length > 0 && (
-                  <div className="photo-history" aria-label="過去の写真">
+                  <div
+                    className="photo-history"
+                    id={`photo-history-${photo.id}`}
+                    aria-label="過去の写真"
+                  >
                     {photo.history.map((historyItem) => {
                       const isCurrent = historyItem.src === photo.src
                       const isSelected = historyItem.src === selectedHistorySrc
@@ -2429,6 +2435,7 @@ function PhotoManager({
                       return (
                         <button
                           className="photo-history-item"
+                          aria-pressed={isSelected}
                           data-current={isCurrent}
                           data-selected={isSelected}
                           key={historyItem.src}
