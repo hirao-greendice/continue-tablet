@@ -1984,8 +1984,19 @@ button:focus-visible {
     text-align: left;
   }
 
+  .photo-editor[data-history-open='true'] {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    text-align: center;
+  }
+
   .photo-editor img {
     width: 190px;
+  }
+
+  .photo-editor[data-history-open='true'] > img {
+    justify-self: center;
+    width: min(100%, 300px);
   }
 
   .photo-editor h2 {
