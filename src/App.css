@@ -779,6 +779,14 @@ button:focus-visible {
   line-height: 1.58;
 }
 
+.scene-one-content[data-video-revealed='true'][data-video-complete='false'] {
+  padding-bottom: 720px;
+}
+
+.scene-sequence[data-followup-visible='true'] .scene-one-content {
+  padding-bottom: 96px;
+}
+
 .ribbon-title {
   position: absolute;
   top: -220px;

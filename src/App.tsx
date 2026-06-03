@@ -190,6 +190,7 @@ const SLIDE_EXPORT_QUALITY = 0.92
 const SCENE_FOLLOWUP_SCROLL_DURATION_MS = 1200
 const SCENE_FOLLOWUP_SCROLL_OFFSET = -80
 const SCENE_VIDEO_SCROLL_DURATION_MS = 1000
+const SCENE_VIDEO_SCROLL_OFFSET = 200
 const VIDEO_DOUBLE_TAP_MS = 320
 const VIDEO_SKIP_INDICATOR_MS = 650
 const VIDEO_SKIP_SECONDS = 5
@@ -246,7 +247,8 @@ function scrollToCenteredElement(container: HTMLElement, target: HTMLElement, du
   return new Promise<void>((resolve) => {
     const startTop = container.scrollTop
     const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0)
-    const targetTop = target.offsetTop - (container.clientHeight - target.offsetHeight) / 2
+    const targetTop =
+      target.offsetTop - (container.clientHeight - target.offsetHeight) / 2 + SCENE_VIDEO_SCROLL_OFFSET
     const distance = Math.min(Math.max(targetTop, 0), maxScrollTop) - startTop
 
     if (Math.abs(distance) < 1) {
@@ -1762,7 +1764,11 @@ function SceneOne({
         style={{ backgroundImage: `url("${versionedAsset('images/tenkei.png', STATIC_IMAGE_VERSION)}")` }}
         aria-hidden="true"
       />
-      <div className="scene-one-content">
+      <div
+        className="scene-one-content"
+        data-video-complete={isVideoComplete}
+        data-video-revealed={isVideoRevealed}
+      >
         <div className="ribbon-title">
           <img
             className="ribbon-title-art"
