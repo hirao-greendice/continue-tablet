@@ -2340,7 +2340,7 @@ function PhotoManager({
   onUpdatePhoto,
 }: PhotoManagerProps) {
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null)
-  const [openHistorySlotId, setOpenHistorySlotId] = useState<number | null>(null)
+  const [activePhotoId, setActivePhotoId] = useState(() => photos[0]?.id ?? 0)
   const [selectedHistorySrcBySlot, setSelectedHistorySrcBySlot] = useState<Record<number, string>>({})
   const objectUrls = useRef<string[]>([])
 
@@ -2366,6 +2366,16 @@ function PhotoManager({
     })
   }
 
+  const activePhoto = photos.find((photo) => photo.id === activePhotoId) ?? photos[0]
+  const activeHistory = activePhoto?.history ?? []
+  const selectedHistorySrc = activePhoto
+    ? selectedHistorySrcBySlot[activePhoto.id] ?? activePhoto.src
+    : ''
+  const selectedHistoryItem =
+    activeHistory.find((historyItem) => historyItem.src === selectedHistorySrc) ?? null
+  const canRestoreHistory =
+    Boolean(activePhoto && selectedHistoryItem) && selectedHistoryItem?.src !== activePhoto?.src
+
   return (
     <section className="photo-manager" data-scrollable="true" aria-label="写真撮影">
       <button className="back-button photo-back" type="button" onClick={onBack}>
@@ -2377,103 +2387,121 @@ function PhotoManager({
         alt="QRコード"
       />
       <div className="photo-manager-inner">
-        <h1>写真撮影</h1>
-        <p>4枚の写真を選ぶと、最終解答の候補画像に反映されます。</p>
-        {uploadStatus && <div className="upload-status" role="status">{uploadStatus}</div>}
-        <div className="photo-editor-list">
-          {photos.map((photo) => {
-            const selectedHistorySrc = selectedHistorySrcBySlot[photo.id] ?? photo.src
-            const selectedHistoryItem =
-              photo.history?.find((historyItem) => historyItem.src === selectedHistorySrc) ?? null
+        <header className="photo-manager-header">
+          <h1>写真撮影</h1>
+          <p>人物を選んで、写真を大きく確認しながら撮影・差し替えできます。</p>
+          {uploadStatus && <div className="upload-status" role="status">{uploadStatus}</div>}
+        </header>
 
-            return (
-            <article
-              className="photo-editor"
-              data-history-open={openHistorySlotId === photo.id}
-              key={photo.id}
-            >
-              <img src={photo.src} alt={`${photo.label}の現在の写真`} />
-              <div>
-                <h2>{photo.id}. {photo.label}</h2>
-                <p className="photo-updated-at">{formatPhotoUpdatedAt(photo.updatedAt)}</p>
-                <label className="photo-input-button">
+        <div className="photo-workspace">
+          <nav className="photo-slot-panel" aria-label="写真を選択">
+            {photos.map((photo) => {
+              const isActive = activePhoto?.id === photo.id
+
+              return (
+                <button
+                  className="photo-slot-card"
+                  aria-pressed={isActive}
+                  data-active={isActive}
+                  key={photo.id}
+                  type="button"
+                  onClick={() => setActivePhotoId(photo.id)}
+                >
+                  <span className="photo-slot-number">{photo.id}</span>
+                  <img src={photo.src} alt="" aria-hidden="true" />
+                  <span className="photo-slot-name">{photo.label}</span>
+                  <span className="photo-slot-updated">{formatHomePhotoUpdatedAt(photo.updatedAt)}</span>
+                </button>
+              )
+            })}
+          </nav>
+
+          {activePhoto && (
+            <main className="photo-main-panel">
+              <section className="photo-preview-panel" aria-label="現在の写真">
+                <div className="photo-preview-heading">
+                  <span>現在の写真</span>
+                  <h2>{activePhoto.id}. {activePhoto.label}</h2>
+                  <p className="photo-updated-at">{formatPhotoUpdatedAt(activePhoto.updatedAt)}</p>
+                </div>
+                <div className="photo-preview-frame">
+                  <img src={activePhoto.src} alt={`${activePhoto.label}の現在の写真`} />
+                </div>
+              </section>
+
+              <section className="photo-action-panel" aria-label="写真操作">
+                <label className="photo-capture-button">
                   撮影・撮り直し
                   <input
                     accept="image/*"
                     capture="environment"
                     type="file"
                     onChange={(event) => {
-                      openCropper(photo, event.target.files?.[0] ?? null)
+                      openCropper(activePhoto, event.target.files?.[0] ?? null)
                       event.currentTarget.value = ''
                     }}
                   />
                 </label>
-                <button
-                  className="photo-history-toggle"
-                  aria-controls={`photo-history-${photo.id}`}
-                  aria-expanded={openHistorySlotId === photo.id}
-                  disabled={!photo.history?.length}
-                  type="button"
-                  onClick={() =>
-                    setOpenHistorySlotId((currentSlotId) =>
-                      currentSlotId === photo.id ? null : photo.id,
-                    )
-                  }
-                >
-                  過去の写真
-                </button>
-                {openHistorySlotId === photo.id && photo.history && photo.history.length > 0 && (
-                  <div
-                    className="photo-history"
-                    id={`photo-history-${photo.id}`}
-                    aria-label="過去の写真"
-                  >
-                    {photo.history.map((historyItem) => {
-                      const isCurrent = historyItem.src === photo.src
-                      const isSelected = historyItem.src === selectedHistorySrc
+                <div className="photo-current-meta">
+                  <span>選択中</span>
+                  <strong>{activePhoto.label}</strong>
+                </div>
+              </section>
 
-                      return (
-                        <button
-                          className="photo-history-item"
-                          aria-pressed={isSelected}
-                          data-current={isCurrent}
-                          data-selected={isSelected}
-                          key={historyItem.src}
-                          type="button"
-                          onClick={() =>
-                            setSelectedHistorySrcBySlot((currentSelections) => ({
-                              ...currentSelections,
-                              [photo.id]: historyItem.src,
-                            }))
-                          }
-                        >
-                          <img src={historyItem.src} alt="" aria-hidden="true" />
-                          <span>{isCurrent ? '現在' : formatHomePhotoUpdatedAt(historyItem.updatedAt)}</span>
-                        </button>
-                      )
-                    })}
+              <section className="photo-history-panel" aria-label="過去の写真">
+                <div className="photo-history-heading">
+                  <h3>過去の写真</h3>
+                  <span>{activeHistory.length}枚</span>
+                </div>
+                {activeHistory.length > 0 ? (
+                  <>
+                    <div className="photo-history-options">
+                      {activeHistory.map((historyItem) => {
+                        const isCurrent = historyItem.src === activePhoto.src
+                        const isSelected = historyItem.src === selectedHistorySrc
+
+                        return (
+                          <button
+                            className="photo-history-option"
+                            aria-pressed={isSelected}
+                            data-current={isCurrent}
+                            data-selected={isSelected}
+                            key={historyItem.src}
+                            type="button"
+                            onClick={() =>
+                              setSelectedHistorySrcBySlot((currentSelections) => ({
+                                ...currentSelections,
+                                [activePhoto.id]: historyItem.src,
+                              }))
+                            }
+                          >
+                            <img src={historyItem.src} alt="" aria-hidden="true" />
+                            <span>{isCurrent ? '現在の写真' : formatHomePhotoUpdatedAt(historyItem.updatedAt)}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
                     <button
-                      className="photo-history-confirm"
-                      disabled={!selectedHistoryItem || selectedHistoryItem.src === photo.src}
+                      className="photo-restore-button"
+                      disabled={!canRestoreHistory}
                       type="button"
                       onClick={() => {
                         if (!selectedHistoryItem) {
                           return
                         }
 
-                        void onSelectHistory(photo.id, selectedHistoryItem).then(() => {
-                          setOpenHistorySlotId(null)
-                        })
+                        void onSelectHistory(activePhoto.id, selectedHistoryItem)
                       }}
                     >
-                      決定
+                      この写真に戻す
                     </button>
-                  </div>
+                  </>
+                ) : (
+                  <p className="photo-history-empty">過去の写真はまだありません。</p>
                 )}
-              </div>
-            </article>
-            )
-          })}
+              </section>
+            </main>
+          )}
         </div>
       </div>
       {cropDraft &&
@@ -2483,6 +2511,12 @@ function PhotoManager({
             onCancel={() => setCropDraft(null)}
             onUpdate={async (file) => {
               await onUpdatePhoto(cropDraft.slotId, file)
+              setSelectedHistorySrcBySlot((currentSelections) => {
+                const nextSelections = { ...currentSelections }
+                delete nextSelections[cropDraft.slotId]
+
+                return nextSelections
+              })
               setCropDraft(null)
             }}
           />,
