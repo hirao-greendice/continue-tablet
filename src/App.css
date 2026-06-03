@@ -2796,13 +2796,15 @@ button:focus-visible {
   cursor: default;
 }
 
-.photo-history-option[data-selected='true'] {
+.photo-history-option[data-selected='true'],
+.photo-backup-option[data-selected='true'] {
   border-color: #0b8fd6;
   background: #eaf7ff;
   box-shadow: 0 0 0 5px rgba(11, 143, 214, 0.18);
 }
 
-.photo-history-option[data-selected='true']::after {
+.photo-history-option[data-selected='true']::after,
+.photo-backup-option[data-selected='true']::after {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -2838,6 +2840,11 @@ button:focus-visible {
 
 .photo-backup-option[data-current='true'] strong {
   background: #151a21;
+  color: #fff;
+}
+
+.photo-backup-option[data-selected='true'] strong {
+  background: #0b8fd6;
   color: #fff;
 }
 

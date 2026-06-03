@@ -2640,6 +2640,7 @@ function PhotoManager({
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null)
   const [activePhotoId, setActivePhotoId] = useState(() => photos[0]?.id ?? 0)
   const [selectedHistorySrcBySlot, setSelectedHistorySrcBySlot] = useState<Record<number, string>>({})
+  const [selectedBackupSrcBySlot, setSelectedBackupSrcBySlot] = useState<Record<number, string>>({})
   const objectUrls = useRef<string[]>([])
 
   useEffect(() => {
@@ -2667,6 +2668,9 @@ function PhotoManager({
   const activePhoto = photos.find((photo) => photo.id === activePhotoId) ?? photos[0]
   const activeHistory = activePhoto?.history ?? []
   const activeBackupPhotos = activePhoto ? backupPhotosBySlot[activePhoto.id] ?? [] : []
+  const activeCurrentBackupPhoto = activePhoto
+    ? activeBackupPhotos.find((backupPhoto) => backupPhoto.src === activePhoto.src)
+    : undefined
   const selectedHistorySrc = activePhoto
     ? selectedHistorySrcBySlot[activePhoto.id] ?? activePhoto.src
     : ''
@@ -2674,6 +2678,13 @@ function PhotoManager({
     activeHistory.find((historyItem) => historyItem.src === selectedHistorySrc) ?? null
   const canRestoreHistory =
     Boolean(activePhoto && selectedHistoryItem) && selectedHistoryItem?.src !== activePhoto?.src
+  const selectedBackupSrc = activePhoto
+    ? selectedBackupSrcBySlot[activePhoto.id] ?? activeCurrentBackupPhoto?.src ?? ''
+    : ''
+  const selectedBackupPhoto =
+    activeBackupPhotos.find((backupPhoto) => backupPhoto.src === selectedBackupSrc) ?? null
+  const canApplyBackup =
+    Boolean(activePhoto && selectedBackupPhoto) && selectedBackupPhoto?.src !== activePhoto?.src
 
   return (
     <section className="photo-manager" data-scrollable="true" aria-label="写真撮影">
@@ -2806,29 +2817,50 @@ function PhotoManager({
                   <span>{activeBackupPhotos.length}枚</span>
                 </div>
                 {activeBackupPhotos.length > 0 ? (
-                  <div className="photo-backup-options">
-                    {activeBackupPhotos.map((backupPhoto) => {
-                      const isCurrent = backupPhoto.src === activePhoto.src
+                  <>
+                    <button
+                      className="photo-restore-button photo-backup-apply"
+                      disabled={!canApplyBackup}
+                      type="button"
+                      onClick={() => {
+                        if (!selectedBackupPhoto) {
+                          return
+                        }
 
-                      return (
-                        <button
-                          className="photo-backup-option"
-                          data-current={isCurrent}
-                          disabled={isCurrent}
-                          key={backupPhoto.id}
-                          type="button"
-                          onClick={() => {
-                            playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
-                            void onSelectBackupPhoto(activePhoto.id, backupPhoto)
-                          }}
-                        >
-                          <img src={backupPhoto.src} alt="" aria-hidden="true" />
-                          <span>{backupPhoto.label}</span>
-                          <strong>{isCurrent ? '使用中' : 'この写真を使う'}</strong>
-                        </button>
-                      )
-                    })}
-                  </div>
+                        void onSelectBackupPhoto(activePhoto.id, selectedBackupPhoto)
+                      }}
+                    >
+                      この予備写真を使う
+                    </button>
+                    <div className="photo-backup-options">
+                      {activeBackupPhotos.map((backupPhoto) => {
+                        const isCurrent = backupPhoto.src === activePhoto.src
+                        const isSelected = backupPhoto.src === selectedBackupSrc
+
+                        return (
+                          <button
+                            className="photo-backup-option"
+                            aria-pressed={isSelected}
+                            data-current={isCurrent}
+                            data-selected={isSelected}
+                            key={backupPhoto.id}
+                            type="button"
+                            onClick={() => {
+                              playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
+                              setSelectedBackupSrcBySlot((currentSelections) => ({
+                                ...currentSelections,
+                                [activePhoto.id]: backupPhoto.src,
+                              }))
+                            }}
+                          >
+                            <img src={backupPhoto.src} alt="" aria-hidden="true" />
+                            <span>{backupPhoto.label}</span>
+                            <strong>{isCurrent ? '使用中' : '選択する'}</strong>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
                 ) : (
                   <p className="photo-history-empty">予備写真は設定されていません。</p>
                 )}
@@ -2845,6 +2877,12 @@ function PhotoManager({
             onUpdate={async (file) => {
               await onUpdatePhoto(cropDraft.slotId, file)
               setSelectedHistorySrcBySlot((currentSelections) => {
+                const nextSelections = { ...currentSelections }
+                delete nextSelections[cropDraft.slotId]
+
+                return nextSelections
+              })
+              setSelectedBackupSrcBySlot((currentSelections) => {
                 const nextSelections = { ...currentSelections }
                 delete nextSelections[cropDraft.slotId]
 
