@@ -51,6 +51,12 @@ type PhotoHistoryItem = {
   src: string
   updatedAt?: number
 }
+type BackupPhoto = {
+  id: string
+  label: string
+  src: string
+}
+type BackupPhotosBySlot = Record<number, BackupPhoto[]>
 type CropDraft = {
   slotId: number
   label: string
@@ -68,7 +74,11 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260603-2'
+const APP_CACHE_NAME = 'continue-tablet-v15'
 const STATIC_IMAGE_VERSION = 'images-20260603-1'
+const BACKUP_PHOTO_VERSION = 'backup-photos-20260603-2'
+const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
+const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
 const CLICK_SOUND_VOLUME = 0.8
@@ -178,6 +188,141 @@ const defaultPhotos: PhotoSlot[] = [
   { id: 3, label: SUSPECT_LABELS[3], src: DEFAULT_PHOTO_SRC },
   { id: 4, label: SUSPECT_LABELS[4], src: DEFAULT_PHOTO_SRC },
 ]
+
+function getBackupPhotoManifestSrc() {
+  return versionedAsset(BACKUP_PHOTO_MANIFEST_PATH, BACKUP_PHOTO_VERSION)
+}
+
+async function loadBackupPhotos() {
+  const manifest = await fetchJsonWithCache(getBackupPhotoManifestSrc())
+
+  return normalizeBackupPhotoManifest(manifest)
+}
+
+async function fetchJsonWithCache(src: string) {
+  const request = new Request(src)
+
+  try {
+    const response = await fetch(request)
+
+    if (response.ok) {
+      await cacheResponse(request, response.clone())
+      return response.json() as Promise<unknown>
+    }
+  } catch {
+    // Fall through to Cache Storage for offline tablets.
+  }
+
+  if (!('caches' in window)) {
+    return null
+  }
+
+  const cachedResponse = await window.caches.match(request)
+
+  return cachedResponse ? (cachedResponse.json() as Promise<unknown>) : null
+}
+
+async function warmBackupPhotoCache(backupPhotosBySlot: BackupPhotosBySlot) {
+  const urls = [
+    getBackupPhotoManifestSrc(),
+    ...Object.values(backupPhotosBySlot).flatMap((backupPhotos) =>
+      backupPhotos.map((backupPhoto) => backupPhoto.src),
+    ),
+  ]
+
+  await Promise.allSettled(urls.map((src) => cacheStaticAsset(src)))
+}
+
+async function cacheStaticAsset(src: string) {
+  if (!('caches' in window)) {
+    return
+  }
+
+  const request = new Request(src)
+  const cache = await window.caches.open(APP_CACHE_NAME)
+
+  if (await cache.match(request)) {
+    return
+  }
+
+  const response = await fetch(request)
+
+  if (response.ok) {
+    await cache.put(request, response)
+  }
+}
+
+async function cacheResponse(request: Request, response: Response) {
+  if (!('caches' in window)) {
+    return
+  }
+
+  const cache = await window.caches.open(APP_CACHE_NAME)
+  await cache.put(request, response)
+}
+
+function normalizeBackupPhotoManifest(manifest: unknown) {
+  const backupPhotosBySlot: BackupPhotosBySlot = {}
+
+  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+    return backupPhotosBySlot
+  }
+
+  Object.entries(manifest as Record<string, unknown>).forEach(([slotKey, rawItems]) => {
+    const slotId = Number(slotKey)
+
+    if (!Number.isInteger(slotId) || !Array.isArray(rawItems)) {
+      return
+    }
+
+    const backupPhotos = rawItems
+      .map((rawItem, index) => normalizeBackupPhoto(rawItem, index))
+      .filter((backupPhoto): backupPhoto is BackupPhoto => Boolean(backupPhoto))
+
+    if (backupPhotos.length > 0) {
+      backupPhotosBySlot[slotId] = backupPhotos
+    }
+  })
+
+  return backupPhotosBySlot
+}
+
+function normalizeBackupPhoto(rawItem: unknown, index: number) {
+  const src = typeof rawItem === 'string'
+    ? rawItem
+    : rawItem && typeof rawItem === 'object' && 'src' in rawItem
+      ? (rawItem as { src?: unknown }).src
+      : undefined
+  const label = rawItem && typeof rawItem === 'object' && 'label' in rawItem
+    ? (rawItem as { label?: unknown }).label
+    : undefined
+
+  if (typeof src !== 'string' || !src.trim()) {
+    return null
+  }
+
+  return {
+    id: `${src}-${index}`,
+    label: typeof label === 'string' && label.trim() ? label.trim() : `予備${index + 1}`,
+    src: resolveBackupPhotoSrc(src),
+  }
+}
+
+function resolveBackupPhotoSrc(src: string) {
+  const trimmedSrc = src.trim()
+
+  if (/^[a-z][a-z\d+\-.]*:/i.test(trimmedSrc)) {
+    return trimmedSrc
+  }
+
+  const publicPath = trimmedSrc.replace(/^\.?\//, '').replace(/^\/+/, '')
+  const backupPhotoPath =
+    publicPath.startsWith(`${BACKUP_PHOTO_FOLDER}/`) || publicPath.startsWith('images/')
+      ? publicPath
+      : `${BACKUP_PHOTO_FOLDER}/${publicPath}`
+
+  return versionedAsset(backupPhotoPath, BACKUP_PHOTO_VERSION)
+}
 
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
@@ -524,6 +669,7 @@ function App() {
   const [isFullscreen, setIsFullscreen] = useState(getIsFullscreen)
   const [stageScale, setStageScale] = useState(getStageScale)
   const [photos, setPhotos] = useState<PhotoSlot[]>(defaultPhotos)
+  const [backupPhotosBySlot, setBackupPhotosBySlot] = useState<BackupPhotosBySlot>({})
   const [teamStates, setTeamStates] = useState<TeamState[]>(createEmptyTeamStates)
   const [realtimeConnected, setRealtimeConnected] = useState(false)
   const [realtimeError, setRealtimeError] = useState('')
@@ -585,6 +731,25 @@ function App() {
 
     return () => {
       window.removeEventListener('pointerdown', unlockAudio)
+    }
+  }, [])
+
+  useEffect(() => {
+    let isMounted = true
+
+    loadBackupPhotos()
+      .then((loadedBackupPhotosBySlot) => {
+        if (!isMounted) {
+          return
+        }
+
+        setBackupPhotosBySlot(loadedBackupPhotosBySlot)
+        void warmBackupPhotoCache(loadedBackupPhotosBySlot)
+      })
+      .catch(() => undefined)
+
+    return () => {
+      isMounted = false
     }
   }, [])
 
@@ -1014,6 +1179,32 @@ function App() {
     await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
   }
 
+  const selectBackupPhoto = async (slotId: number, backupPhoto: BackupPhoto) => {
+    const updatedAt = Date.now()
+    const previousPhotos = photos
+    const nextPhotos = photos.map((photo) =>
+      photo.id === slotId
+        ? {
+            ...photo,
+            history: getPhotoHistory({ ...photo, src: backupPhoto.src, updatedAt }),
+            src: backupPhoto.src,
+            updatedAt,
+          }
+        : photo,
+    )
+
+    setPhotos(nextPhotos)
+
+    try {
+      await saveCurrentPhotos(toStoredPhotos(nextPhotos))
+      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
+      setUploadStatus('予備写真に切り替えました')
+    } catch (error) {
+      console.error('Failed to save backup photo selection', error)
+      setUploadStatus('端末内で予備写真を表示しています')
+    }
+  }
+
   const submitAnswer = async () => {
     if (!teamNumber || !selectedPhoto) {
       return
@@ -1179,9 +1370,11 @@ function App() {
 
           {screen === 'photos' && (
             <PhotoManager
+              backupPhotosBySlot={backupPhotosBySlot}
               photos={photos}
               uploadStatus={uploadStatus}
               onBack={() => setScreen('home')}
+              onSelectBackupPhoto={selectBackupPhoto}
               onSelectHistory={selectPhotoHistory}
               onUpdatePhoto={updatePhoto}
             />
@@ -2360,17 +2553,21 @@ function MasterScreen({
 }
 
 type PhotoManagerProps = {
+  backupPhotosBySlot: BackupPhotosBySlot
   photos: PhotoSlot[]
   uploadStatus: string
   onBack: () => void
+  onSelectBackupPhoto: (slotId: number, backupPhoto: BackupPhoto) => Promise<void>
   onSelectHistory: (slotId: number, historyItem: PhotoHistoryItem) => Promise<void>
   onUpdatePhoto: (slotId: number, file: File | null) => Promise<void>
 }
 
 function PhotoManager({
+  backupPhotosBySlot,
   photos,
   uploadStatus,
   onBack,
+  onSelectBackupPhoto,
   onSelectHistory,
   onUpdatePhoto,
 }: PhotoManagerProps) {
@@ -2403,6 +2600,7 @@ function PhotoManager({
 
   const activePhoto = photos.find((photo) => photo.id === activePhotoId) ?? photos[0]
   const activeHistory = activePhoto?.history ?? []
+  const activeBackupPhotos = activePhoto ? backupPhotosBySlot[activePhoto.id] ?? [] : []
   const selectedHistorySrc = activePhoto
     ? selectedHistorySrcBySlot[activePhoto.id] ?? activePhoto.src
     : ''
@@ -2490,6 +2688,20 @@ function PhotoManager({
                 </div>
                 {activeHistory.length > 0 ? (
                   <>
+                    <button
+                      className="photo-restore-button"
+                      disabled={!canRestoreHistory}
+                      type="button"
+                      onClick={() => {
+                        if (!selectedHistoryItem) {
+                          return
+                        }
+
+                        void onSelectHistory(activePhoto.id, selectedHistoryItem)
+                      }}
+                    >
+                      この写真に戻す
+                    </button>
                     <div className="photo-history-options">
                       {activeHistory.map((historyItem) => {
                         const isCurrent = historyItem.src === activePhoto.src
@@ -2516,23 +2728,43 @@ function PhotoManager({
                         )
                       })}
                     </div>
-                    <button
-                      className="photo-restore-button"
-                      disabled={!canRestoreHistory}
-                      type="button"
-                      onClick={() => {
-                        if (!selectedHistoryItem) {
-                          return
-                        }
-
-                        void onSelectHistory(activePhoto.id, selectedHistoryItem)
-                      }}
-                    >
-                      この写真に戻す
-                    </button>
                   </>
                 ) : (
                   <p className="photo-history-empty">過去の写真はまだありません。</p>
+                )}
+              </section>
+
+              <section className="photo-backup-panel" aria-label="予備写真">
+                <div className="photo-backup-heading">
+                  <h3>予備写真</h3>
+                  <span>{activeBackupPhotos.length}枚</span>
+                </div>
+                {activeBackupPhotos.length > 0 ? (
+                  <div className="photo-backup-options">
+                    {activeBackupPhotos.map((backupPhoto) => {
+                      const isCurrent = backupPhoto.src === activePhoto.src
+
+                      return (
+                        <button
+                          className="photo-backup-option"
+                          data-current={isCurrent}
+                          disabled={isCurrent}
+                          key={backupPhoto.id}
+                          type="button"
+                          onClick={() => {
+                            playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
+                            void onSelectBackupPhoto(activePhoto.id, backupPhoto)
+                          }}
+                        >
+                          <img src={backupPhoto.src} alt="" aria-hidden="true" />
+                          <span>{backupPhoto.label}</span>
+                          <strong>{isCurrent ? '使用中' : 'この写真を使う'}</strong>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="photo-history-empty">予備写真は設定されていません。</p>
                 )}
               </section>
             </main>

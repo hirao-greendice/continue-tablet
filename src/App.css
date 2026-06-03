@@ -2587,7 +2587,8 @@ button:focus-visible {
 
 .photo-preview-panel,
 .photo-action-panel,
-.photo-history-panel {
+.photo-history-panel,
+.photo-backup-panel {
   border: 3px solid #d5dde7;
   border-radius: 8px;
   background: #fff;
@@ -2702,28 +2703,32 @@ button:focus-visible {
   white-space: pre-line;
 }
 
-.photo-history-panel {
+.photo-history-panel,
+.photo-backup-panel {
   grid-column: 1 / -1;
   display: grid;
   gap: 18px;
   padding: 22px;
 }
 
-.photo-history-heading {
+.photo-history-heading,
+.photo-backup-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.photo-history-heading h3 {
+.photo-history-heading h3,
+.photo-backup-heading h3 {
   margin: 0;
   color: #151a21;
   font-size: 34px;
   line-height: 1;
 }
 
-.photo-history-heading span {
+.photo-history-heading span,
+.photo-backup-heading span {
   display: grid;
   min-width: 82px;
   height: 44px;
@@ -2735,13 +2740,24 @@ button:focus-visible {
   font-weight: 900;
 }
 
-.photo-history-options {
+.photo-backup-heading span {
+  background: #7a421d;
+}
+
+.photo-history-options,
+.photo-backup-options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 18px;
 }
 
-.photo-history-option {
+.photo-backup-options {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 230px));
+  justify-content: start;
+}
+
+.photo-history-option,
+.photo-backup-option {
   position: relative;
   display: grid;
   gap: 10px;
@@ -2756,9 +2772,23 @@ button:focus-visible {
   text-align: center;
 }
 
+.photo-backup-option {
+  border-color: #d4b991;
+  background: #fff7eb;
+}
+
 .photo-history-option[data-current='true'] {
   border-color: #d54397;
   background: #fff3fa;
+}
+
+.photo-backup-option[data-current='true'] {
+  border-color: #7a421d;
+  background: #f3e1cb;
+}
+
+.photo-backup-option:disabled {
+  cursor: default;
 }
 
 .photo-history-option[data-selected='true'] {
@@ -2781,12 +2811,29 @@ button:focus-visible {
   line-height: 1;
 }
 
-.photo-history-option img {
+.photo-history-option img,
+.photo-backup-option img {
   width: 100%;
   aspect-ratio: var(--photo-aspect-width, 4) / var(--photo-aspect-height, 5);
   border-radius: 6px;
   background: #dce3eb;
   object-fit: cover;
+}
+
+.photo-backup-option strong {
+  display: grid;
+  min-height: 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: #7a421d;
+  color: #fff6df;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.photo-backup-option[data-current='true'] strong {
+  background: #151a21;
+  color: #fff;
 }
 
 .photo-restore-button {
@@ -2960,7 +3007,8 @@ button:focus-visible {
 
   .photo-preview-panel,
   .photo-action-panel,
-  .photo-history-panel {
+  .photo-history-panel,
+  .photo-backup-panel {
     padding: 14px;
     border-width: 3px;
   }

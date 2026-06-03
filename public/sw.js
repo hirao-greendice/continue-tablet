@@ -1,8 +1,13 @@
-const CACHE_NAME = 'continue-tablet-v14'
+const CACHE_NAME = 'continue-tablet-v15'
 const STATIC_IMAGE_VERSION = 'images-20260603-1'
+const BACKUP_PHOTO_VERSION = 'backup-photos-20260603-2'
 
 function versionedAsset(path) {
   return `${path}?v=${STATIC_IMAGE_VERSION}`
+}
+
+function versionedBackupPhotoAsset(path) {
+  return `${path}?v=${BACKUP_PHOTO_VERSION}`
 }
 
 const APP_SHELL = [
@@ -20,10 +25,14 @@ const WARM_ASSET_CACHE = [
   versionedAsset('./images/erabinaosu_button.png'),
   versionedAsset('./images/goutou.jpeg'),
   versionedAsset('./images/hannnin.jpg'),
+  versionedAsset('./images/konohito.png'),
+  versionedAsset('./images/0.png'),
+  versionedAsset('./images/0-1.png'),
   versionedAsset('./images/play.png'),
   versionedAsset('./images/teisyutu_botton.png'),
   versionedAsset('./images/tenkei.png'),
   versionedAsset('./images/tukitome.png'),
+  versionedBackupPhotoAsset('./images/backup-photos/backup-photos.json'),
   './sounds/click.mp3',
   './sounds/omaeda.mp3',
 ]
