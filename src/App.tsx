@@ -32,7 +32,6 @@ import {
   subscribeGameControl,
   subscribeHomeCommand,
   subscribeRealtimeConnection,
-  subscribeTeamAnswer,
   submitTeamAnswer,
   subscribeTeamStates,
   type TeamState,
@@ -663,25 +662,6 @@ function App() {
     }
 
     return connectTeamPresence(teamNumber, setRealtimeError)
-  }, [teamNumber])
-
-  useEffect(() => {
-    if (!teamNumber) {
-      return
-    }
-
-    return subscribeTeamAnswer(
-      teamNumber,
-      (answer) => {
-        if (!answer) {
-          return
-        }
-
-        setSubmittedPhotoId(answer.photoId)
-        setSelectedPhotoId(answer.photoId)
-      },
-      setRealtimeError,
-    )
   }, [teamNumber])
 
   useEffect(() => {
