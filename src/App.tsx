@@ -41,6 +41,7 @@ import { realtimeDatabaseUrl } from './firebase'
 type Screen = 'home' | 'scene1' | 'scene3' | 'photos' | 'master'
 type DeviceRole = 'unknown' | 'master' | 'player'
 type PhotoSlot = {
+  exportSrc?: string
   history?: PhotoHistoryItem[]
   id: number
   label: string
@@ -48,6 +49,7 @@ type PhotoSlot = {
   updatedAt?: number
 }
 type PhotoHistoryItem = {
+  exportSrc?: string
   src: string
   updatedAt?: number
 }
@@ -301,27 +303,9 @@ function loadCanvasImage(src: string) {
   })
 }
 
-function loadDisplayImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image()
-
-    image.addEventListener('load', () => resolve(image), { once: true })
-    image.addEventListener('error', () => reject(new Error(`Failed to load image: ${src}`)), {
-      once: true,
-    })
-    image.src = src
-  })
-}
-
 async function loadOptionalCanvasImage(src: string) {
   try {
     return await loadCanvasImage(src)
-  } catch (error) {
-    console.warn(error)
-  }
-
-  try {
-    return await loadDisplayImage(src)
   } catch (error) {
     console.warn(error)
     return null
@@ -359,6 +343,23 @@ function downloadBlob(blob: Blob, filename: string) {
   link.click()
   link.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+
+    reader.addEventListener('load', () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result)
+        return
+      }
+
+      reject(new Error('Failed to read photo data URL'))
+    })
+    reader.addEventListener('error', () => reject(reader.error ?? new Error('Failed to read photo')))
+    reader.readAsDataURL(file)
+  })
 }
 
 function drawImageCover(
@@ -460,7 +461,7 @@ async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
     loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
     loadCanvasImage(versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)),
     loadCanvasImage(versionedAsset('images/back.webp', STATIC_IMAGE_VERSION)),
-    ...photos.map((photo) => loadOptionalCanvasImage(photo.src)),
+    ...photos.map((photo) => loadOptionalCanvasImage(photo.exportSrc ?? photo.src)),
   ])
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
@@ -999,13 +1000,17 @@ function App() {
     setUploadStatus('アップロード中...')
 
     try {
-      const src = await uploadCurrentPhoto(slotId, file)
+      const [src, exportSrc] = await Promise.all([
+        uploadCurrentPhoto(slotId, file),
+        readFileAsDataUrl(file),
+      ])
       const updatedAt = Date.now()
       const nextPhotos = photos.map((photo) =>
         photo.id === slotId
           ? {
               ...photo,
-              history: getPhotoHistory({ ...photo, src, updatedAt }),
+              exportSrc,
+              history: getPhotoHistory({ ...photo, exportSrc, src, updatedAt }),
               src,
               updatedAt,
             }
@@ -1025,7 +1030,13 @@ function App() {
       photo.id === slotId
         ? {
             ...photo,
-            history: getPhotoHistory({ ...photo, src: historyItem.src, updatedAt: historyItem.updatedAt }),
+            exportSrc: historyItem.exportSrc,
+            history: getPhotoHistory({
+              ...photo,
+              exportSrc: historyItem.exportSrc,
+              src: historyItem.src,
+              updatedAt: historyItem.updatedAt,
+            }),
             src: historyItem.src,
             updatedAt: historyItem.updatedAt,
           }
@@ -1252,6 +1263,7 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
     return storedPhoto
       ? {
           ...photo,
+          exportSrc: storedPhoto.exportSrc,
           history: getPhotoHistory(storedPhoto),
           src: storedPhoto.src,
           updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhoto.src),
@@ -1262,6 +1274,7 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
 
 function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   return photos.map((photo) => ({
+    exportSrc: photo.exportSrc,
     history: photo.history,
     id: photo.id,
     src: photo.src,
@@ -1269,11 +1282,11 @@ function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   }))
 }
 
-function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
+function getPhotoHistory(photo: Pick<PhotoSlot, 'exportSrc' | 'history' | 'src' | 'updatedAt'>) {
   const history = photo.history ?? []
   const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(photo.src)
   const items = [
-    { src: photo.src, updatedAt: currentUpdatedAt },
+    { exportSrc: photo.exportSrc, src: photo.src, updatedAt: currentUpdatedAt },
     ...history,
   ]
   const seen = new Set<string>()
