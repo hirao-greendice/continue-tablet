@@ -2387,7 +2387,11 @@ function PhotoManager({
               photo.history?.find((historyItem) => historyItem.src === selectedHistorySrc) ?? null
 
             return (
-            <article className="photo-editor" key={photo.id}>
+            <article
+              className="photo-editor"
+              data-history-open={openHistorySlotId === photo.id}
+              key={photo.id}
+            >
               <img src={photo.src} alt={`${photo.label}の現在の写真`} />
               <div>
                 <h2>{photo.id}. {photo.label}</h2>
