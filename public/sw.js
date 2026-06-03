@@ -1,4 +1,4 @@
-const CACHE_NAME = 'continue-tablet-v16'
+const CACHE_NAME = 'continue-tablet-v17'
 const STATIC_IMAGE_VERSION = 'images-20260603-1'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260603-2'
 
