@@ -1069,6 +1069,7 @@ function App() {
   }
 
   const openMaster = () => {
+    void enterFullscreen()
     setDeviceRole('master')
     window.localStorage.setItem(DEVICE_ROLE_STORAGE_KEY, 'master')
     setScreen('master')
