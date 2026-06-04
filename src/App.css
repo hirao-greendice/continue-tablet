@@ -783,7 +783,7 @@ button:focus-visible {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  filter: brightness(0.9);
+  filter: brightness(0.8);
 }
 
 .scene-zero-content {
