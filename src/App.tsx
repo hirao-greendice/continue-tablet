@@ -2602,6 +2602,7 @@ function SceneOne({
             <span className="video-seek-thumb" />
           </span>
         </div>
+        {isVideoComplete && (
         <div className="video-controls" aria-label="動画操作">
           <button
             className="video-control-button video-skip-button"
@@ -2665,6 +2666,7 @@ function SceneOne({
             />
           </button>
         </div>
+        )}
           </>
         )}
         {isVideoComplete && (
