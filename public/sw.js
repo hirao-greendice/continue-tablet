@@ -1,5 +1,5 @@
-const CACHE_NAME = 'continue-tablet-v19'
-const STATIC_IMAGE_VERSION = 'images-20260604-2'
+const CACHE_NAME = 'continue-tablet-v20'
+const STATIC_IMAGE_VERSION = 'images-20260604-3'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 
 function versionedAsset(path) {
