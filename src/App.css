@@ -909,7 +909,7 @@ button:focus-visible {
   width: 100%;
   max-width: none;
   height: auto;
-  filter: drop-shadow(0 7px 0 rgba(87, 38, 71, 0.22));
+  filter: drop-shadow(0 9px 0 rgba(87, 38, 71, 0.22));
   transform: translateY(205px) scale(0.86);
   transform-origin: top center;
 }
