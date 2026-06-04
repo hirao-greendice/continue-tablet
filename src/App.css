@@ -1437,6 +1437,31 @@ button:focus-visible {
   color: #fff;
 }
 
+.scene-three-stack,
+.scene-three-panel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.scene-three-panel {
+  z-index: 1;
+  opacity: 0.001;
+  pointer-events: none;
+  transform: translateZ(0);
+}
+
+.scene-three-panel[data-active='true'] {
+  z-index: 2;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.scene-three-panel[data-active='false'] * {
+  pointer-events: none;
+}
+
 .scene-three .story-background {
   background-size: cover;
 }

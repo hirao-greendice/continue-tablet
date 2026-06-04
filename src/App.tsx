@@ -1538,12 +1538,16 @@ function App() {
   }
 
   const retryAnswer = async () => {
-    if (teamNumber) {
-      await clearTeamAnswer(teamNumber)
-    }
-
     setSubmittedPhotoId(null)
     setSelectedPhotoId(null)
+
+    if (teamNumber) {
+      try {
+        await clearTeamAnswer(teamNumber)
+      } catch (error) {
+        console.error('Failed to clear answer', error)
+      }
+    }
   }
 
   const resetMasterAnswers = async () => {
@@ -2774,12 +2778,17 @@ function SceneThree({
   onSelect,
   onSubmit,
 }: SceneThreeProps) {
-  if (submittedPhoto) {
-    return <SubmittedAnswerScreen photo={submittedPhoto} onRetry={onRetry} />
-  }
+  const isSubmitted = Boolean(submittedPhoto)
+  const submittedPreviewPhoto = submittedPhoto ?? selectedPhoto ?? photos[0] ?? defaultPhotos[0]
 
   return (
-    <section className="story-screen scene-three">
+    <div className="scene-three-stack">
+      <div
+        className="scene-three-panel"
+        data-active={!isSubmitted}
+        aria-hidden={isSubmitted}
+      >
+        <section className="story-screen scene-three">
       <div
         className="story-background"
         style={{ backgroundImage: `url("${versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)}")` }}
@@ -2871,7 +2880,16 @@ function SceneThree({
         </button>
         <p className="submit-answer-note">※提出後でも選びなおすことができます</p>
       </div>
-    </section>
+        </section>
+      </div>
+      <div
+        className="scene-three-panel"
+        data-active={isSubmitted}
+        aria-hidden={!isSubmitted}
+      >
+        <SubmittedAnswerScreen photo={submittedPreviewPhoto} onRetry={onRetry} />
+      </div>
+    </div>
   )
 }
 
