@@ -77,8 +77,8 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260604-1'
-const APP_CACHE_NAME = 'continue-tablet-v18'
-const STATIC_IMAGE_VERSION = 'images-20260604-1'
+const APP_CACHE_NAME = 'continue-tablet-v19'
+const STATIC_IMAGE_VERSION = 'images-20260604-2'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
@@ -91,7 +91,7 @@ const PRELOAD_IMAGE_ASSETS = [
   'QR.png',
   'select.png',
   'images/back.webp',
-  'images/dayo.png',
+  'images/dayo.webp',
   'images/erabinaosu_button.png',
   'images/goutou.jpeg',
   'images/hannnin.jpg',
@@ -2150,7 +2150,7 @@ function SceneOne({
         <div className="ribbon-title">
           <img
             className="ribbon-title-art"
-            src={versionedAsset('images/dayo.png', STATIC_IMAGE_VERSION)}
+            src={versionedAsset('images/dayo.webp', STATIC_IMAGE_VERSION)}
             alt=""
             aria-hidden="true"
           />
