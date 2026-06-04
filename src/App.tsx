@@ -1636,42 +1636,11 @@ function App() {
             <AssetLoadingScreen status={assetLoadStatus} />
           ) : (
             <>
-              {screen === 'home' && (
-                <HomeScreen
-                  photos={photos}
-                  isSlideExporting={isSlideExporting}
-                  slideExportStatus={slideExportStatus}
-                  teams={teamStates}
-                  onExportSlideImage={exportSlideImage}
-                  onStartTeam={startTeam}
-                  onOpenMaster={openMaster}
-                  onOpenPhotos={openPhotos}
-                />
-              )}
-
-              {screen === 'scene0' && (
-                <SceneZero onNext={startSceneOne} />
-              )}
-
-              {screen === 'scene1' && (
-                <div
-                  className="scene-sequence"
-                  data-followup-visible={hasCompletedSceneOneVideo}
-                  ref={sceneSequenceRef}
-                >
-                  <SceneOne
-                    isPreparingNext={isPreparingSceneThree}
-                    isVideoComplete={hasCompletedSceneOneVideo}
-                    isVideoRevealed={hasRevealedSceneOneVideo}
-                    sceneFollowupRef={sceneTwoPanelRef}
-                    onVideoReveal={() => setHasRevealedSceneOneVideo(true)}
-                    onVideoComplete={completeSceneOneVideo}
-                    onNext={openSceneThree}
-                  />
-                </div>
-              )}
-
-              {screen === 'scene3' && (
+              <div
+                className="persistent-scene-three"
+                data-active={screen === 'scene3'}
+                aria-hidden={screen !== 'scene3'}
+              >
                 <SceneThree
                   photos={photos}
                   selectedPhoto={selectedPhoto}
@@ -1682,32 +1651,71 @@ function App() {
                   onSelect={setSelectedPhotoId}
                   onSubmit={submitAnswer}
                 />
-              )}
+              </div>
 
-              {screen === 'master' && (
-                <MasterScreen
-                  gameEnded={gameEnded}
-                  realtimeConnected={realtimeConnected}
-                  realtimeError={realtimeError}
-                  teams={teamStates}
-                  onBack={() => setScreen('home')}
-                  onResetAnswers={resetMasterAnswers}
-                  onSendHomeCommand={sendHomeCommand}
-                  onSetGameEnded={setGameEndedStatus}
-                />
-              )}
+              {screen !== 'scene3' && (
+                <div className="active-screen-layer">
+                  {screen === 'home' && (
+                    <HomeScreen
+                      photos={photos}
+                      isSlideExporting={isSlideExporting}
+                      slideExportStatus={slideExportStatus}
+                      teams={teamStates}
+                      onExportSlideImage={exportSlideImage}
+                      onStartTeam={startTeam}
+                      onOpenMaster={openMaster}
+                      onOpenPhotos={openPhotos}
+                    />
+                  )}
 
-              {screen === 'photos' && (
-                <PhotoManager
-                  backupPhotosBySlot={backupPhotosBySlot}
-                  photos={photos}
-                  uploadStatus={uploadStatus}
-                  onBack={() => setScreen('home')}
-                  onSelectBackupPhoto={selectBackupPhoto}
-                  onSelectHistory={selectPhotoHistory}
-                  onToggleKeep={togglePhotoKeep}
-                  onUpdatePhoto={updatePhoto}
-                />
+                  {screen === 'scene0' && (
+                    <SceneZero onNext={startSceneOne} />
+                  )}
+
+                  {screen === 'scene1' && (
+                    <div
+                      className="scene-sequence"
+                      data-followup-visible={hasCompletedSceneOneVideo}
+                      ref={sceneSequenceRef}
+                    >
+                      <SceneOne
+                        isPreparingNext={isPreparingSceneThree}
+                        isVideoComplete={hasCompletedSceneOneVideo}
+                        isVideoRevealed={hasRevealedSceneOneVideo}
+                        sceneFollowupRef={sceneTwoPanelRef}
+                        onVideoReveal={() => setHasRevealedSceneOneVideo(true)}
+                        onVideoComplete={completeSceneOneVideo}
+                        onNext={openSceneThree}
+                      />
+                    </div>
+                  )}
+
+                  {screen === 'master' && (
+                    <MasterScreen
+                      gameEnded={gameEnded}
+                      realtimeConnected={realtimeConnected}
+                      realtimeError={realtimeError}
+                      teams={teamStates}
+                      onBack={() => setScreen('home')}
+                      onResetAnswers={resetMasterAnswers}
+                      onSendHomeCommand={sendHomeCommand}
+                      onSetGameEnded={setGameEndedStatus}
+                    />
+                  )}
+
+                  {screen === 'photos' && (
+                    <PhotoManager
+                      backupPhotosBySlot={backupPhotosBySlot}
+                      photos={photos}
+                      uploadStatus={uploadStatus}
+                      onBack={() => setScreen('home')}
+                      onSelectBackupPhoto={selectBackupPhoto}
+                      onSelectHistory={selectPhotoHistory}
+                      onToggleKeep={togglePhotoKeep}
+                      onUpdatePhoto={updatePhoto}
+                    />
+                  )}
+                </div>
               )}
             </>
           )}
