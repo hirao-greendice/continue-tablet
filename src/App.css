@@ -794,7 +794,7 @@ button:focus-visible {
   grid-template-rows: 1fr auto auto;
   justify-items: center;
   align-items: center;
-  padding: 110px 0 500px;
+  padding: 110px 0 400px;
 }
 
 .scene-zero-letter {
@@ -966,7 +966,7 @@ button:focus-visible {
 .scene-reenact-button {
   display: block;
   position: absolute;
-  bottom: 200px;
+  bottom: 125px;
   left: 50%;
   min-width: 460px;
   min-height: 116px;
