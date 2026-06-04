@@ -1,4 +1,4 @@
-import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDocFromServer, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
 import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { db, storage } from './firebase'
 
@@ -30,6 +30,14 @@ export function subscribeCurrentPhotos(onChange: (photos: StoredPhoto[]) => void
       onChange(photos)
     }
   })
+}
+
+export async function fetchCurrentPhotos() {
+  const snapshot = await getDocFromServer(currentPhotosRef)
+  const data = snapshot.data() as CurrentPhotosDocument | undefined
+  const photos = data?.photos
+
+  return Array.isArray(photos) ? photos : []
 }
 
 export async function uploadCurrentPhoto(slotId: number, file: File) {

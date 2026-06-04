@@ -14,6 +14,7 @@ import './App.css'
 import { createCroppedPhotoFile } from './cropImage'
 import {
   deletePhotoFiles,
+  fetchCurrentPhotos,
   saveCurrentPhotos,
   subscribeCurrentPhotos,
   uploadCurrentPhoto,
@@ -124,6 +125,10 @@ const PRELOAD_SOUND_ASSETS = [
 ]
 const PHOTO_HISTORY_LIMIT = 10
 const soundPools = new Map<string, HTMLAudioElement[]>()
+
+function getSceneOneVideoSrc() {
+  return publicAsset(`videos/scene-1.mp4?v=${SCENE_ONE_VIDEO_VERSION}`)
+}
 
 function clampVolume(volume: number) {
   return Math.min(Math.max(volume, 0), 1)
@@ -569,6 +574,81 @@ async function loadCanvasPhotoImage(photo: PhotoSlot) {
   }
 }
 
+function getPreloadImageSrcs() {
+  return PRELOAD_IMAGE_ASSETS.map((path) => versionedAsset(path, STATIC_IMAGE_VERSION))
+}
+
+function getBackupPhotoImageSrcs(backupPhotosBySlot: BackupPhotosBySlot) {
+  return Object.values(backupPhotosBySlot).flatMap((backupPhotos) =>
+    backupPhotos.map((backupPhoto) => backupPhoto.src),
+  )
+}
+
+function getResidentImageSrcs(
+  photos: PhotoSlot[],
+  backupPhotosBySlot: BackupPhotosBySlot,
+) {
+  return Array.from(
+    new Set([
+      ...getPreloadImageSrcs(),
+      ...DEFAULT_BACKUP_PHOTO_ASSETS.map((path) => versionedAsset(path, BACKUP_PHOTO_VERSION)),
+      ...getBackupPhotoImageSrcs(backupPhotosBySlot),
+      ...Array.from(getPhotoSrcs(photos)),
+      ...photos.map((photo) => getDefaultPhotoSrc(photo.id)),
+    ]),
+  )
+}
+
+async function preparePhotoForDisplay(
+  photo: PhotoSlot,
+  decodedImageCache: Map<string, Promise<HTMLImageElement>>,
+) {
+  const fallbackSrc = getDefaultPhotoSrc(photo.id)
+  const primarySrc = photo.src || fallbackSrc
+
+  try {
+    await preloadDecodedImage(primarySrc, decodedImageCache)
+    return { ...photo, src: primarySrc }
+  } catch {
+    await preloadDecodedImage(fallbackSrc, decodedImageCache).catch((error) => {
+      console.error('Failed to preload fallback photo', error)
+    })
+    return { ...photo, src: fallbackSrc }
+  }
+}
+
+function preparePhotoSlots(
+  photos: PhotoSlot[],
+  decodedImageCache: Map<string, Promise<HTMLImageElement>>,
+) {
+  return Promise.all(
+    photos.map((photo) => preparePhotoForDisplay(photo, decodedImageCache)),
+  )
+}
+
+async function prepareInitialAppAssets(
+  photos: PhotoSlot[],
+  backupPhotosBySlot: BackupPhotosBySlot,
+  decodedImageCache: Map<string, Promise<HTMLImageElement>>,
+) {
+  const imageSrcs = getResidentImageSrcs(photos, backupPhotosBySlot)
+  const mediaSrcs = [
+    getSceneOneVideoSrc(),
+    ...PRELOAD_SOUND_ASSETS.map(({ path }) => publicAsset(path)),
+  ]
+
+  const [preparedPhotos] = await Promise.all([
+    preparePhotoSlots(photos, decodedImageCache),
+    Promise.allSettled(
+      imageSrcs.map((src) => preloadDecodedImage(src, decodedImageCache)),
+    ),
+    Promise.allSettled(mediaSrcs.map((src) => cacheStaticAsset(src))),
+    warmBackupPhotoCache(backupPhotosBySlot),
+  ])
+
+  return preparedPhotos
+}
+
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     try {
@@ -780,9 +860,13 @@ function App() {
   const [slideExportStatus, setSlideExportStatus] = useState('')
   const [hasRevealedSceneOneVideo, setHasRevealedSceneOneVideo] = useState(false)
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
-  const [isPreparingSceneThree, setIsPreparingSceneThree] = useState(false)
+  const [isAppReady, setIsAppReady] = useState(false)
+  const [assetLoadStatus, setAssetLoadStatus] = useState('LOADING...')
+  const isPreparingSceneThree = false
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const decodedImageCache = useRef<Map<string, Promise<HTMLImageElement>>>(new Map())
+  const photosRef = useRef(photos)
+  const photoPreparationSequenceRef = useRef(0)
   const sceneSequenceRef = useRef<HTMLDivElement>(null)
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
   const shouldScrollToSceneTwoRef = useRef(false)
@@ -802,18 +886,6 @@ function App() {
   const secretTapResetTimer = useRef<number | undefined>(undefined)
 
   useEffect(() => {
-    PRELOAD_IMAGE_ASSETS.forEach((path) => {
-      const src = versionedAsset(path, STATIC_IMAGE_VERSION)
-
-      void preloadDecodedImage(src, decodedImageCache.current).catch(() => undefined)
-    })
-
-    DEFAULT_BACKUP_PHOTO_ASSETS.forEach((path) => {
-      const src = versionedAsset(path, BACKUP_PHOTO_VERSION)
-
-      void preloadDecodedImage(src, decodedImageCache.current).catch(() => undefined)
-    })
-
     PRELOAD_SOUND_ASSETS.forEach(({ path, volume, poolSize }) => {
       preloadSoundPool(path, volume, poolSize)
     })
@@ -830,23 +902,51 @@ function App() {
   }, [])
 
   useEffect(() => {
+    photosRef.current = photos
+  }, [photos])
+
+  useEffect(() => {
     let isMounted = true
 
-    loadBackupPhotos()
-      .then((loadedBackupPhotosBySlot) => {
-        if (!isMounted) {
-          return
-        }
+    const initializeAppAssets = async () => {
+      const [storedPhotosResult, backupPhotosResult] = await Promise.allSettled([
+        fetchCurrentPhotos(),
+        loadBackupPhotos(),
+      ])
+      const storedPhotos = storedPhotosResult.status === 'fulfilled'
+        ? storedPhotosResult.value
+        : []
+      const loadedBackupPhotosBySlot = backupPhotosResult.status === 'fulfilled'
+        ? backupPhotosResult.value
+        : withDefaultBackupPhotos({})
+      const initialPhotos = mergeStoredPhotos(defaultPhotos, storedPhotos)
 
-        setBackupPhotosBySlot(loadedBackupPhotosBySlot)
-        void warmBackupPhotoCache(loadedBackupPhotosBySlot)
-        Object.values(loadedBackupPhotosBySlot).forEach((backupPhotos) => {
-          backupPhotos.forEach((backupPhoto) => {
-            void preloadDecodedImage(backupPhoto.src, decodedImageCache.current).catch(() => undefined)
-          })
-        })
-      })
-      .catch(() => undefined)
+      setAssetLoadStatus('LOADING ASSETS...')
+      const preparedPhotos = await prepareInitialAppAssets(
+        initialPhotos,
+        loadedBackupPhotosBySlot,
+        decodedImageCache.current,
+      )
+
+      if (!isMounted) {
+        return
+      }
+
+      photosRef.current = preparedPhotos
+      setBackupPhotosBySlot(loadedBackupPhotosBySlot)
+      setPhotos(preparedPhotos)
+      setIsAppReady(true)
+    }
+
+    void initializeAppAssets().catch((error) => {
+      console.error('Failed to initialize app assets', error)
+
+      if (!isMounted) {
+        return
+      }
+
+      setIsAppReady(true)
+    })
 
     return () => {
       isMounted = false
@@ -896,10 +996,29 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (!isAppReady) {
+      return
+    }
+
     return subscribeCurrentPhotos((storedPhotos) => {
-      setPhotos((currentPhotos) => mergeStoredPhotos(currentPhotos, storedPhotos))
+      const sequence = photoPreparationSequenceRef.current + 1
+      photoPreparationSequenceRef.current = sequence
+      const nextPhotos = mergeStoredPhotos(photosRef.current, storedPhotos)
+
+      void preparePhotoSlots(nextPhotos, decodedImageCache.current)
+        .then((preparedPhotos) => {
+          if (photoPreparationSequenceRef.current !== sequence) {
+            return
+          }
+
+          photosRef.current = preparedPhotos
+          setPhotos(preparedPhotos)
+        })
+        .catch((error) => {
+          console.error('Failed to prepare updated photos', error)
+        })
     })
-  }, [])
+  }, [isAppReady])
 
   useEffect(() => {
     return subscribeGameControl((state) => setGameEnded(state.gameEnded), setRealtimeError)
@@ -930,8 +1049,10 @@ function App() {
   }, [teamNumber])
 
   useEffect(() => {
+    Array.from(getPhotoSrcs(photos)).forEach((src) => {
+      void preloadDecodedImage(src, decodedImageCache.current).catch(() => undefined)
+    })
     photos.forEach((photo) => {
-      void preloadDecodedImage(photo.src, decodedImageCache.current).catch(() => undefined)
       void preloadDecodedImage(getDefaultPhotoSrc(photo.id), decodedImageCache.current).catch(() => undefined)
     })
   }, [photos])
@@ -1127,6 +1248,10 @@ function App() {
     () => photos.find((photo) => photo.id === submittedPhotoId),
     [photos, submittedPhotoId],
   )
+  const residentImageSrcs = useMemo(
+    () => getResidentImageSrcs(photos, backupPhotosBySlot),
+    [backupPhotosBySlot, photos],
+  )
 
   const enterFullscreen = async () => {
     if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
@@ -1213,6 +1338,9 @@ function App() {
     }, 1200)
   }
 
+  const preparePhotosForDisplay = (nextPhotos: PhotoSlot[]) =>
+    preparePhotoSlots(nextPhotos, decodedImageCache.current)
+
   const updatePhoto = async (slotId: number, file: File | null) => {
     if (!file) {
       return
@@ -1234,10 +1362,12 @@ function App() {
             }
           : photo,
       )
+      const preparedPhotos = await preparePhotosForDisplay(nextPhotos)
 
-      setPhotos(nextPhotos)
-      await saveCurrentPhotos(toStoredPhotos(nextPhotos))
-      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
+      photosRef.current = preparedPhotos
+      setPhotos(preparedPhotos)
+      await saveCurrentPhotos(toStoredPhotos(preparedPhotos))
+      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, preparedPhotos))
       setUploadStatus('更新しました')
     } catch (error) {
       console.error('Failed to update photo', error)
@@ -1257,10 +1387,12 @@ function App() {
           }
         : photo,
     )
+    const preparedPhotos = await preparePhotosForDisplay(nextPhotos)
 
-    setPhotos(nextPhotos)
-    await saveCurrentPhotos(toStoredPhotos(nextPhotos))
-    await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
+    photosRef.current = preparedPhotos
+    setPhotos(preparedPhotos)
+    await saveCurrentPhotos(toStoredPhotos(preparedPhotos))
+    await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, preparedPhotos))
   }
 
   const togglePhotoKeep = async (slotId: number, src: string) => {
@@ -1296,14 +1428,17 @@ function App() {
       }
     })
 
-    setPhotos(nextPhotos)
+    const preparedPhotos = await preparePhotosForDisplay(nextPhotos)
+    photosRef.current = preparedPhotos
+    setPhotos(preparedPhotos)
 
     try {
-      await saveCurrentPhotos(toStoredPhotos(nextPhotos))
-      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
+      await saveCurrentPhotos(toStoredPhotos(preparedPhotos))
+      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, preparedPhotos))
       setUploadStatus(isKeptAfterToggle ? '写真を保管しました' : '写真の保管を解除しました')
     } catch (error) {
       console.error('Failed to update kept photo', error)
+      photosRef.current = previousPhotos
       setPhotos(previousPhotos)
       setUploadStatus('写真の保管設定に失敗しました')
     }
@@ -1323,11 +1458,13 @@ function App() {
         : photo,
     )
 
-    setPhotos(nextPhotos)
+    const preparedPhotos = await preparePhotosForDisplay(nextPhotos)
+    photosRef.current = preparedPhotos
+    setPhotos(preparedPhotos)
 
     try {
-      await saveCurrentPhotos(toStoredPhotos(nextPhotos))
-      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
+      await saveCurrentPhotos(toStoredPhotos(preparedPhotos))
+      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, preparedPhotos))
       setUploadStatus('予備写真に切り替えました')
     } catch (error) {
       console.error('Failed to save backup photo selection', error)
@@ -1340,11 +1477,18 @@ function App() {
       return
     }
 
-    await submitTeamAnswer(teamNumber, {
-      label: getAnswerLabel(selectedPhoto.id),
-      photoId: selectedPhoto.id,
-    })
-    setSubmittedPhotoId(selectedPhoto.id)
+    const photoId = selectedPhoto.id
+
+    setSubmittedPhotoId(photoId)
+
+    try {
+      await submitTeamAnswer(teamNumber, {
+        label: getAnswerLabel(photoId),
+        photoId,
+      })
+    } catch (error) {
+      console.error('Failed to submit answer', error)
+    }
   }
 
   const retryAnswer = async () => {
@@ -1377,33 +1521,8 @@ function App() {
     setScreen('scene1')
   }
 
-  const openSceneThree = async () => {
-    if (isPreparingSceneThree) {
-      return
-    }
-
-    setIsPreparingSceneThree(true)
-
-    try {
-      const sceneThreeImageSrcs = [
-        versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION),
-        versionedAsset('images/back.webp', STATIC_IMAGE_VERSION),
-        versionedAsset('select.png', STATIC_IMAGE_VERSION),
-        versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION),
-        versionedAsset('images/goutou.jpeg', STATIC_IMAGE_VERSION),
-        versionedAsset('images/erabinaosu_button.png', STATIC_IMAGE_VERSION),
-        ...photos.flatMap((photo) => [photo.src, getDefaultPhotoSrc(photo.id)]),
-      ]
-
-      await Promise.allSettled(
-        sceneThreeImageSrcs.map((src) =>
-          preloadDecodedImage(src, decodedImageCache.current),
-        ),
-      )
-      setScreen('scene3')
-    } finally {
-      setIsPreparingSceneThree(false)
-    }
+  const openSceneThree = () => {
+    setScreen('scene3')
   }
 
   const openMaster = () => {
@@ -1467,83 +1586,89 @@ function App() {
         }
       >
         <div className="stage-content">
-          {screen === 'home' && (
-            <HomeScreen
-              photos={photos}
-              isSlideExporting={isSlideExporting}
-              slideExportStatus={slideExportStatus}
-              teams={teamStates}
-              onExportSlideImage={exportSlideImage}
-              onStartTeam={startTeam}
-              onOpenMaster={openMaster}
-              onOpenPhotos={openPhotos}
-            />
-          )}
+          {!isAppReady ? (
+            <AssetLoadingScreen status={assetLoadStatus} />
+          ) : (
+            <>
+              {screen === 'home' && (
+                <HomeScreen
+                  photos={photos}
+                  isSlideExporting={isSlideExporting}
+                  slideExportStatus={slideExportStatus}
+                  teams={teamStates}
+                  onExportSlideImage={exportSlideImage}
+                  onStartTeam={startTeam}
+                  onOpenMaster={openMaster}
+                  onOpenPhotos={openPhotos}
+                />
+              )}
 
-          {screen === 'scene0' && (
-            <SceneZero onNext={startSceneOne} />
-          )}
+              {screen === 'scene0' && (
+                <SceneZero onNext={startSceneOne} />
+              )}
 
-          {screen === 'scene1' && (
-            <div
-              className="scene-sequence"
-              data-followup-visible={hasCompletedSceneOneVideo}
-              ref={sceneSequenceRef}
-            >
-              <SceneOne
-                isPreparingNext={isPreparingSceneThree}
-                isVideoComplete={hasCompletedSceneOneVideo}
-                isVideoRevealed={hasRevealedSceneOneVideo}
-                sceneFollowupRef={sceneTwoPanelRef}
-                onVideoReveal={() => setHasRevealedSceneOneVideo(true)}
-                onVideoComplete={completeSceneOneVideo}
-                onNext={() => {
-                  void openSceneThree()
-                }}
-              />
-            </div>
-          )}
+              {screen === 'scene1' && (
+                <div
+                  className="scene-sequence"
+                  data-followup-visible={hasCompletedSceneOneVideo}
+                  ref={sceneSequenceRef}
+                >
+                  <SceneOne
+                    isPreparingNext={isPreparingSceneThree}
+                    isVideoComplete={hasCompletedSceneOneVideo}
+                    isVideoRevealed={hasRevealedSceneOneVideo}
+                    sceneFollowupRef={sceneTwoPanelRef}
+                    onVideoReveal={() => setHasRevealedSceneOneVideo(true)}
+                    onVideoComplete={completeSceneOneVideo}
+                    onNext={openSceneThree}
+                  />
+                </div>
+              )}
 
-          {screen === 'scene3' && (
-            <SceneThree
-              photos={photos}
-              selectedPhoto={selectedPhoto}
-              selectedPhotoId={selectedPhotoId}
-              submittedPhoto={submittedPhoto}
-              onBack={returnToSceneTwo}
-              onRetry={retryAnswer}
-              onSelect={setSelectedPhotoId}
-              onSubmit={submitAnswer}
-            />
-          )}
+              {screen === 'scene3' && (
+                <SceneThree
+                  photos={photos}
+                  selectedPhoto={selectedPhoto}
+                  selectedPhotoId={selectedPhotoId}
+                  submittedPhoto={submittedPhoto}
+                  onBack={returnToSceneTwo}
+                  onRetry={retryAnswer}
+                  onSelect={setSelectedPhotoId}
+                  onSubmit={submitAnswer}
+                />
+              )}
 
-          {screen === 'master' && (
-            <MasterScreen
-              gameEnded={gameEnded}
-              realtimeConnected={realtimeConnected}
-              realtimeError={realtimeError}
-              teams={teamStates}
-              onBack={() => setScreen('home')}
-              onResetAnswers={resetMasterAnswers}
-              onSendHomeCommand={sendHomeCommand}
-              onSetGameEnded={setGameEndedStatus}
-            />
-          )}
+              {screen === 'master' && (
+                <MasterScreen
+                  gameEnded={gameEnded}
+                  realtimeConnected={realtimeConnected}
+                  realtimeError={realtimeError}
+                  teams={teamStates}
+                  onBack={() => setScreen('home')}
+                  onResetAnswers={resetMasterAnswers}
+                  onSendHomeCommand={sendHomeCommand}
+                  onSetGameEnded={setGameEndedStatus}
+                />
+              )}
 
-          {screen === 'photos' && (
-            <PhotoManager
-              backupPhotosBySlot={backupPhotosBySlot}
-              photos={photos}
-              uploadStatus={uploadStatus}
-              onBack={() => setScreen('home')}
-              onSelectBackupPhoto={selectBackupPhoto}
-              onSelectHistory={selectPhotoHistory}
-              onToggleKeep={togglePhotoKeep}
-              onUpdatePhoto={updatePhoto}
-            />
+              {screen === 'photos' && (
+                <PhotoManager
+                  backupPhotosBySlot={backupPhotosBySlot}
+                  photos={photos}
+                  uploadStatus={uploadStatus}
+                  onBack={() => setScreen('home')}
+                  onSelectBackupPhoto={selectBackupPhoto}
+                  onSelectHistory={selectPhotoHistory}
+                  onToggleKeep={togglePhotoKeep}
+                  onUpdatePhoto={updatePhoto}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {isAppReady && <AssetPreloadLayer srcs={residentImageSrcs} />}
 
       {isPlayerGameEnded && <GameEndedOverlay />}
 
@@ -1577,6 +1702,30 @@ function GameEndedOverlay() {
   return (
     <div className="game-ended-overlay" role="status" aria-live="polite">
       <div className="game-ended-message">ゲームが終了いたしました</div>
+    </div>
+  )
+}
+
+function AssetLoadingScreen({ status }: { status: string }) {
+  return (
+    <section className="asset-loading-screen" aria-label="loading">
+      <p>{status}</p>
+    </section>
+  )
+}
+
+function AssetPreloadLayer({ srcs }: { srcs: string[] }) {
+  return (
+    <div className="asset-preload-layer" aria-hidden="true">
+      {srcs.map((src) => (
+        <img
+          alt=""
+          decoding="async"
+          key={src}
+          loading="eager"
+          src={src}
+        />
+      ))}
     </div>
   )
 }
@@ -1743,19 +1892,16 @@ type FallbackPhotoImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'onErro
 
 function FallbackPhotoImage({ fallbackSrc, src, ...props }: FallbackPhotoImageProps) {
   const primarySrc = src || fallbackSrc
-  const [displaySrc, setDisplaySrc] = useState(primarySrc)
-
-  useEffect(() => {
-    setDisplaySrc(primarySrc)
-  }, [primarySrc])
+  const [failedPrimarySrc, setFailedPrimarySrc] = useState<string | null>(null)
+  const displaySrc = failedPrimarySrc === primarySrc ? fallbackSrc : primarySrc
 
   return (
     <img
       {...props}
       src={displaySrc}
       onError={() => {
-        if (displaySrc !== fallbackSrc) {
-          setDisplaySrc(fallbackSrc)
+        if (displaySrc === primarySrc && primarySrc !== fallbackSrc) {
+          setFailedPrimarySrc(primarySrc)
         }
       }}
     />
@@ -2292,7 +2438,7 @@ function SceneOne({
         >
           <video
             ref={videoRef}
-            src={publicAsset(`videos/scene-1.mp4?v=${SCENE_ONE_VIDEO_VERSION}`)}
+            src={getSceneOneVideoSrc()}
             preload="metadata"
             playsInline
             onLoadedMetadata={syncVideoProgress}
