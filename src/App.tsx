@@ -2188,6 +2188,8 @@ function SceneOne({
             君たちがこの会場に入る前にボクがみた光景を、
             <br />
             なるべく<strong>忠実に再現</strong>するね。
+            
+           
           </p>
         </div>
         {!isVideoRevealed && (
