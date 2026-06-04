@@ -1,4 +1,4 @@
-const CACHE_NAME = 'continue-tablet-v23'
+const CACHE_NAME = 'continue-tablet-v24'
 const STATIC_IMAGE_VERSION = 'images-20260604-6'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 
@@ -236,8 +236,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   const isStaticAsset =
-    (url.origin === self.location.origin ||
-      event.request.destination === 'image') &&
+    url.origin === self.location.origin &&
     ['script', 'style', 'font', 'image', 'manifest'].includes(
       event.request.destination,
     )
@@ -256,7 +255,7 @@ self.addEventListener('fetch', (event) => {
       }
 
       return fetch(event.request).then((response) => {
-        if (response.status === 200 || response.type === 'opaque') {
+        if (response.status === 200 && response.type !== 'opaque') {
           const copy = response.clone()
           caches.open(CACHE_NAME).then(async (cache) => {
             await cache.put(event.request, copy)
