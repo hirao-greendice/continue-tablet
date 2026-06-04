@@ -1648,13 +1648,23 @@ button:focus-visible {
   width: 840px;
   min-height: 150px;
   place-items: center;
+  gap: 10px;
   padding: 8px 28px;
-  color: #f7e8d0;
   font-size: 60px;
   font-weight: 900;
   line-height: 1.08;
   text-align: center;
   white-space: pre-line;
+}
+
+.submitted-file-role-label {
+  color: #d54397;
+  font-size: 50px;
+}
+
+.submitted-file-cast-label {
+  color: #f7e8d0;
+  font-size: 64px;
 }
 
 .retry-answer {

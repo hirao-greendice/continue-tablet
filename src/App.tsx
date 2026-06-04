@@ -2584,6 +2584,8 @@ type SubmittedAnswerScreenProps = {
 }
 
 function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
+  const [roleLabel, castLabel] = photo.label.split('\n')
+
   return (
     <section className="submitted-answer-screen" aria-label="提出した回答">
       <img
@@ -2595,7 +2597,10 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
       <span className="submitted-file-photo-frame">
         <img className="submitted-file-photo" src={photo.src} alt={photo.label} decoding="sync" loading="eager" />
       </span>
-      <span className="submitted-file-name">{photo.label}</span>
+      <span className="submitted-file-name">
+        <span className="submitted-file-role-label">{roleLabel}</span>
+        {castLabel && <span className="submitted-file-cast-label">{castLabel}</span>}
+      </span>
       <button
         className="retry-answer"
         type="button"
