@@ -794,7 +794,7 @@ button:focus-visible {
   grid-template-rows: 1fr auto auto;
   justify-items: center;
   align-items: center;
-  padding: 110px 0 400px;
+  padding: 100px 0 400px;
 }
 
 .scene-zero-letter {
