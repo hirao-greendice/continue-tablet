@@ -36,7 +36,6 @@ const WARM_ASSET_CACHE = [
   versionedAsset('./images/teisyutu_botton.png'),
   versionedAsset('./images/tenkei.png'),
   versionedAsset('./images/tukitome.png'),
-  versionedBackupPhotoAsset('./images/backup-photos/backup-photos.json'),
   versionedBackupPhotoAsset('./images/backup-photos/slot-1-1.png'),
   versionedBackupPhotoAsset('./images/backup-photos/slot-2-1.png'),
   versionedBackupPhotoAsset('./images/backup-photos/slot-3-1.png'),

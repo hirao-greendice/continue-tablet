@@ -584,17 +584,26 @@ function getBackupPhotoImageSrcs(backupPhotosBySlot: BackupPhotosBySlot) {
   )
 }
 
-function getResidentImageSrcs(
+function getResidentImageSrcs(photos: PhotoSlot[]) {
+  return Array.from(
+    new Set([
+      ...getPreloadImageSrcs(),
+      ...DEFAULT_BACKUP_PHOTO_ASSETS.map((path) => versionedAsset(path, BACKUP_PHOTO_VERSION)),
+      ...photos.map((photo) => photo.src),
+      ...photos.map((photo) => getDefaultPhotoSrc(photo.id)),
+    ]),
+  )
+}
+
+function getPhotoManagerImageSrcs(
   photos: PhotoSlot[],
   backupPhotosBySlot: BackupPhotosBySlot,
 ) {
   return Array.from(
     new Set([
-      ...getPreloadImageSrcs(),
-      ...DEFAULT_BACKUP_PHOTO_ASSETS.map((path) => versionedAsset(path, BACKUP_PHOTO_VERSION)),
-      ...getBackupPhotoImageSrcs(backupPhotosBySlot),
       ...Array.from(getPhotoSrcs(photos)),
       ...photos.map((photo) => getDefaultPhotoSrc(photo.id)),
+      ...getBackupPhotoImageSrcs(backupPhotosBySlot),
     ]),
   )
 }
@@ -628,10 +637,9 @@ function preparePhotoSlots(
 
 async function prepareInitialAppAssets(
   photos: PhotoSlot[],
-  backupPhotosBySlot: BackupPhotosBySlot,
   decodedImageCache: Map<string, Promise<HTMLImageElement>>,
 ) {
-  const imageSrcs = getResidentImageSrcs(photos, backupPhotosBySlot)
+  const imageSrcs = getResidentImageSrcs(photos)
   const mediaSrcs = [
     getSceneOneVideoSrc(),
     ...PRELOAD_SOUND_ASSETS.map(({ path }) => publicAsset(path)),
@@ -643,7 +651,6 @@ async function prepareInitialAppAssets(
       imageSrcs.map((src) => preloadDecodedImage(src, decodedImageCache)),
     ),
     Promise.allSettled(mediaSrcs.map((src) => cacheStaticAsset(src))),
-    warmBackupPhotoCache(backupPhotosBySlot),
   ])
 
   return preparedPhotos
@@ -867,6 +874,7 @@ function App() {
   const decodedImageCache = useRef<Map<string, Promise<HTMLImageElement>>>(new Map())
   const photosRef = useRef(photos)
   const photoPreparationSequenceRef = useRef(0)
+  const hasLoadedPhotoManagerAssetsRef = useRef(false)
   const sceneSequenceRef = useRef<HTMLDivElement>(null)
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
   const shouldScrollToSceneTwoRef = useRef(false)
@@ -909,22 +917,19 @@ function App() {
     let isMounted = true
 
     const initializeAppAssets = async () => {
-      const [storedPhotosResult, backupPhotosResult] = await Promise.allSettled([
-        fetchCurrentPhotos(),
-        loadBackupPhotos(),
-      ])
-      const storedPhotos = storedPhotosResult.status === 'fulfilled'
-        ? storedPhotosResult.value
-        : []
-      const loadedBackupPhotosBySlot = backupPhotosResult.status === 'fulfilled'
-        ? backupPhotosResult.value
-        : withDefaultBackupPhotos({})
+      let storedPhotos: StoredPhoto[] = []
+
+      try {
+        storedPhotos = await fetchCurrentPhotos()
+      } catch (error) {
+        console.warn('Failed to fetch current photos on startup', error)
+      }
+
       const initialPhotos = mergeStoredPhotos(defaultPhotos, storedPhotos)
 
       setAssetLoadStatus('LOADING ASSETS...')
       const preparedPhotos = await prepareInitialAppAssets(
         initialPhotos,
-        loadedBackupPhotosBySlot,
         decodedImageCache.current,
       )
 
@@ -933,7 +938,6 @@ function App() {
       }
 
       photosRef.current = preparedPhotos
-      setBackupPhotosBySlot(loadedBackupPhotosBySlot)
       setPhotos(preparedPhotos)
       setIsAppReady(true)
     }
@@ -1049,13 +1053,55 @@ function App() {
   }, [teamNumber])
 
   useEffect(() => {
-    Array.from(getPhotoSrcs(photos)).forEach((src) => {
-      void preloadDecodedImage(src, decodedImageCache.current).catch(() => undefined)
-    })
     photos.forEach((photo) => {
+      void preloadDecodedImage(photo.src, decodedImageCache.current).catch(() => undefined)
       void preloadDecodedImage(getDefaultPhotoSrc(photo.id), decodedImageCache.current).catch(() => undefined)
     })
   }, [photos])
+
+  useEffect(() => {
+    if (screen !== 'photos') {
+      return
+    }
+
+    let isMounted = true
+
+    const loadPhotoManagerAssets = async () => {
+      let loadedBackupPhotosBySlot = backupPhotosBySlot
+
+      if (!hasLoadedPhotoManagerAssetsRef.current) {
+        try {
+          loadedBackupPhotosBySlot = await loadBackupPhotos()
+        } catch (error) {
+          console.warn('Failed to load backup photos for photo manager', error)
+          loadedBackupPhotosBySlot = withDefaultBackupPhotos({})
+        }
+
+        if (!isMounted) {
+          return
+        }
+
+        hasLoadedPhotoManagerAssetsRef.current = true
+        setBackupPhotosBySlot(loadedBackupPhotosBySlot)
+      }
+
+      const imageSrcs = getPhotoManagerImageSrcs(
+        photosRef.current,
+        loadedBackupPhotosBySlot,
+      )
+
+      await Promise.allSettled([
+        warmBackupPhotoCache(loadedBackupPhotosBySlot),
+        ...imageSrcs.map((src) => preloadDecodedImage(src, decodedImageCache.current)),
+      ])
+    }
+
+    void loadPhotoManagerAssets()
+
+    return () => {
+      isMounted = false
+    }
+  }, [backupPhotosBySlot, photos, screen])
 
   useEffect(() => {
     if (screen !== 'scene1') {
@@ -1249,8 +1295,8 @@ function App() {
     [photos, submittedPhotoId],
   )
   const residentImageSrcs = useMemo(
-    () => getResidentImageSrcs(photos, backupPhotosBySlot),
-    [backupPhotosBySlot, photos],
+    () => getResidentImageSrcs(photos),
+    [photos],
   )
 
   const enterFullscreen = async () => {
