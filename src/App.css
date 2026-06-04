@@ -675,7 +675,10 @@ button:focus-visible {
 }
 
 .master-team-answer {
+  display: grid;
   min-height: 78px;
+  align-content: center;
+  gap: 6px;
   color: #fff;
   font-size: 45px;
   font-weight: 900;
@@ -686,6 +689,19 @@ button:focus-visible {
 
 .master-team-answer[data-correct='true'] {
   color: #ffea00;
+}
+
+.master-team-answer[data-previous='true'] {
+  color: #8fa3b8;
+  font-size: 30px;
+}
+
+.master-team-previous-answer {
+  display: block;
+  color: #8fa3b8;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.15;
 }
 
 .story-screen {

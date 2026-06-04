@@ -1,5 +1,6 @@
 import {
   off,
+  get,
   onDisconnect,
   onValue,
   remove,
@@ -20,6 +21,7 @@ export type TeamState = {
   answer?: TeamAnswer
   connections?: Record<string, { connectedAt?: number }>
   online?: boolean
+  previousAnswer?: TeamAnswer
   team: number
 }
 
@@ -129,14 +131,30 @@ export function subscribeTeamAnswer(
   )
 }
 
-export function clearTeamAnswer(team: number) {
-  return remove(ref(realtimeDb, `teams/${team}/answer`))
+export async function clearTeamAnswer(team: number) {
+  const answerSnapshot = await get(ref(realtimeDb, `teams/${team}/answer`))
+  const answer = answerSnapshot.val() as TeamAnswer | null
+
+  if (!answer) {
+    await remove(ref(realtimeDb, `teams/${team}/answer`))
+    return
+  }
+
+  await update(ref(realtimeDb, `teams/${team}`), {
+    answer: null,
+    previousAnswer: answer,
+  })
 }
 
 export function resetAllTeamAnswers() {
   return update(
     ref(realtimeDb),
-    Object.fromEntries(TEAM_NUMBERS.map((team) => [`teams/${team}/answer`, null])),
+    Object.fromEntries(
+      TEAM_NUMBERS.flatMap((team) => [
+        [`teams/${team}/answer`, null],
+        [`teams/${team}/previousAnswer`, null],
+      ]),
+    ),
   )
 }
 

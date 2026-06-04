@@ -1225,11 +1225,15 @@ function App() {
 
       isKeptAfterToggle = !selectedItem.isKept
 
-      const nextHistory = history.map((historyItem) =>
-        historyItem.src === src
-          ? setPhotoHistoryItemKeep(historyItem, isKeptAfterToggle)
-          : historyItem,
-      )
+      const toggledItem = setPhotoHistoryItemKeep(selectedItem, isKeptAfterToggle)
+      const nextHistory = isKeptAfterToggle
+        ? history.map((historyItem) =>
+            historyItem.src === src ? toggledItem : historyItem,
+          )
+        : [
+            toggledItem,
+            ...history.filter((historyItem) => historyItem.src !== src),
+          ]
 
       return {
         ...photo,
@@ -2642,8 +2646,13 @@ function MasterScreen({
       <div className="master-team-grid">
         {teams.map((team) => {
           const answer = team.answer
+          const previousAnswer = answer ? undefined : team.previousAnswer
           const connectionCount = getTeamConnectionCount(team)
           const hasDuplicateConnections = connectionCount >= 2
+          const answerLabel = answer ? SUSPECT_ROLE_LABELS[answer.photoId] ?? answer.label : ''
+          const previousAnswerLabel = previousAnswer
+            ? SUSPECT_ROLE_LABELS[previousAnswer.photoId] ?? previousAnswer.label
+            : ''
           const isCorrect = answer?.photoId === 2 || answer?.label === '学芸員'
 
           return (
@@ -2656,8 +2665,17 @@ function MasterScreen({
                 <span>{team.team}</span>
                 {hasDuplicateConnections && <small>{connectionCount}台接続済</small>}
               </div>
-              <div className="master-team-answer" data-correct={isCorrect}>
-                {answer ? SUSPECT_ROLE_LABELS[answer.photoId] ?? answer.label : ''}
+              <div
+                className="master-team-answer"
+                data-correct={isCorrect}
+                data-previous={Boolean(previousAnswerLabel)}
+              >
+                {answerLabel}
+                {previousAnswerLabel && (
+                  <span className="master-team-previous-answer">
+                    前回: {previousAnswerLabel}
+                  </span>
+                )}
               </div>
             </article>
           )
