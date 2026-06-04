@@ -2267,7 +2267,7 @@ function SceneOne({
           <p>
             文字で説明するより見せたほうがいいか。
             <br />
-            君たちがこの会場に入る前にボクがみた光景を、
+            君たちがこの会場に入る前にボクが聞いた会話を、
             <br />
             なるべく<strong>忠実に再現</strong>するね。
             
@@ -2444,9 +2444,16 @@ function SceneTwoContent({ isPreparingNext, onNext }: SceneTwoProps) {
       <div className="scene-two-content">
         <div className="scene-two-text-block">
           <p>
+            この映像はあくまでイメージなんだけど、
+            <br />
+            大変な状況だということが伝わったかな？
+          </p>
+        </div>
+        <div className="scene-two-text-block">
+          <p>
             先程のシーメイの<strong>はりきっちゃた</strong>という
             <br />
-            発言は何かの<strong>アピール</strong>だったのかもね。
+            発言も何かの<strong>アピール</strong>だったのかもね。
           </p>
         </div>
         <div className="scene-two-text-block">
