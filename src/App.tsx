@@ -1,5 +1,6 @@
 import {
   type CSSProperties,
+  type ImgHTMLAttributes,
   type MouseEvent as ReactMouseEvent,
   type RefObject,
   useEffect,
@@ -77,11 +78,21 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260604-2'
-const APP_CACHE_NAME = 'continue-tablet-v24'
+const APP_CACHE_NAME = 'continue-tablet-v25'
 const STATIC_IMAGE_VERSION = 'images-20260604-6'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
+const DEFAULT_PHOTO_IDS = [1, 2, 3, 4] as const
+const DEFAULT_BACKUP_PHOTO_FILES: Record<number, string> = {
+  1: 'slot-1-1.png',
+  2: 'slot-2-1.png',
+  3: 'slot-3-1.png',
+  4: 'slot-4-1.png',
+}
+const DEFAULT_BACKUP_PHOTO_ASSETS = DEFAULT_PHOTO_IDS.map(
+  (slotId) => `${BACKUP_PHOTO_FOLDER}/${DEFAULT_BACKUP_PHOTO_FILES[slotId]}`,
+)
 const CLICK_SOUND = 'sounds/click.mp3'
 const SUBMIT_SOUND = 'sounds/omaeda.mp3'
 const CLICK_SOUND_VOLUME = 0.8
@@ -187,14 +198,11 @@ const SUSPECT_ROLE_LABELS: Record<number, string> = {
   4: '刑事',
 }
 
-const DEFAULT_PHOTO_SRC = versionedAsset('images/konohito.png', STATIC_IMAGE_VERSION)
-
-const defaultPhotos: PhotoSlot[] = [
-  { id: 1, label: SUSPECT_LABELS[1], src: DEFAULT_PHOTO_SRC },
-  { id: 2, label: SUSPECT_LABELS[2], src: DEFAULT_PHOTO_SRC },
-  { id: 3, label: SUSPECT_LABELS[3], src: DEFAULT_PHOTO_SRC },
-  { id: 4, label: SUSPECT_LABELS[4], src: DEFAULT_PHOTO_SRC },
-]
+const defaultPhotos: PhotoSlot[] = DEFAULT_PHOTO_IDS.map((id) => ({
+  id,
+  label: SUSPECT_LABELS[id],
+  src: getDefaultPhotoSrc(id),
+}))
 
 function getBackupPhotoManifestSrc() {
   return versionedAsset(BACKUP_PHOTO_MANIFEST_PATH, BACKUP_PHOTO_VERSION)
@@ -203,7 +211,7 @@ function getBackupPhotoManifestSrc() {
 async function loadBackupPhotos() {
   const manifest = await fetchJsonWithCache(getBackupPhotoManifestSrc())
 
-  return normalizeBackupPhotoManifest(manifest)
+  return withDefaultBackupPhotos(normalizeBackupPhotoManifest(manifest))
 }
 
 async function fetchJsonWithCache(src: string) {
@@ -313,6 +321,30 @@ function normalizeBackupPhoto(rawItem: unknown, index: number) {
     label: typeof label === 'string' && label.trim() ? label.trim() : `予備${index + 1}`,
     src: resolveBackupPhotoSrc(src),
   }
+}
+
+function withDefaultBackupPhotos(backupPhotosBySlot: BackupPhotosBySlot) {
+  const nextBackupPhotosBySlot = { ...backupPhotosBySlot }
+
+  DEFAULT_PHOTO_IDS.forEach((slotId) => {
+    if (!nextBackupPhotosBySlot[slotId]?.length) {
+      nextBackupPhotosBySlot[slotId] = [createDefaultBackupPhoto(slotId)]
+    }
+  })
+
+  return nextBackupPhotosBySlot
+}
+
+function createDefaultBackupPhoto(slotId: number): BackupPhoto {
+  return {
+    id: `default-${slotId}`,
+    label: '予備1',
+    src: getDefaultPhotoSrc(slotId),
+  }
+}
+
+function getDefaultPhotoSrc(slotId: number) {
+  return resolveBackupPhotoSrc(DEFAULT_BACKUP_PHOTO_FILES[slotId] ?? DEFAULT_BACKUP_PHOTO_FILES[1])
 }
 
 function resolveBackupPhotoSrc(src: string) {
@@ -523,6 +555,20 @@ function loadCanvasImage(src: string) {
   })
 }
 
+async function loadCanvasPhotoImage(photo: PhotoSlot) {
+  const fallbackSrc = getDefaultPhotoSrc(photo.id)
+
+  try {
+    return await loadCanvasImage(photo.src || fallbackSrc)
+  } catch (error) {
+    if (!photo.src || photo.src === fallbackSrc) {
+      throw error
+    }
+
+    return loadCanvasImage(fallbackSrc)
+  }
+}
+
 function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number) {
   return new Promise<Blob>((resolve, reject) => {
     try {
@@ -652,7 +698,7 @@ async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
   const [backgroundImage, submitButtonImage, ...photoImages] = await Promise.all([
     loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
     loadCanvasImage(versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)),
-    ...photos.map((photo) => loadCanvasImage(photo.src)),
+    ...photos.map((photo) => loadCanvasPhotoImage(photo)),
   ])
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
@@ -758,6 +804,12 @@ function App() {
   useEffect(() => {
     PRELOAD_IMAGE_ASSETS.forEach((path) => {
       const src = versionedAsset(path, STATIC_IMAGE_VERSION)
+
+      void preloadDecodedImage(src, decodedImageCache.current).catch(() => undefined)
+    })
+
+    DEFAULT_BACKUP_PHOTO_ASSETS.forEach((path) => {
+      const src = versionedAsset(path, BACKUP_PHOTO_VERSION)
 
       void preloadDecodedImage(src, decodedImageCache.current).catch(() => undefined)
     })
@@ -880,6 +932,7 @@ function App() {
   useEffect(() => {
     photos.forEach((photo) => {
       void preloadDecodedImage(photo.src, decodedImageCache.current).catch(() => undefined)
+      void preloadDecodedImage(getDefaultPhotoSrc(photo.id), decodedImageCache.current).catch(() => undefined)
     })
   }, [photos])
 
@@ -1339,7 +1392,7 @@ function App() {
         versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION),
         versionedAsset('images/goutou.jpeg', STATIC_IMAGE_VERSION),
         versionedAsset('images/erabinaosu_button.png', STATIC_IMAGE_VERSION),
-        ...photos.map((photo) => photo.src),
+        ...photos.flatMap((photo) => [photo.src, getDefaultPhotoSrc(photo.id)]),
       ]
 
       await Promise.allSettled(
@@ -1683,6 +1736,32 @@ function formatHomePhotoUpdatedAt(updatedAt: number | undefined) {
   return photoUpdatedAtFormatter.format(new Date(updatedAt))
 }
 
+type FallbackPhotoImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'onError' | 'src'> & {
+  fallbackSrc: string
+  src: string
+}
+
+function FallbackPhotoImage({ fallbackSrc, src, ...props }: FallbackPhotoImageProps) {
+  const primarySrc = src || fallbackSrc
+  const [displaySrc, setDisplaySrc] = useState(primarySrc)
+
+  useEffect(() => {
+    setDisplaySrc(primarySrc)
+  }, [primarySrc])
+
+  return (
+    <img
+      {...props}
+      src={displaySrc}
+      onError={() => {
+        if (displaySrc !== fallbackSrc) {
+          setDisplaySrc(fallbackSrc)
+        }
+      }}
+    />
+  )
+}
+
 function createEmptyTeamStates() {
   return Array.from({ length: 8 }, (_, index) => ({ team: index + 1 }))
 }
@@ -1835,7 +1914,11 @@ function HomeScreen({
       <div className="home-photo-strip" aria-label="現在の写真">
         {photos.map((photo) => (
           <article className="home-photo-card" key={photo.id}>
-            <img src={photo.src} alt={`${photo.label}の現在の写真`} />
+            <FallbackPhotoImage
+              src={photo.src}
+              fallbackSrc={getDefaultPhotoSrc(photo.id)}
+              alt={`${photo.label}の現在の写真`}
+            />
             <span>{photo.label}</span>
             <p className="home-photo-updated-at">{formatHomePhotoUpdatedAt(photo.updatedAt)}</p>
           </article>
@@ -2526,7 +2609,13 @@ function SceneThree({
                 }}
               >
                 <span className="suspect-frame">
-                  <img src={photo.src} alt={photo.label} decoding="sync" loading="eager" />
+                  <FallbackPhotoImage
+                    src={photo.src}
+                    fallbackSrc={getDefaultPhotoSrc(photo.id)}
+                    alt={photo.label}
+                    decoding="sync"
+                    loading="eager"
+                  />
                 </span>
                 <span className="selection-pointer-slot" aria-hidden="true">
                   {isSelected && (
@@ -2595,7 +2684,14 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
         aria-hidden="true"
       />
       <span className="submitted-file-photo-frame">
-        <img className="submitted-file-photo" src={photo.src} alt={photo.label} decoding="sync" loading="eager" />
+        <FallbackPhotoImage
+          className="submitted-file-photo"
+          src={photo.src}
+          fallbackSrc={getDefaultPhotoSrc(photo.id)}
+          alt={photo.label}
+          decoding="sync"
+          loading="eager"
+        />
       </span>
       <span className="submitted-file-name">
         <span className="submitted-file-role-label">{roleLabel}</span>
@@ -2908,7 +3004,12 @@ function PhotoManager({
                   onClick={() => setActivePhotoId(photo.id)}
                 >
                   <span className="photo-slot-number">{photo.id}</span>
-                  <img src={photo.src} alt="" aria-hidden="true" />
+                  <FallbackPhotoImage
+                    src={photo.src}
+                    fallbackSrc={getDefaultPhotoSrc(photo.id)}
+                    alt=""
+                    aria-hidden="true"
+                  />
                   <span className="photo-slot-name">{photo.label}</span>
                   <span className="photo-slot-updated">{formatHomePhotoUpdatedAt(photo.updatedAt)}</span>
                 </button>
@@ -2926,7 +3027,11 @@ function PhotoManager({
                   {activePhotoIsKept && <strong className="photo-preview-kept-badge">保管中</strong>}
                 </div>
                 <div className="photo-preview-frame">
-                  <img src={activePhoto.src} alt={`${activePhoto.label}の現在の写真`} />
+                  <FallbackPhotoImage
+                    src={activePhoto.src}
+                    fallbackSrc={getDefaultPhotoSrc(activePhoto.id)}
+                    alt={`${activePhoto.label}の現在の写真`}
+                  />
                 </div>
               </section>
 
@@ -3018,7 +3123,12 @@ function PhotoManager({
                               }))
                             }
                           >
-                            <img src={historyItem.src} alt="" aria-hidden="true" />
+                            <FallbackPhotoImage
+                              src={historyItem.src}
+                              fallbackSrc={getDefaultPhotoSrc(activePhoto.id)}
+                              alt=""
+                              aria-hidden="true"
+                            />
                             <span>{isCurrent ? '現在の写真' : formatHomePhotoUpdatedAt(historyItem.updatedAt)}</span>
                           </button>
                         )
@@ -3103,7 +3213,12 @@ function PhotoManager({
                               }))
                             }}
                           >
-                            <img src={backupPhoto.src} alt="" aria-hidden="true" />
+                            <FallbackPhotoImage
+                              src={backupPhoto.src}
+                              fallbackSrc={getDefaultPhotoSrc(activePhoto.id)}
+                              alt=""
+                              aria-hidden="true"
+                            />
                             <span>{backupPhoto.label}</span>
                             <strong>{backupPhoto.isKept ? '保管中' : isCurrent ? '使用中' : '選択する'}</strong>
                           </button>

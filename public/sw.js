@@ -1,4 +1,4 @@
-const CACHE_NAME = 'continue-tablet-v24'
+const CACHE_NAME = 'continue-tablet-v25'
 const STATIC_IMAGE_VERSION = 'images-20260604-6'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 
@@ -37,6 +37,10 @@ const WARM_ASSET_CACHE = [
   versionedAsset('./images/tenkei.png'),
   versionedAsset('./images/tukitome.png'),
   versionedBackupPhotoAsset('./images/backup-photos/backup-photos.json'),
+  versionedBackupPhotoAsset('./images/backup-photos/slot-1-1.png'),
+  versionedBackupPhotoAsset('./images/backup-photos/slot-2-1.png'),
+  versionedBackupPhotoAsset('./images/backup-photos/slot-3-1.png'),
+  versionedBackupPhotoAsset('./images/backup-photos/slot-4-1.png'),
   './sounds/click.mp3',
   './sounds/omaeda.mp3',
 ]
