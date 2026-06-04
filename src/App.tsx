@@ -48,13 +48,16 @@ type PhotoSlot = {
   updatedAt?: number
 }
 type PhotoHistoryItem = {
+  isKept?: boolean
   src: string
   updatedAt?: number
 }
 type BackupPhoto = {
   id: string
+  isKept?: boolean
   label: string
   src: string
+  updatedAt?: number
 }
 type BackupPhotosBySlot = Record<number, BackupPhoto[]>
 type CropDraft = {
@@ -1205,6 +1208,48 @@ function App() {
     await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
   }
 
+  const togglePhotoKeep = async (slotId: number, src: string) => {
+    const previousPhotos = photos
+    let isKeptAfterToggle = false
+    const nextPhotos = photos.map((photo) => {
+      if (photo.id !== slotId) {
+        return photo
+      }
+
+      const history = getPhotoHistory(photo)
+      const selectedItem = history.find((historyItem) => historyItem.src === src)
+
+      if (!selectedItem) {
+        return photo
+      }
+
+      isKeptAfterToggle = !selectedItem.isKept
+
+      const nextHistory = history.map((historyItem) =>
+        historyItem.src === src
+          ? setPhotoHistoryItemKeep(historyItem, isKeptAfterToggle)
+          : historyItem,
+      )
+
+      return {
+        ...photo,
+        history: getPhotoHistory({ ...photo, history: nextHistory }),
+      }
+    })
+
+    setPhotos(nextPhotos)
+
+    try {
+      await saveCurrentPhotos(toStoredPhotos(nextPhotos))
+      await deletePhotoFiles(getUnreferencedPhotoSrcs(previousPhotos, nextPhotos))
+      setUploadStatus(isKeptAfterToggle ? '写真を保管しました' : '写真の保管を解除しました')
+    } catch (error) {
+      console.error('Failed to update kept photo', error)
+      setPhotos(previousPhotos)
+      setUploadStatus('写真の保管設定に失敗しました')
+    }
+  }
+
   const selectBackupPhoto = async (slotId: number, backupPhoto: BackupPhoto) => {
     const updatedAt = Date.now()
     const previousPhotos = photos
@@ -1434,6 +1479,7 @@ function App() {
               onBack={() => setScreen('home')}
               onSelectBackupPhoto={selectBackupPhoto}
               onSelectHistory={selectPhotoHistory}
+              onToggleKeep={togglePhotoKeep}
               onUpdatePhoto={updatePhoto}
             />
           )}
@@ -1504,13 +1550,18 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
 
 function toStoredPhotos(photos: PhotoSlot[]): StoredPhoto[] {
   return photos.map((photo) => ({
-    history: photo.history?.map((historyItem) => ({
-      src: historyItem.src,
-      updatedAt: historyItem.updatedAt,
-    })),
+    ...(photo.history && photo.history.length > 0
+      ? {
+          history: photo.history.map((historyItem) => ({
+            ...(historyItem.isKept ? { isKept: true } : {}),
+            ...(historyItem.updatedAt ? { updatedAt: historyItem.updatedAt } : {}),
+            src: historyItem.src,
+          })),
+        }
+      : {}),
     id: photo.id,
     src: photo.src,
-    updatedAt: photo.updatedAt,
+    ...(photo.updatedAt ? { updatedAt: photo.updatedAt } : {}),
   }))
 }
 
@@ -1533,6 +1584,14 @@ function getPhotoSrcs(photos: PhotoSlot[]) {
   return srcs
 }
 
+function setPhotoHistoryItemKeep(historyItem: PhotoHistoryItem, isKept: boolean): PhotoHistoryItem {
+  return {
+    ...(isKept ? { isKept: true } : {}),
+    ...(historyItem.updatedAt ? { updatedAt: historyItem.updatedAt } : {}),
+    src: historyItem.src,
+  }
+}
+
 function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
   const history = photo.history ?? []
   const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(photo.src)
@@ -1540,18 +1599,51 @@ function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>
     { src: photo.src, updatedAt: currentUpdatedAt },
     ...history,
   ]
-  const seen = new Set<string>()
+  const seen = new Map<string, PhotoHistoryItem>()
+  const uniqueItems: PhotoHistoryItem[] = []
+  let unkeptCount = 0
 
-  return items
-    .filter((item) => {
-      if (!item.src || seen.has(item.src)) {
-        return false
+  items.forEach((item) => {
+    if (!item.src) {
+      return
+    }
+
+    const existingItem = seen.get(item.src)
+
+    if (existingItem) {
+      if (item.isKept) {
+        existingItem.isKept = true
       }
 
-      seen.add(item.src)
+      if (!existingItem.updatedAt && item.updatedAt) {
+        existingItem.updatedAt = item.updatedAt
+      }
+
+      return
+    }
+
+    const nextItem: PhotoHistoryItem = {
+      ...(item.isKept ? { isKept: true } : {}),
+      ...(item.updatedAt ? { updatedAt: item.updatedAt } : {}),
+      src: item.src,
+    }
+
+    seen.set(item.src, nextItem)
+    uniqueItems.push(nextItem)
+  })
+
+  return uniqueItems.filter((item) => {
+    if (item.isKept) {
       return true
-    })
-    .slice(0, PHOTO_HISTORY_LIMIT)
+    }
+
+    if (unkeptCount >= PHOTO_HISTORY_LIMIT) {
+      return false
+    }
+
+    unkeptCount += 1
+    return true
+  })
 }
 
 function getPhotoVersionTimestamp(src: string) {
@@ -2625,6 +2717,7 @@ type PhotoManagerProps = {
   onBack: () => void
   onSelectBackupPhoto: (slotId: number, backupPhoto: BackupPhoto) => Promise<void>
   onSelectHistory: (slotId: number, historyItem: PhotoHistoryItem) => Promise<void>
+  onToggleKeep: (slotId: number, src: string) => Promise<void>
   onUpdatePhoto: (slotId: number, file: File | null) => Promise<void>
 }
 
@@ -2635,6 +2728,7 @@ function PhotoManager({
   onBack,
   onSelectBackupPhoto,
   onSelectHistory,
+  onToggleKeep,
   onUpdatePhoto,
 }: PhotoManagerProps) {
   const [cropDraft, setCropDraft] = useState<CropDraft | null>(null)
@@ -2667,22 +2761,39 @@ function PhotoManager({
 
   const activePhoto = photos.find((photo) => photo.id === activePhotoId) ?? photos[0]
   const activeHistory = activePhoto?.history ?? []
+  const activeRegularHistory = activeHistory.filter((historyItem) => !historyItem.isKept)
   const activeBackupPhotos = activePhoto ? backupPhotosBySlot[activePhoto.id] ?? [] : []
+  const activeKeptBackupPhotos: BackupPhoto[] = activeHistory
+    .filter((historyItem) => historyItem.isKept)
+    .map((historyItem, index) => ({
+      id: `kept-${activePhoto?.id ?? 0}-${index}-${historyItem.src}`,
+      isKept: true,
+      label: formatHomePhotoUpdatedAt(historyItem.updatedAt),
+      src: historyItem.src,
+      updatedAt: historyItem.updatedAt,
+    }))
+  const activeBackupChoices = [...activeKeptBackupPhotos, ...activeBackupPhotos]
   const activeCurrentBackupPhoto = activePhoto
-    ? activeBackupPhotos.find((backupPhoto) => backupPhoto.src === activePhoto.src)
+    ? activeBackupChoices.find((backupPhoto) => backupPhoto.src === activePhoto.src)
     : undefined
+  const activeCurrentHistoryItem = activePhoto
+    ? activeHistory.find((historyItem) => historyItem.src === activePhoto.src)
+    : null
+  const activePhotoIsKept = Boolean(activeCurrentHistoryItem?.isKept)
   const selectedHistorySrc = activePhoto
     ? selectedHistorySrcBySlot[activePhoto.id] ?? activePhoto.src
     : ''
   const selectedHistoryItem =
-    activeHistory.find((historyItem) => historyItem.src === selectedHistorySrc) ?? null
+    activeRegularHistory.find((historyItem) => historyItem.src === selectedHistorySrc) ?? null
   const canRestoreHistory =
     Boolean(activePhoto && selectedHistoryItem) && selectedHistoryItem?.src !== activePhoto?.src
+  const canToggleKeep = Boolean(selectedHistoryItem)
+  const selectedHistoryIsKept = Boolean(selectedHistoryItem?.isKept)
   const selectedBackupSrc = activePhoto
     ? selectedBackupSrcBySlot[activePhoto.id] ?? activeCurrentBackupPhoto?.src ?? ''
     : ''
   const selectedBackupPhoto =
-    activeBackupPhotos.find((backupPhoto) => backupPhoto.src === selectedBackupSrc) ?? null
+    activeBackupChoices.find((backupPhoto) => backupPhoto.src === selectedBackupSrc) ?? null
   const canApplyBackup =
     Boolean(activePhoto && selectedBackupPhoto) && selectedBackupPhoto?.src !== activePhoto?.src
 
@@ -2733,6 +2844,7 @@ function PhotoManager({
                   <span>現在の写真</span>
                   <h2>{activePhoto.id}. {activePhoto.label}</h2>
                   <p className="photo-updated-at">{formatPhotoUpdatedAt(activePhoto.updatedAt)}</p>
+                  {activePhotoIsKept && <strong className="photo-preview-kept-badge">保管中</strong>}
                 </div>
                 <div className="photo-preview-frame">
                   <img src={activePhoto.src} alt={`${activePhoto.label}の現在の写真`} />
@@ -2761,10 +2873,11 @@ function PhotoManager({
               <section className="photo-history-panel" aria-label="過去の写真">
                 <div className="photo-history-heading">
                   <h3>過去の写真</h3>
-                  <span>{activeHistory.length}枚</span>
+                  <span>{activeRegularHistory.length}枚</span>
                 </div>
-                {activeHistory.length > 0 ? (
+                {activeRegularHistory.length > 0 ? (
                   <>
+                    <div className="photo-history-actions">
                     <button
                       className="photo-restore-button"
                       disabled={!canRestoreHistory}
@@ -2779,8 +2892,35 @@ function PhotoManager({
                     >
                       この写真に戻す
                     </button>
+                      <button
+                        className="photo-keep-button"
+                        data-kept={selectedHistoryIsKept}
+                        disabled={!canToggleKeep}
+                        type="button"
+                        onClick={() => {
+                          if (!selectedHistoryItem) {
+                            return
+                          }
+
+                          void onToggleKeep(activePhoto.id, selectedHistoryItem.src).then(() => {
+                            setSelectedHistorySrcBySlot((currentSelections) => {
+                              const nextSelections = { ...currentSelections }
+                              delete nextSelections[activePhoto.id]
+
+                              return nextSelections
+                            })
+                            setSelectedBackupSrcBySlot((currentSelections) => ({
+                              ...currentSelections,
+                              [activePhoto.id]: selectedHistoryItem.src,
+                            }))
+                          })
+                        }}
+                      >
+                        {selectedHistoryIsKept ? '保管を解除' : 'この写真を保管'}
+                      </button>
+                    </div>
                     <div className="photo-history-options">
-                      {activeHistory.map((historyItem) => {
+                      {activeRegularHistory.map((historyItem) => {
                         const isCurrent = historyItem.src === activePhoto.src
                         const isSelected = historyItem.src === selectedHistorySrc
 
@@ -2814,10 +2954,11 @@ function PhotoManager({
               <section className="photo-backup-panel" aria-label="予備写真">
                 <div className="photo-backup-heading">
                   <h3>予備写真</h3>
-                  <span>{activeBackupPhotos.length}枚</span>
+                  <span>{activeBackupChoices.length}枚</span>
                 </div>
-                {activeBackupPhotos.length > 0 ? (
+                {activeBackupChoices.length > 0 ? (
                   <>
+                    <div className="photo-backup-actions">
                     <button
                       className="photo-restore-button photo-backup-apply"
                       disabled={!canApplyBackup}
@@ -2827,13 +2968,42 @@ function PhotoManager({
                           return
                         }
 
+                        if (selectedBackupPhoto.isKept) {
+                          void onSelectHistory(activePhoto.id, selectedBackupPhoto)
+                          return
+                        }
+
                         void onSelectBackupPhoto(activePhoto.id, selectedBackupPhoto)
                       }}
                     >
                       この予備写真を使う
                     </button>
+                      <button
+                        className="photo-keep-button photo-kept-release-button"
+                        aria-hidden={!selectedBackupPhoto?.isKept}
+                        data-visible={selectedBackupPhoto?.isKept}
+                        disabled={!selectedBackupPhoto?.isKept}
+                        type="button"
+                        onClick={() => {
+                          if (!selectedBackupPhoto?.isKept) {
+                            return
+                          }
+
+                          void onToggleKeep(activePhoto.id, selectedBackupPhoto.src).then(() => {
+                            setSelectedBackupSrcBySlot((currentSelections) => {
+                              const nextSelections = { ...currentSelections }
+                              delete nextSelections[activePhoto.id]
+
+                              return nextSelections
+                            })
+                          })
+                        }}
+                      >
+                        保管を解除
+                      </button>
+                    </div>
                     <div className="photo-backup-options">
-                      {activeBackupPhotos.map((backupPhoto) => {
+                      {activeBackupChoices.map((backupPhoto) => {
                         const isCurrent = backupPhoto.src === activePhoto.src
                         const isSelected = backupPhoto.src === selectedBackupSrc
 
@@ -2842,6 +3012,7 @@ function PhotoManager({
                             className="photo-backup-option"
                             aria-pressed={isSelected}
                             data-current={isCurrent}
+                            data-kept={backupPhoto.isKept}
                             data-selected={isSelected}
                             key={backupPhoto.id}
                             type="button"
@@ -2855,7 +3026,7 @@ function PhotoManager({
                           >
                             <img src={backupPhoto.src} alt="" aria-hidden="true" />
                             <span>{backupPhoto.label}</span>
-                            <strong>{isCurrent ? '使用中' : '選択する'}</strong>
+                            <strong>{backupPhoto.isKept ? '保管中' : isCurrent ? '使用中' : '選択する'}</strong>
                           </button>
                         )
                       })}

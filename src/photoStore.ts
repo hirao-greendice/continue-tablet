@@ -3,6 +3,7 @@ import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage
 import { db, storage } from './firebase'
 
 export type StoredPhotoHistoryItem = {
+  isKept?: boolean
   src: string
   updatedAt?: number
 }

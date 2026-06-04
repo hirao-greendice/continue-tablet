@@ -2638,6 +2638,20 @@ button:focus-visible {
   line-height: 1.25;
 }
 
+.photo-preview-kept-badge {
+  display: grid;
+  width: fit-content;
+  min-height: 44px;
+  place-items: center;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #b78914;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .photo-preview-frame {
   display: grid;
   justify-items: center;
@@ -2792,6 +2806,11 @@ button:focus-visible {
   background: #f3e1cb;
 }
 
+.photo-backup-option[data-kept='true'] {
+  border-color: #b78914;
+  background: #fff8df;
+}
+
 .photo-backup-option:disabled {
   cursor: default;
 }
@@ -2827,6 +2846,22 @@ button:focus-visible {
   object-fit: cover;
 }
 
+.photo-history-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(260px, 440px));
+  justify-content: center;
+  gap: 16px;
+}
+
+.photo-backup-actions {
+  display: grid;
+  min-height: 82px;
+  grid-template-columns: minmax(260px, 440px) 150px;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
 .photo-backup-option strong {
   display: grid;
   min-height: 42px;
@@ -2848,6 +2883,11 @@ button:focus-visible {
   color: #fff;
 }
 
+.photo-backup-option[data-kept='true'] strong {
+  background: #b78914;
+  color: #fff;
+}
+
 .photo-restore-button {
   width: min(100%, 440px);
   min-height: 82px;
@@ -2861,7 +2901,59 @@ button:focus-visible {
   box-shadow: 0 8px 0 rgba(67, 92, 19, 0.34);
 }
 
+.photo-history-actions .photo-restore-button {
+  width: 100%;
+  justify-self: stretch;
+}
+
+.photo-backup-actions .photo-restore-button {
+  width: 100%;
+  justify-self: stretch;
+}
+
+.photo-keep-button {
+  width: 100%;
+  min-height: 82px;
+  justify-self: stretch;
+  border: 0;
+  border-radius: 8px;
+  background: #ffcf33;
+  color: #2d2100;
+  font-size: 32px;
+  font-weight: 900;
+  box-shadow: 0 8px 0 rgba(115, 84, 9, 0.34);
+}
+
+.photo-keep-button[data-kept='true'] {
+  background: #151a21;
+  color: #fff;
+  box-shadow: 0 8px 0 rgba(0, 0, 0, 0.24);
+}
+
+.photo-kept-release-button {
+  width: 150px;
+  min-height: 46px;
+  justify-self: stretch;
+  padding: 0 18px;
+  border: 3px solid #151a21;
+  background: #fff;
+  color: #151a21;
+  font-size: 18px;
+  box-shadow: none;
+}
+
+.photo-kept-release-button[data-visible='false'] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .photo-restore-button:disabled {
+  background: #d5dce4;
+  color: #6f7b88;
+  box-shadow: none;
+}
+
+.photo-keep-button:disabled {
   background: #d5dce4;
   color: #6f7b88;
   box-shadow: none;
@@ -3083,6 +3175,31 @@ button:focus-visible {
     min-height: 66px;
     font-size: 24px;
     box-shadow: 0 6px 0 rgba(67, 92, 19, 0.34);
+  }
+
+  .photo-history-actions {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .photo-backup-actions {
+    min-height: 66px;
+    grid-template-columns: minmax(0, 1fr) 116px;
+    gap: 10px;
+  }
+
+  .photo-keep-button {
+    min-height: 66px;
+    font-size: 24px;
+    box-shadow: 0 6px 0 rgba(115, 84, 9, 0.34);
+  }
+
+  .photo-kept-release-button {
+    width: 116px;
+    min-height: 44px;
+    padding: 0 16px;
+    font-size: 16px;
+    box-shadow: none;
   }
 
   .photo-history-empty {
