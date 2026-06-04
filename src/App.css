@@ -759,7 +759,7 @@ button:focus-visible {
   display: block;
   background-position: top center;
   background-repeat: no-repeat;
-  background-size: 100% auto;
+  background-size: 108% auto;
   filter: brightness(0.84);
 }
 
