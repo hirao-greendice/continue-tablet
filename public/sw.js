@@ -28,6 +28,8 @@ const WARM_ASSET_CACHE = [
   versionedAsset('./images/konohito.png'),
   versionedAsset('./images/0.webp'),
   versionedAsset('./images/0-1.webp'),
+  versionedAsset('./images/1x.webp'),
+  versionedAsset('./images/2x.webp'),
   versionedAsset('./images/5maebutton.webp'),
   versionedAsset('./images/5nextbutton.webp'),
   versionedAsset('./images/play.png'),

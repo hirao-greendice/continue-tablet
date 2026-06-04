@@ -110,6 +110,8 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/konohito.png',
   'images/0.webp',
   'images/0-1.webp',
+  'images/1x.webp',
+  'images/2x.webp',
   'images/5maebutton.webp',
   'images/5nextbutton.webp',
   'images/play.png',
@@ -2282,6 +2284,7 @@ function SceneOne({
   const [videoSkipIndicator, setVideoSkipIndicator] = useState<'left' | 'right' | null>(null)
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
+  const [videoPlaybackRate, setVideoPlaybackRate] = useState<1 | 2>(1)
 
   useEffect(() => {
     if (videoRef.current) {
@@ -2294,10 +2297,17 @@ function SceneOne({
     }
   }, [])
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = videoPlaybackRate
+    }
+  }, [videoPlaybackRate])
+
   const playVideo = async (restart = false) => {
     try {
       if (videoRef.current) {
         videoRef.current.volume = clampVolume(SCENE_ONE_VIDEO_VOLUME)
+        videoRef.current.playbackRate = videoPlaybackRate
 
         if (restart) {
           videoRef.current.currentTime = 0
@@ -2344,6 +2354,19 @@ function SceneOne({
     }
 
     await playVideo()
+  }
+
+  const toggleVideoPlaybackRate = () => {
+    playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
+    setVideoPlaybackRate((currentRate) => {
+      const nextRate = currentRate === 1 ? 2 : 1
+
+      if (videoRef.current) {
+        videoRef.current.playbackRate = nextRate
+      }
+
+      return nextRate
+    })
   }
 
   const syncVideoProgress = () => {
@@ -2620,6 +2643,23 @@ function SceneOne({
             <img
               className="video-control-art"
               src={versionedAsset('images/5nextbutton.webp', STATIC_IMAGE_VERSION)}
+              alt=""
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            className="video-control-button video-speed-button"
+            type="button"
+            aria-label={`再生速度 ${videoPlaybackRate}倍`}
+            aria-pressed={videoPlaybackRate === 2}
+            onClick={toggleVideoPlaybackRate}
+          >
+            <img
+              className="video-control-art"
+              src={versionedAsset(
+                videoPlaybackRate === 1 ? 'images/1x.webp' : 'images/2x.webp',
+                STATIC_IMAGE_VERSION,
+              )}
               alt=""
               aria-hidden="true"
             />
