@@ -649,9 +649,8 @@ function drawSceneThreeLabel(
 async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
   await document.fonts?.ready
 
-  const [backgroundImage, backButtonImage, submitButtonImage, ...photoImages] = await Promise.all([
+  const [backgroundImage, submitButtonImage, ...photoImages] = await Promise.all([
     loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
-    loadCanvasImage(versionedAsset('images/back.webp', STATIC_IMAGE_VERSION)),
     loadCanvasImage(versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)),
     ...photos.map((photo) => loadCanvasImage(photo.src)),
   ])
@@ -707,7 +706,6 @@ async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
     drawSceneThreeLabel(context, photo.label, cardX, labelY, 442, 86)
   })
 
-  drawImageContain(context, backButtonImage, 40, 1670, 204, 155)
   context.save()
   context.globalAlpha = 0.52
   drawImageContain(context, submitButtonImage, 310, 1682, 581, 129)
