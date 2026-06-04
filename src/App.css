@@ -797,10 +797,19 @@ button:focus-visible {
   padding: 100px 0 400px;
 }
 
-.scene-zero-letter {
+.scene-zero-letter-float {
   display: block;
   width: 760px;
   max-width: 82%;
+  pointer-events: none;
+  transform: translate3d(0, -120px, 0);
+  animation: scene-zero-letter-float 4.8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+  will-change: transform;
+}
+
+.scene-zero-letter {
+  display: block;
+  width: 100%;
   height: auto;
   border-radius: 42px;
   opacity: 0.96;
@@ -809,7 +818,20 @@ button:focus-visible {
     drop-shadow(0 22px 28px rgba(102, 74, 35, 0.22))
     drop-shadow(0 0 28px rgba(255, 244, 196, 0.55));
   pointer-events: none;
-  transform: translate(0, -120px) rotate(-8deg) scale(1.2);
+  transform: rotate(-8deg) scale(1.2) translateZ(0);
+  transform-origin: center;
+  backface-visibility: hidden;
+}
+
+@keyframes scene-zero-letter-float {
+  0%,
+  100% {
+    transform: translate3d(0, -120px, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -185px, 0);
+  }
 }
 
 .scene-zero-message {

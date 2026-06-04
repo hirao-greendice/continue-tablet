@@ -2032,12 +2032,13 @@ function SceneZero({ onNext }: SceneZeroProps) {
         aria-hidden="true"
       />
       <div className="scene-zero-content">
-        <img
-          className="scene-zero-letter"
-          src={versionedAsset('images/0-1.png', STATIC_IMAGE_VERSION)}
-          alt=""
-          aria-hidden="true"
-        />
+        <span className="scene-zero-letter-float" aria-hidden="true">
+          <img
+            className="scene-zero-letter"
+            src={versionedAsset('images/0-1.png', STATIC_IMAGE_VERSION)}
+            alt=""
+          />
+        </span>
         <p className="scene-zero-message">
           席に戻ってまずは、
           <br />
