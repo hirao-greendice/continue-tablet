@@ -2409,7 +2409,7 @@ function SceneTwoContent({ isPreparingNext, onNext }: SceneTwoProps) {
             <br />
             「謎を独り占めしたら、
             <br />
-            退席して死の運命を回避できるじゃん！」
+            退席できて死の運命を回避できるじゃん！」
             <br />
             って思った人、いるでしょ？
             <br />
