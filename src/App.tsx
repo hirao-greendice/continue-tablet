@@ -76,9 +76,9 @@ function versionedAsset(path: string, version: string) {
   return publicAsset(`${path}${separator}v=${version}`)
 }
 
-const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260604-1'
-const APP_CACHE_NAME = 'continue-tablet-v20'
-const STATIC_IMAGE_VERSION = 'images-20260604-3'
+const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260604-2'
+const APP_CACHE_NAME = 'continue-tablet-v22'
+const STATIC_IMAGE_VERSION = 'images-20260604-5'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
@@ -98,7 +98,11 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/konohito.png',
   'images/0.png',
   'images/0-1.png',
+  'images/5maebutton.webp',
+  'images/5nextbutton.webp',
   'images/play.png',
+  'images/playbutton.webp',
+  'images/stopbutton.webp',
   'images/teisyutu_botton.png',
   'images/tenkei.png',
   'images/tukitome.png',
@@ -2090,6 +2094,12 @@ function SceneOne({
     seekVideo(nextTime)
   }
 
+  const clickSkipControl = (seconds: number, side: 'left' | 'right') => {
+    playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
+    skipVideo(seconds)
+    showSkipIndicator(side)
+  }
+
   const showSkipIndicator = (side: 'left' | 'right') => {
     window.clearTimeout(videoSkipIndicatorTimerRef.current)
     setVideoSkipIndicator(side)
@@ -2177,7 +2187,7 @@ function SceneOne({
             <br />
             君たちがこの会場に入る前にボクがみた光景を、
             <br />
-            なるべく<strong>リアルに再現</strong>するね。
+            なるべく<strong>忠実に再現</strong>するね。
           </p>
         </div>
         {!isVideoRevealed && (
@@ -2280,6 +2290,52 @@ function SceneOne({
             <span className="video-seek-fill" />
             <span className="video-seek-thumb" />
           </span>
+        </div>
+        <div className="video-controls" aria-label="動画操作">
+          <button
+            className="video-control-button video-skip-button"
+            disabled={!videoDuration}
+            type="button"
+            aria-label="5秒戻る"
+            onClick={() => clickSkipControl(-VIDEO_SKIP_SECONDS, 'left')}
+          >
+            <img
+              className="video-control-art"
+              src={versionedAsset('images/5maebutton.webp', STATIC_IMAGE_VERSION)}
+              alt=""
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            className="video-control-button video-toggle-button"
+            type="button"
+            aria-label={isVideoPlaying ? '動画を停止' : '動画を再生'}
+            onClick={() => void toggleVideo()}
+          >
+            <img
+              className="video-control-art"
+              src={versionedAsset(
+                isVideoPlaying ? 'images/stopbutton.webp' : 'images/playbutton.webp',
+                STATIC_IMAGE_VERSION,
+              )}
+              alt=""
+              aria-hidden="true"
+            />
+          </button>
+          <button
+            className="video-control-button video-skip-button"
+            disabled={!videoDuration}
+            type="button"
+            aria-label="5秒進む"
+            onClick={() => clickSkipControl(VIDEO_SKIP_SECONDS, 'right')}
+          >
+            <img
+              className="video-control-art"
+              src={versionedAsset('images/5nextbutton.webp', STATIC_IMAGE_VERSION)}
+              alt=""
+              aria-hidden="true"
+            />
+          </button>
         </div>
           </>
         )}

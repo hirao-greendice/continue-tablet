@@ -783,7 +783,7 @@ button:focus-visible {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  filter: brightness(0.80);
+  filter: brightness(0.9);
 }
 
 .scene-zero-content {
@@ -1180,6 +1180,60 @@ button:focus-visible {
   background: #d00000;
   box-shadow: 0 3px 9px rgba(0, 0, 0, 0.26);
   transform: translate(-50%, -50%);
+}
+
+.video-controls {
+  display: grid;
+  width: 480px;
+  height: 116px;
+  grid-template-columns: 96px 116px 96px;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  margin: 22px auto 0;
+  transform: scale(1.1);
+  transform-origin: center;
+}
+
+.video-control-button {
+  position: relative;
+  display: grid;
+  width: 96px;
+  height: 96px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+  touch-action: manipulation;
+}
+
+.video-control-button:active:not(:disabled) {
+  transform: translateY(3px);
+}
+
+.video-control-button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.video-toggle-button {
+  width: 116px;
+  height: 116px;
+}
+
+.video-control-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.video-toggle-button .video-control-art {
+  width: 100%;
+  height: 100%;
 }
 
 .primary-next {
