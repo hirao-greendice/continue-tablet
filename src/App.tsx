@@ -78,8 +78,8 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260604-2'
-const APP_CACHE_NAME = 'continue-tablet-v25'
-const STATIC_IMAGE_VERSION = 'images-20260604-6'
+const APP_CACHE_NAME = 'continue-tablet-v26'
+const STATIC_IMAGE_VERSION = 'images-20260604-7'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
@@ -107,8 +107,8 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/goutou.jpeg',
   'images/hannnin.jpg',
   'images/konohito.png',
-  'images/0.png',
-  'images/0-1.png',
+  'images/0.webp',
+  'images/0-1.webp',
   'images/5maebutton.webp',
   'images/5nextbutton.webp',
   'images/play.png',
@@ -2028,22 +2028,22 @@ function SceneZero({ onNext }: SceneZeroProps) {
     <section className="story-screen scene-zero" aria-label="天使からの手紙">
       <div
         className="story-background"
-        style={{ backgroundImage: `url("${versionedAsset('images/0.png', STATIC_IMAGE_VERSION)}")` }}
+        style={{ backgroundImage: `url("${versionedAsset('images/0.webp', STATIC_IMAGE_VERSION)}")` }}
         aria-hidden="true"
       />
       <div className="scene-zero-content">
-        <span className="scene-zero-letter-float" aria-hidden="true">
-          <img
-            className="scene-zero-letter"
-            src={versionedAsset('images/0-1.png', STATIC_IMAGE_VERSION)}
-            alt=""
-          />
-        </span>
         <p className="scene-zero-message">
           席に戻ってまずは、
           <br />
           タブレットを確認しよう！
         </p>
+        <span className="scene-zero-letter-float" aria-hidden="true">
+          <img
+            className="scene-zero-letter"
+            src={versionedAsset('images/0-1.webp', STATIC_IMAGE_VERSION)}
+            alt=""
+          />
+        </span>
         <button
           className="scene-zero-next"
           type="button"

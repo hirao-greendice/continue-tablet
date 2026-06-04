@@ -788,21 +788,19 @@ button:focus-visible {
 
 .scene-zero-content {
   position: relative;
-  display: grid;
   width: 100%;
   height: 100%;
-  grid-template-rows: 1fr auto auto;
-  justify-items: center;
-  align-items: center;
-  padding: 100px 0 400px;
 }
 
 .scene-zero-letter-float {
   display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
   width: 760px;
   max-width: 82%;
   pointer-events: none;
-  transform: translate3d(0, -120px, 0);
+  transform: translate3d(-50%, -50%, 0);
   animation: scene-zero-letter-float 4.8s cubic-bezier(0.37, 0, 0.63, 1) infinite;
   will-change: transform;
 }
@@ -826,18 +824,21 @@ button:focus-visible {
 @keyframes scene-zero-letter-float {
   0%,
   100% {
-    transform: translate3d(0, -120px, 0);
+    transform: translate3d(-50%, -50%, 0);
   }
 
   50% {
-    transform: translate3d(0, -185px, 0);
+    transform: translate3d(-50%, calc(-50% - 65px), 0);
   }
 }
 
 .scene-zero-message {
+  position: absolute;
+  top: 190px;
+  left: 50%;
   width: 980px;
   max-width: calc(100% - 120px);
-  margin: -118px 0 -18px;
+  margin: 0;
   color: #7b3f08;
   font-family: 'Yu Mincho', 'YuMincho', 'Hiragino Mincho ProN', 'Hiragino Mincho Pro',
     'Noto Serif JP', 'MS PMincho', serif;
@@ -845,8 +846,7 @@ button:focus-visible {
   font-weight: 900;
   line-height: 1.28;
   text-align: center;
-  transform: translateY(-82px);
-  translate: 0 -100px;
+  transform: translateX(-50%);
   text-shadow:
     0 2px 0 rgba(255, 255, 255, 0.85),
     0 0 12px rgba(255, 247, 206, 0.92),
@@ -855,6 +855,9 @@ button:focus-visible {
 }
 
 .scene-zero-next {
+  position: absolute;
+  left: 50%;
+  bottom: 260px;
   display: grid;
   width: 360px;
   height: 104px;
@@ -868,11 +871,12 @@ button:focus-visible {
   font-size: 46px;
   font-weight: 900;
   line-height: 1;
+  transform: translateX(-50%);
   box-shadow: 0 12px 22px rgba(74, 42, 15, 0.26);
 }
 
 .scene-zero-next:active {
-  transform: translateY(4px);
+  transform: translateX(-50%) translateY(4px);
   box-shadow: 0 7px 14px rgba(74, 42, 15, 0.22);
 }
 

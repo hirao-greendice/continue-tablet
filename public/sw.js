@@ -1,5 +1,5 @@
-const CACHE_NAME = 'continue-tablet-v25'
-const STATIC_IMAGE_VERSION = 'images-20260604-6'
+const CACHE_NAME = 'continue-tablet-v26'
+const STATIC_IMAGE_VERSION = 'images-20260604-7'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 
 function versionedAsset(path) {
@@ -26,8 +26,8 @@ const WARM_ASSET_CACHE = [
   versionedAsset('./images/goutou.jpeg'),
   versionedAsset('./images/hannnin.jpg'),
   versionedAsset('./images/konohito.png'),
-  versionedAsset('./images/0.png'),
-  versionedAsset('./images/0-1.png'),
+  versionedAsset('./images/0.webp'),
+  versionedAsset('./images/0-1.webp'),
   versionedAsset('./images/5maebutton.webp'),
   versionedAsset('./images/5nextbutton.webp'),
   versionedAsset('./images/play.png'),
