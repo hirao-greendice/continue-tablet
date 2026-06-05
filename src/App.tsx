@@ -279,6 +279,22 @@ async function cacheStaticAsset(src: string) {
   }
 }
 
+async function getCachedAssetObjectUrl(src: string) {
+  if (!('caches' in window)) {
+    return null
+  }
+
+  const cachedResponse = await window.caches.match(new Request(src))
+
+  if (!cachedResponse) {
+    return null
+  }
+
+  const blob = await cachedResponse.blob()
+
+  return URL.createObjectURL(blob)
+}
+
 async function cacheResponse(request: Request, response: Response) {
   if (!('caches' in window)) {
     return
@@ -537,6 +553,19 @@ function preloadDecodedImage(src: string, cache: Map<string, Promise<HTMLImageEl
   return trackedImagePromise
 }
 
+async function preloadCachedImage(
+  src: string,
+  cache: Map<string, Promise<HTMLImageElement>>,
+) {
+  const image = await preloadDecodedImage(src, cache)
+
+  await cacheStaticAsset(src).catch((error) => {
+    console.warn('Failed to cache image asset', error)
+  })
+
+  return image
+}
+
 async function decodeImage(image: HTMLImageElement) {
   try {
     await image.decode?.()
@@ -623,10 +652,10 @@ async function preparePhotoForDisplay(
   const primarySrc = photo.src || fallbackSrc
 
   try {
-    await preloadDecodedImage(primarySrc, decodedImageCache)
+    await preloadCachedImage(primarySrc, decodedImageCache)
     return { ...photo, src: primarySrc }
   } catch {
-    await preloadDecodedImage(fallbackSrc, decodedImageCache).catch((error) => {
+    await preloadCachedImage(fallbackSrc, decodedImageCache).catch((error) => {
       console.error('Failed to preload fallback photo', error)
     })
     return { ...photo, src: fallbackSrc }
@@ -666,7 +695,7 @@ async function prepareInitialAppAssets(
   const [preparedPhotos] = await Promise.all([
     preparePhotoSlots(photos, decodedImageCache),
     Promise.allSettled(
-      imageSrcs.map((src) => trackAsset(preloadDecodedImage(src, decodedImageCache))),
+      imageSrcs.map((src) => trackAsset(preloadCachedImage(src, decodedImageCache))),
     ),
     Promise.allSettled(mediaSrcs.map((src) => trackAsset(cacheStaticAsset(src)))),
   ])
@@ -1081,8 +1110,8 @@ function App() {
 
   useEffect(() => {
     photos.forEach((photo) => {
-      void preloadDecodedImage(photo.src, decodedImageCache.current).catch(() => undefined)
-      void preloadDecodedImage(getDefaultPhotoSrc(photo.id), decodedImageCache.current).catch(() => undefined)
+      void preloadCachedImage(photo.src, decodedImageCache.current).catch(() => undefined)
+      void preloadCachedImage(getDefaultPhotoSrc(photo.id), decodedImageCache.current).catch(() => undefined)
     })
   }, [photos])
 
@@ -1119,7 +1148,7 @@ function App() {
 
       await Promise.allSettled([
         warmBackupPhotoCache(loadedBackupPhotosBySlot),
-        ...imageSrcs.map((src) => preloadDecodedImage(src, decodedImageCache.current)),
+        ...imageSrcs.map((src) => preloadCachedImage(src, decodedImageCache.current)),
       ])
     }
 
@@ -2002,20 +2031,59 @@ type FallbackPhotoImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'onErro
   fallbackSrc: string
   src: string
 }
+type CachedObjectUrl = {
+  objectUrl: string
+  src: string
+}
 
 function FallbackPhotoImage({ fallbackSrc, src, ...props }: FallbackPhotoImageProps) {
   const primarySrc = src || fallbackSrc
   const [failedPrimarySrc, setFailedPrimarySrc] = useState<string | null>(null)
-  const displaySrc = failedPrimarySrc === primarySrc ? fallbackSrc : primarySrc
+  const [cachedObjectUrl, setCachedObjectUrl] = useState<CachedObjectUrl | null>(null)
+  const currentPrimarySrcRef = useRef(primarySrc)
+  const displaySrc = cachedObjectUrl?.src === primarySrc
+    ? cachedObjectUrl.objectUrl
+    : failedPrimarySrc === primarySrc
+      ? fallbackSrc
+      : primarySrc
+
+  useEffect(() => {
+    currentPrimarySrcRef.current = primarySrc
+  }, [primarySrc])
+
+  useEffect(() => {
+    return () => {
+      if (cachedObjectUrl) {
+        URL.revokeObjectURL(cachedObjectUrl.objectUrl)
+      }
+    }
+  }, [cachedObjectUrl])
 
   return (
     <img
       {...props}
       src={displaySrc}
       onError={() => {
-        if (displaySrc === primarySrc && primarySrc !== fallbackSrc) {
-          setFailedPrimarySrc(primarySrc)
+        if (displaySrc !== primarySrc || primarySrc === fallbackSrc) {
+          return
         }
+
+        void getCachedAssetObjectUrl(primarySrc)
+          .then((objectUrl) => {
+            if (!objectUrl) {
+              setFailedPrimarySrc(primarySrc)
+              return
+            }
+
+            if (currentPrimarySrcRef.current !== primarySrc) {
+              URL.revokeObjectURL(objectUrl)
+              return
+            }
+
+            setFailedPrimarySrc(null)
+            setCachedObjectUrl({ objectUrl, src: primarySrc })
+          })
+          .catch(() => setFailedPrimarySrc(primarySrc))
       }}
     />
   )
@@ -2984,7 +3052,7 @@ function SceneThree({
         data-active={isSubmitted}
         aria-hidden={!isSubmitted}
       >
-        <SubmittedAnswerScreen photo={submittedPreviewPhoto} onRetry={onRetry} />
+        {isSubmitted && <SubmittedAnswerScreen photo={submittedPreviewPhoto} onRetry={onRetry} />}
       </div>
     </div>
   )
