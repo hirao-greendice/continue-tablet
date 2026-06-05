@@ -1,5 +1,5 @@
-const CACHE_NAME = 'continue-tablet-v33'
-const STATIC_IMAGE_VERSION = 'images-20260605-4'
+const CACHE_NAME = 'continue-tablet-v34'
+const STATIC_IMAGE_VERSION = 'images-20260605-5'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 
 function versionedAsset(path) {
@@ -35,7 +35,7 @@ const WARM_ASSET_CACHE = [
   versionedAsset('./images/play.png'),
   versionedAsset('./images/playbutton.webp'),
   versionedAsset('./images/stopbutton.webp'),
-  versionedAsset('./images/teisyutu_botton.webp'),
+  versionedAsset('./images/teisyutu_botton1.png'),
   versionedAsset('./images/tenkei.png'),
   versionedAsset('./images/tukitome.png'),
   versionedBackupPhotoAsset('./images/backup-photos/slot-1-1.png'),
@@ -63,21 +63,22 @@ async function warmAssetCache() {
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.allSettled(
-        APP_SHELL.map(async (asset) => {
-          const request = new Request(asset)
-          const response = await fetch(request)
+    Promise.all([
+      caches.open(CACHE_NAME).then((cache) =>
+        Promise.allSettled(
+          APP_SHELL.map(async (asset) => {
+            const request = new Request(asset)
+            const response = await fetch(request)
 
-          if (response.status === 200) {
-            await cache.put(request, response)
-          }
-        }),
+            if (response.status === 200) {
+              await cache.put(request, response)
+            }
+          }),
+        ),
       ),
-    ),
+      warmAssetCache(),
+    ]).then(() => self.skipWaiting()),
   )
-  warmAssetCache().catch(() => undefined)
-  self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {

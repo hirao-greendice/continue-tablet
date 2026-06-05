@@ -84,11 +84,12 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260605-3'
-const APP_CACHE_NAME = 'continue-tablet-v33'
-const STATIC_IMAGE_VERSION = 'images-20260605-4'
+const APP_CACHE_NAME = 'continue-tablet-v34'
+const STATIC_IMAGE_VERSION = 'images-20260605-5'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
+const SUBMIT_BUTTON_IMAGE = 'images/teisyutu_botton1.png'
 const DEFAULT_PHOTO_IDS = [1, 2, 3, 4] as const
 const DEFAULT_BACKUP_PHOTO_FILES: Record<number, string> = {
   1: 'slot-1-1.png',
@@ -122,7 +123,7 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/play.png',
   'images/playbutton.webp',
   'images/stopbutton.webp',
-  'images/teisyutu_botton.webp',
+  SUBMIT_BUTTON_IMAGE,
   'images/tenkei.png',
   'images/tukitome.png',
 ]
@@ -831,7 +832,7 @@ async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
 
   const [backgroundImage, submitButtonImage, ...photoImages] = await Promise.all([
     loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
-    loadCanvasImage(versionedAsset('images/teisyutu_botton.webp', STATIC_IMAGE_VERSION)),
+    loadCanvasImage(versionedAsset(SUBMIT_BUTTON_IMAGE, STATIC_IMAGE_VERSION)),
     ...photos.map((photo) => loadCanvasPhotoImage(photo)),
   ])
   const canvas = document.createElement('canvas')
@@ -1041,17 +1042,45 @@ function App() {
   }, [])
 
   useEffect(() => {
+    let frameId = 0
+    let timeoutId = 0
+
     const updateStageScale = () => {
       setStageScale(getStageScale())
     }
 
-    updateStageScale()
-    window.addEventListener('resize', updateStageScale)
-    window.addEventListener('orientationchange', updateStageScale)
+    const scheduleStageScaleUpdate = () => {
+      window.cancelAnimationFrame(frameId)
+      window.clearTimeout(timeoutId)
+
+      updateStageScale()
+      frameId = window.requestAnimationFrame(() => {
+        updateStageScale()
+        timeoutId = window.setTimeout(updateStageScale, 250)
+      })
+    }
+
+    const updateStageScaleWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        scheduleStageScaleUpdate()
+      }
+    }
+
+    scheduleStageScaleUpdate()
+    window.addEventListener('resize', scheduleStageScaleUpdate)
+    window.addEventListener('orientationchange', scheduleStageScaleUpdate)
+    window.addEventListener('focus', scheduleStageScaleUpdate)
+    window.addEventListener('pageshow', scheduleStageScaleUpdate)
+    document.addEventListener('visibilitychange', updateStageScaleWhenVisible)
 
     return () => {
-      window.removeEventListener('resize', updateStageScale)
-      window.removeEventListener('orientationchange', updateStageScale)
+      window.cancelAnimationFrame(frameId)
+      window.clearTimeout(timeoutId)
+      window.removeEventListener('resize', scheduleStageScaleUpdate)
+      window.removeEventListener('orientationchange', scheduleStageScaleUpdate)
+      window.removeEventListener('focus', scheduleStageScaleUpdate)
+      window.removeEventListener('pageshow', scheduleStageScaleUpdate)
+      document.removeEventListener('visibilitychange', updateStageScaleWhenVisible)
     }
   }, [])
 
@@ -3050,7 +3079,7 @@ function SceneThree({
         >
           <img
             className="image-button-art"
-            src={versionedAsset('images/teisyutu_botton.webp', STATIC_IMAGE_VERSION)}
+            src={versionedAsset(SUBMIT_BUTTON_IMAGE, STATIC_IMAGE_VERSION)}
             alt=""
             aria-hidden="true"
           />
