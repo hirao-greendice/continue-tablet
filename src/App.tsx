@@ -67,6 +67,11 @@ type CropDraft = {
   label: string
   src: string
 }
+type AssetLoadProgress = {
+  loaded: number
+  total: number
+}
+type AssetLoadProgressHandler = (progress: AssetLoadProgress) => void
 
 function publicAsset(path: string) {
   return `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
@@ -640,19 +645,30 @@ function preparePhotoSlots(
 async function prepareInitialAppAssets(
   photos: PhotoSlot[],
   decodedImageCache: Map<string, Promise<HTMLImageElement>>,
+  onProgress?: AssetLoadProgressHandler,
 ) {
   const imageSrcs = getResidentImageSrcs(photos)
   const mediaSrcs = [
     getSceneOneVideoSrc(),
     ...PRELOAD_SOUND_ASSETS.map(({ path }) => publicAsset(path)),
   ]
+  const total = imageSrcs.length + mediaSrcs.length
+  let loaded = 0
+  const reportProgress = () => onProgress?.({ loaded, total })
+  const trackAsset = <T,>(promise: Promise<T>) =>
+    promise.finally(() => {
+      loaded += 1
+      reportProgress()
+    })
+
+  reportProgress()
 
   const [preparedPhotos] = await Promise.all([
     preparePhotoSlots(photos, decodedImageCache),
     Promise.allSettled(
-      imageSrcs.map((src) => preloadDecodedImage(src, decodedImageCache)),
+      imageSrcs.map((src) => trackAsset(preloadDecodedImage(src, decodedImageCache))),
     ),
-    Promise.allSettled(mediaSrcs.map((src) => cacheStaticAsset(src))),
+    Promise.allSettled(mediaSrcs.map((src) => trackAsset(cacheStaticAsset(src)))),
   ])
 
   return preparedPhotos
@@ -871,6 +887,10 @@ function App() {
   const [hasCompletedSceneOneVideo, setHasCompletedSceneOneVideo] = useState(false)
   const [isAppReady, setIsAppReady] = useState(false)
   const [assetLoadStatus, setAssetLoadStatus] = useState('LOADING...')
+  const [assetLoadProgress, setAssetLoadProgress] = useState<AssetLoadProgress>({
+    loaded: 0,
+    total: 0,
+  })
   const isPreparingSceneThree = false
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const decodedImageCache = useRef<Map<string, Promise<HTMLImageElement>>>(new Map())
@@ -933,6 +953,11 @@ function App() {
       const preparedPhotos = await prepareInitialAppAssets(
         initialPhotos,
         decodedImageCache.current,
+        (progress) => {
+          if (isMounted) {
+            setAssetLoadProgress(progress)
+          }
+        },
       )
 
       if (!isMounted) {
@@ -1639,7 +1664,7 @@ function App() {
       >
         <div className="stage-content">
           {!isAppReady ? (
-            <AssetLoadingScreen status={assetLoadStatus} />
+            <AssetLoadingScreen progress={assetLoadProgress} status={assetLoadStatus} />
           ) : (
             <>
               <div
@@ -1766,10 +1791,38 @@ function GameEndedOverlay() {
   )
 }
 
-function AssetLoadingScreen({ status }: { status: string }) {
+function AssetLoadingScreen({
+  progress,
+  status,
+}: {
+  progress: AssetLoadProgress
+  status: string
+}) {
+  const percent = progress.total > 0
+    ? Math.round((progress.loaded / progress.total) * 100)
+    : 0
+
   return (
     <section className="asset-loading-screen" aria-label="loading">
-      <p>{status}</p>
+      <div className="asset-loading-panel">
+        <p>{status}</p>
+        <div className="asset-loading-count" aria-live="polite">
+          <span>{progress.loaded}</span>
+          <span>/</span>
+          <span>{progress.total}</span>
+          <strong>{percent}%</strong>
+        </div>
+        <div
+          className="asset-loading-bar"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percent}
+          style={{ '--asset-load-progress': `${percent}%` } as CSSProperties}
+        >
+          <span />
+        </div>
+      </div>
     </section>
   )
 }
