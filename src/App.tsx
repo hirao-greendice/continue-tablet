@@ -78,9 +78,9 @@ function versionedAsset(path: string, version: string) {
   return publicAsset(`${path}${separator}v=${version}`)
 }
 
-const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260604-3'
-const APP_CACHE_NAME = 'continue-tablet-v29'
-const STATIC_IMAGE_VERSION = 'images-20260604-10'
+const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260605-1'
+const APP_CACHE_NAME = 'continue-tablet-v30'
+const STATIC_IMAGE_VERSION = 'images-20260605-1'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
@@ -117,7 +117,7 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/play.png',
   'images/playbutton.webp',
   'images/stopbutton.webp',
-  'images/teisyutu_botton.png',
+  'images/teisyutu_botton.webp',
   'images/tenkei.png',
   'images/tukitome.png',
 ]
@@ -786,7 +786,7 @@ async function createSceneThreeSlideBlob(photos: PhotoSlot[]) {
 
   const [backgroundImage, submitButtonImage, ...photoImages] = await Promise.all([
     loadCanvasImage(versionedAsset('images/hannnin.jpg', STATIC_IMAGE_VERSION)),
-    loadCanvasImage(versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)),
+    loadCanvasImage(versionedAsset('images/teisyutu_botton.webp', STATIC_IMAGE_VERSION)),
     ...photos.map((photo) => loadCanvasPhotoImage(photo)),
   ])
   const canvas = document.createElement('canvas')
@@ -2914,7 +2914,7 @@ function SceneThree({
         >
           <img
             className="image-button-art"
-            src={versionedAsset('images/teisyutu_botton.png', STATIC_IMAGE_VERSION)}
+            src={versionedAsset('images/teisyutu_botton.webp', STATIC_IMAGE_VERSION)}
             alt=""
             aria-hidden="true"
           />
