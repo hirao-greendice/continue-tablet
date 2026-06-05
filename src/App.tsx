@@ -2699,7 +2699,7 @@ function SceneTwoContent({ isPreparingNext, onNext }: SceneTwoProps) {
         </div>
         <div className="scene-two-text-block">
           <p>
-            先ほど警備員の<strong>意気込んだ発言</strong>も
+            先ほどの警備員の<strong>意気込んだ発言</strong>も
             <br />
             何かの<strong>アピール</strong>だったのかもね。
           </p>
