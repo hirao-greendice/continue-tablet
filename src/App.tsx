@@ -79,8 +79,8 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260605-1'
-const APP_CACHE_NAME = 'continue-tablet-v30'
-const STATIC_IMAGE_VERSION = 'images-20260605-1'
+const APP_CACHE_NAME = 'continue-tablet-v31'
+const STATIC_IMAGE_VERSION = 'images-20260605-2'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
@@ -110,8 +110,8 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/konohito.png',
   'images/0.webp',
   'images/0-1.webp',
-  'images/1x.webp',
-  'images/2x.webp',
+  'images/1.0x.webp',
+  'images/1.5x.webp',
   'images/5maebutton.webp',
   'images/5nextbutton.webp',
   'images/play.png',
@@ -2284,7 +2284,7 @@ function SceneOne({
   const [videoSkipIndicator, setVideoSkipIndicator] = useState<'left' | 'right' | null>(null)
   const [videoDuration, setVideoDuration] = useState(0)
   const [videoProgress, setVideoProgress] = useState(0)
-  const [videoPlaybackRate, setVideoPlaybackRate] = useState<1 | 2>(1)
+  const [videoPlaybackRate, setVideoPlaybackRate] = useState<1 | 1.5>(1)
 
   useEffect(() => {
     if (videoRef.current) {
@@ -2359,7 +2359,7 @@ function SceneOne({
   const toggleVideoPlaybackRate = () => {
     playSound(CLICK_SOUND, CLICK_SOUND_VOLUME)
     setVideoPlaybackRate((currentRate) => {
-      const nextRate = currentRate === 1 ? 2 : 1
+      const nextRate = currentRate === 1 ? 1.5 : 1
 
       if (videoRef.current) {
         videoRef.current.playbackRate = nextRate
@@ -2652,13 +2652,13 @@ function SceneOne({
             className="video-control-button video-speed-button"
             type="button"
             aria-label={`再生速度 ${videoPlaybackRate}倍`}
-            aria-pressed={videoPlaybackRate === 2}
+            aria-pressed={videoPlaybackRate === 1.5}
             onClick={toggleVideoPlaybackRate}
           >
             <img
               className="video-control-art"
               src={versionedAsset(
-                videoPlaybackRate === 1 ? 'images/1x.webp' : 'images/2x.webp',
+                videoPlaybackRate === 1 ? 'images/1.0x.webp' : 'images/1.5x.webp',
                 STATIC_IMAGE_VERSION,
               )}
               alt=""
