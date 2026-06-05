@@ -1332,6 +1332,8 @@ button:focus-visible {
   position: absolute;
   top: 50%;
   left: calc(100% + 54px);
+  width: 114px;
+  height: 96px;
   transform: translateY(-50%);
 }
 
