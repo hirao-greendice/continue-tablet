@@ -2074,6 +2074,7 @@ function FallbackPhotoImage({
   return (
     <img
       {...props}
+      key={primarySrc}
       src={displaySrc}
       onError={() => {
         if (displaySrc !== primarySrc || primarySrc === fallbackSrc) {
@@ -3065,6 +3066,7 @@ function SceneThree({
         aria-hidden={!isSubmitted}
       >
         <SubmittedAnswerScreen
+          key={`${submittedPreviewPhoto.id}:${submittedPreviewPhoto.src}`}
           isActive={isSubmitted}
           photo={submittedPreviewPhoto}
           onRetry={onRetry}
