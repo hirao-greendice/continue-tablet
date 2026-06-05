@@ -83,9 +83,9 @@ function versionedAsset(path: string, version: string) {
   return publicAsset(`${path}${separator}v=${version}`)
 }
 
-const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260605-1'
-const APP_CACHE_NAME = 'continue-tablet-v31'
-const STATIC_IMAGE_VERSION = 'images-20260605-2'
+const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260605-2'
+const APP_CACHE_NAME = 'continue-tablet-v32'
+const STATIC_IMAGE_VERSION = 'images-20260605-3'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
