@@ -2690,16 +2690,18 @@ function SceneTwoContent({ isPreparingNext, onNext }: SceneTwoProps) {
       <div className="scene-two-content">
         <div className="scene-two-text-block">
           <p>
-            この映像はあくまでイメージなんだけど、
+            この映像は<strong>あくまでイメージ</strong>だから、
+            <br />
+            実際の見た目や性別は分からないけど、
             <br />
             大変な状況だということが伝わったかな？
           </p>
         </div>
         <div className="scene-two-text-block">
           <p>
-            先程のシーメイの<strong>はりきっちゃた</strong>という
+            先ほど警備員の<strong>意気込んだ発言</strong>も
             <br />
-            発言も何かの<strong>アピール</strong>だったのかもね。
+            何かの<strong>アピール</strong>だったのかもね。
           </p>
         </div>
         <div className="scene-two-text-block">
