@@ -2029,21 +2029,33 @@ function formatHomePhotoUpdatedAt(updatedAt: number | undefined) {
 
 type FallbackPhotoImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'onError' | 'src'> & {
   fallbackSrc: string
+  retryKey?: boolean | number | string
   src: string
 }
 type CachedObjectUrl = {
   objectUrl: string
   src: string
 }
+type FailedPrimarySrc = {
+  retryKey?: boolean | number | string
+  src: string
+}
 
-function FallbackPhotoImage({ fallbackSrc, src, ...props }: FallbackPhotoImageProps) {
+function FallbackPhotoImage({
+  fallbackSrc,
+  retryKey,
+  src,
+  ...props
+}: FallbackPhotoImageProps) {
   const primarySrc = src || fallbackSrc
-  const [failedPrimarySrc, setFailedPrimarySrc] = useState<string | null>(null)
+  const [failedPrimarySrc, setFailedPrimarySrc] = useState<FailedPrimarySrc | null>(null)
   const [cachedObjectUrl, setCachedObjectUrl] = useState<CachedObjectUrl | null>(null)
   const currentPrimarySrcRef = useRef(primarySrc)
+  const isFailedForCurrentRetry =
+    failedPrimarySrc?.src === primarySrc && failedPrimarySrc.retryKey === retryKey
   const displaySrc = cachedObjectUrl?.src === primarySrc
     ? cachedObjectUrl.objectUrl
-    : failedPrimarySrc === primarySrc
+    : isFailedForCurrentRetry
       ? fallbackSrc
       : primarySrc
 
@@ -2071,7 +2083,7 @@ function FallbackPhotoImage({ fallbackSrc, src, ...props }: FallbackPhotoImagePr
         void getCachedAssetObjectUrl(primarySrc)
           .then((objectUrl) => {
             if (!objectUrl) {
-              setFailedPrimarySrc(primarySrc)
+              setFailedPrimarySrc({ retryKey, src: primarySrc })
               return
             }
 
@@ -2083,7 +2095,7 @@ function FallbackPhotoImage({ fallbackSrc, src, ...props }: FallbackPhotoImagePr
             setFailedPrimarySrc(null)
             setCachedObjectUrl({ objectUrl, src: primarySrc })
           })
-          .catch(() => setFailedPrimarySrc(primarySrc))
+          .catch(() => setFailedPrimarySrc({ retryKey, src: primarySrc }))
       }}
     />
   )
@@ -3052,18 +3064,23 @@ function SceneThree({
         data-active={isSubmitted}
         aria-hidden={!isSubmitted}
       >
-        {isSubmitted && <SubmittedAnswerScreen photo={submittedPreviewPhoto} onRetry={onRetry} />}
+        <SubmittedAnswerScreen
+          isActive={isSubmitted}
+          photo={submittedPreviewPhoto}
+          onRetry={onRetry}
+        />
       </div>
     </div>
   )
 }
 
 type SubmittedAnswerScreenProps = {
+  isActive: boolean
   photo: PhotoSlot
   onRetry: () => Promise<void>
 }
 
-function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
+function SubmittedAnswerScreen({ isActive, photo, onRetry }: SubmittedAnswerScreenProps) {
   const [roleLabel, castLabel] = photo.label.split('\n')
 
   return (
@@ -3079,6 +3096,7 @@ function SubmittedAnswerScreen({ photo, onRetry }: SubmittedAnswerScreenProps) {
           className="submitted-file-photo"
           src={photo.src}
           fallbackSrc={getDefaultPhotoSrc(photo.id)}
+          retryKey={isActive ? 'active' : 'inactive'}
           alt={photo.label}
           decoding="sync"
           loading="eager"
