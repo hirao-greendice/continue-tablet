@@ -3129,6 +3129,14 @@ button:focus-visible {
   padding: 22px;
 }
 
+.photo-backup-panel {
+  order: 1;
+}
+
+.photo-history-panel {
+  order: 2;
+}
+
 .photo-history-heading,
 .photo-backup-heading {
   display: flex;
