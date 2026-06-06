@@ -96,6 +96,7 @@ const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
 const SUBMIT_BUTTON_IMAGE = 'images/teisyutu_botton.webp'
+const GAME_ENDED_COVER_IMAGE = 'images/hutae.webp'
 const DEFAULT_PHOTO_IDS = [1, 2, 3, 4] as const
 const DEFAULT_BACKUP_PHOTO_FILES: Record<number, string> = {
   1: 'slot-1-1.png',
@@ -129,6 +130,7 @@ const PRELOAD_IMAGE_ASSETS = [
   'images/play.png',
   'images/playbutton.webp',
   'images/stopbutton.webp',
+  GAME_ENDED_COVER_IMAGE,
   SUBMIT_BUTTON_IMAGE,
   'images/tenkei.png',
   'images/tukitome.png',
@@ -2034,8 +2036,13 @@ function App() {
 
 function GameEndedOverlay() {
   return (
-    <div className="game-ended-overlay" role="status" aria-live="polite">
-      <div className="game-ended-message">ゲームが終了いたしました</div>
+    <div className="game-ended-overlay" role="status" aria-live="polite" aria-label="ゲームが終了いたしました">
+      <img
+        className="game-ended-cover"
+        src={versionedAsset(GAME_ENDED_COVER_IMAGE, STATIC_IMAGE_VERSION)}
+        alt=""
+        draggable={false}
+      />
     </div>
   )
 }

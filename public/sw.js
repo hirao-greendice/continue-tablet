@@ -35,6 +35,7 @@ const WARM_ASSET_CACHE = [
   versionedAsset('./images/play.png'),
   versionedAsset('./images/playbutton.webp'),
   versionedAsset('./images/stopbutton.webp'),
+  versionedAsset('./images/hutae.webp'),
   versionedAsset('./images/teisyutu_botton.webp'),
   versionedAsset('./images/tenkei.png'),
   versionedAsset('./images/tukitome.png'),
