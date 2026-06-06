@@ -382,6 +382,26 @@ button:focus-visible {
   background: #b8b8b8;
 }
 
+.home-reload-button {
+  position: absolute;
+  top: 128px;
+  left: 46px;
+  min-width: 136px;
+  height: 56px;
+  padding: 0 18px;
+  border: 3px solid rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.72);
+}
+
+.home-reload-button:active {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .home-clock {
   position: absolute;
   top: 42px;

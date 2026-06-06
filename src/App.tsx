@@ -1924,6 +1924,7 @@ function App() {
                       onStartTeam={startTeam}
                       onOpenMaster={openMaster}
                       onOpenPhotos={openPhotos}
+                      onReload={reloadApp}
                     />
                   )}
 
@@ -2433,6 +2434,7 @@ type HomeScreenProps = {
   onOpenMaster: () => void
   onStartTeam: (team: number) => void
   onOpenPhotos: () => void
+  onReload: () => void
 }
 
 function HomeScreen({
@@ -2444,6 +2446,7 @@ function HomeScreen({
   onOpenMaster,
   onStartTeam,
   onOpenPhotos,
+  onReload,
 }: HomeScreenProps) {
   const batteryStatus = useBatteryStatus()
   const teamsByNumber = useMemo(
@@ -2455,6 +2458,9 @@ function HomeScreen({
     <section className="home-screen" aria-label="チーム選択">
       <BatteryIndicator status={batteryStatus} />
       <HomeClock />
+      <button className="home-reload-button" type="button" onClick={onReload}>
+        リロード
+      </button>
       <h1 className="home-title">ゲームは続く</h1>
       <div className="home-photo-strip" aria-label="現在の写真">
         {photos.map((photo) => (
