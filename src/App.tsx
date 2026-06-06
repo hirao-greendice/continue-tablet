@@ -62,6 +62,12 @@ type BackupPhoto = {
   updatedAt?: number
 }
 type BackupPhotosBySlot = Record<number, BackupPhoto[]>
+type PreparedSubmittedPhotoAsset = {
+  displaySrc: string
+  objectUrl?: string
+  originalSrc: string
+}
+type PreparedSubmittedPhotoAssets = Record<number, PreparedSubmittedPhotoAsset>
 type CropDraft = {
   slotId: number
   label: string
@@ -84,12 +90,12 @@ function versionedAsset(path: string, version: string) {
 }
 
 const SCENE_ONE_VIDEO_VERSION = 'scene-1-20260605-3'
-const APP_CACHE_NAME = 'continue-tablet-v34'
-const STATIC_IMAGE_VERSION = 'images-20260605-5'
+const APP_CACHE_NAME = 'continue-tablet-v35'
+const STATIC_IMAGE_VERSION = 'images-20260605-6'
 const BACKUP_PHOTO_VERSION = 'backup-photos-20260604-1'
 const BACKUP_PHOTO_FOLDER = 'images/backup-photos'
 const BACKUP_PHOTO_MANIFEST_PATH = `${BACKUP_PHOTO_FOLDER}/backup-photos.json`
-const SUBMIT_BUTTON_IMAGE = 'images/teisyutu_botton1.png'
+const SUBMIT_BUTTON_IMAGE = 'images/teisyutu_botton.webp'
 const DEFAULT_PHOTO_IDS = [1, 2, 3, 4] as const
 const DEFAULT_BACKUP_PHOTO_FILES: Record<number, string> = {
   1: 'slot-1-1.png',
@@ -294,6 +300,51 @@ async function getCachedAssetObjectUrl(src: string) {
   const blob = await cachedResponse.blob()
 
   return URL.createObjectURL(blob)
+}
+
+async function createPreparedImageObjectUrl(src: string) {
+  const cachedObjectUrl = await getCachedAssetObjectUrl(src)
+
+  if (cachedObjectUrl) {
+    return cachedObjectUrl
+  }
+
+  try {
+    const request = new Request(src)
+    const response = await fetch(request)
+
+    if (!response.ok) {
+      return null
+    }
+
+    const responseForCache = response.clone()
+    const blob = await response.blob()
+
+    void cacheResponse(request, responseForCache).catch(() => undefined)
+
+    return URL.createObjectURL(blob)
+  } catch {
+    return null
+  }
+}
+
+function decodePreparedImageSrc(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const image = new Image()
+
+    image.decoding = 'async'
+    image.addEventListener(
+      'load',
+      () => {
+        void decodeImage(image).then(resolve)
+      },
+      { once: true },
+    )
+    image.addEventListener('error', () => reject(new Error(`Failed to decode image: ${src}`)), {
+      once: true,
+    })
+    image.src = src
+  })
 }
 
 async function cacheResponse(request: Request, response: Response) {
@@ -672,6 +723,77 @@ function preparePhotoSlots(
   )
 }
 
+async function prepareSubmittedPhotoAsset(
+  photo: PhotoSlot,
+  decodedImageCache: Map<string, Promise<HTMLImageElement>>,
+) {
+  const fallbackSrc = getDefaultPhotoSrc(photo.id)
+  const primarySrc = photo.src || fallbackSrc
+
+  try {
+    await preloadCachedImage(primarySrc, decodedImageCache)
+    let objectUrl = await createPreparedImageObjectUrl(primarySrc)
+
+    if (objectUrl) {
+      try {
+        await decodePreparedImageSrc(objectUrl)
+      } catch {
+        URL.revokeObjectURL(objectUrl)
+        objectUrl = null
+      }
+    }
+
+    return {
+      displaySrc: objectUrl ?? primarySrc,
+      ...(objectUrl ? { objectUrl } : {}),
+      originalSrc: primarySrc,
+    }
+  } catch {
+    await preloadCachedImage(fallbackSrc, decodedImageCache).catch((error) => {
+      console.error('Failed to preload submitted fallback photo', error)
+    })
+
+    let objectUrl = await createPreparedImageObjectUrl(fallbackSrc)
+
+    if (objectUrl) {
+      try {
+        await decodePreparedImageSrc(objectUrl)
+      } catch {
+        URL.revokeObjectURL(objectUrl)
+        objectUrl = null
+      }
+    }
+
+    return {
+      displaySrc: objectUrl ?? fallbackSrc,
+      ...(objectUrl ? { objectUrl } : {}),
+      originalSrc: fallbackSrc,
+    }
+  }
+}
+
+async function prepareSubmittedPhotoAssets(
+  photos: PhotoSlot[],
+  decodedImageCache: Map<string, Promise<HTMLImageElement>>,
+) {
+  const entries = await Promise.all(
+    photos.map(async (photo) => [
+      photo.id,
+      await prepareSubmittedPhotoAsset(photo, decodedImageCache),
+    ] as const),
+  )
+
+  return Object.fromEntries(entries) as PreparedSubmittedPhotoAssets
+}
+
+function releasePreparedSubmittedPhotoAssets(assets: PreparedSubmittedPhotoAssets) {
+  Object.values(assets).forEach((asset) => {
+    if (asset.objectUrl) {
+      URL.revokeObjectURL(asset.objectUrl)
+    }
+  })
+}
+
 async function prepareInitialAppAssets(
   photos: PhotoSlot[],
   decodedImageCache: Map<string, Promise<HTMLImageElement>>,
@@ -921,11 +1043,14 @@ function App() {
     loaded: 0,
     total: 0,
   })
+  const [preparedSubmittedPhotoAssets, setPreparedSubmittedPhotoAssets] =
+    useState<PreparedSubmittedPhotoAssets>({})
   const isPreparingSceneThree = false
   const [secretMenuOpen, setSecretMenuOpen] = useState(false)
   const decodedImageCache = useRef<Map<string, Promise<HTMLImageElement>>>(new Map())
   const photosRef = useRef(photos)
   const photoPreparationSequenceRef = useRef(0)
+  const submittedPhotoPreparationSequenceRef = useRef(0)
   const hasLoadedPhotoManagerAssetsRef = useRef(false)
   const sceneSequenceRef = useRef<HTMLDivElement>(null)
   const sceneTwoPanelRef = useRef<HTMLDivElement>(null)
@@ -1143,6 +1268,42 @@ function App() {
       void preloadCachedImage(getDefaultPhotoSrc(photo.id), decodedImageCache.current).catch(() => undefined)
     })
   }, [photos])
+
+  useEffect(() => {
+    if (!isAppReady) {
+      return
+    }
+
+    let isDisposed = false
+    const sequence = submittedPhotoPreparationSequenceRef.current + 1
+    submittedPhotoPreparationSequenceRef.current = sequence
+
+    void prepareSubmittedPhotoAssets(photos, decodedImageCache.current)
+      .then((preparedAssets) => {
+        if (
+          isDisposed
+          || submittedPhotoPreparationSequenceRef.current !== sequence
+        ) {
+          releasePreparedSubmittedPhotoAssets(preparedAssets)
+          return
+        }
+
+        setPreparedSubmittedPhotoAssets(preparedAssets)
+      })
+      .catch((error) => {
+        console.error('Failed to prepare submitted photo assets', error)
+      })
+
+    return () => {
+      isDisposed = true
+    }
+  }, [isAppReady, photos])
+
+  useEffect(() => {
+    return () => {
+      releasePreparedSubmittedPhotoAssets(preparedSubmittedPhotoAssets)
+    }
+  }, [preparedSubmittedPhotoAssets])
 
   useEffect(() => {
     if (screen !== 'photos') {
@@ -1382,6 +1543,14 @@ function App() {
   const residentImageSrcs = useMemo(
     () => getResidentImageSrcs(photos),
     [photos],
+  )
+  const preparedSubmittedPhotoSrcs = useMemo(
+    () => Object.values(preparedSubmittedPhotoAssets).map((asset) => asset.displaySrc),
+    [preparedSubmittedPhotoAssets],
+  )
+  const preloadImageSrcs = useMemo(
+    () => Array.from(new Set([...residentImageSrcs, ...preparedSubmittedPhotoSrcs])),
+    [preparedSubmittedPhotoSrcs, residentImageSrcs],
   )
 
   const enterFullscreen = async () => {
@@ -1732,6 +1901,7 @@ function App() {
               >
                 <SceneThree
                   photos={photos}
+                  preparedSubmittedPhotoAssets={preparedSubmittedPhotoAssets}
                   selectedPhoto={selectedPhoto}
                   selectedPhotoId={selectedPhotoId}
                   submittedPhoto={submittedPhoto}
@@ -1811,7 +1981,7 @@ function App() {
         </div>
       </div>
 
-      {isAppReady && <AssetPreloadLayer srcs={residentImageSrcs} />}
+      {isAppReady && <AssetPreloadLayer srcs={preloadImageSrcs} />}
 
       {isPlayerGameEnded && <GameEndedOverlay />}
 
@@ -2996,6 +3166,7 @@ function SceneTwoContent({ isPreparingNext, onNext }: SceneTwoProps) {
 
 type SceneThreeProps = {
   photos: PhotoSlot[]
+  preparedSubmittedPhotoAssets: PreparedSubmittedPhotoAssets
   selectedPhoto: PhotoSlot | undefined
   selectedPhotoId: number | null
   submittedPhoto: PhotoSlot | undefined
@@ -3007,6 +3178,7 @@ type SceneThreeProps = {
 
 function SceneThree({
   photos,
+  preparedSubmittedPhotoAssets,
   selectedPhoto,
   selectedPhotoId,
   submittedPhoto,
@@ -3016,7 +3188,14 @@ function SceneThree({
   onSubmit,
 }: SceneThreeProps) {
   const isSubmitted = Boolean(submittedPhoto)
-  const submittedPreviewPhoto = submittedPhoto ?? selectedPhoto ?? photos[0] ?? defaultPhotos[0]
+  const submittedPreviewPhoto = submittedPhoto ?? photos[0] ?? defaultPhotos[0]
+  const submittedPreviewOriginalSrc = submittedPreviewPhoto.src || getDefaultPhotoSrc(submittedPreviewPhoto.id)
+  const submittedPreviewAsset =
+    preparedSubmittedPhotoAssets[submittedPreviewPhoto.id]
+  const submittedPreviewSrc =
+    submittedPreviewAsset?.originalSrc === submittedPreviewOriginalSrc
+      ? submittedPreviewAsset.displaySrc
+      : undefined
 
   return (
     <div className="scene-three-stack">
@@ -3128,6 +3307,7 @@ function SceneThree({
           key={`${submittedPreviewPhoto.id}:${submittedPreviewPhoto.src}`}
           isActive={isSubmitted}
           photo={submittedPreviewPhoto}
+          photoSrc={submittedPreviewSrc}
           onRetry={onRetry}
         />
       </div>
@@ -3138,10 +3318,11 @@ function SceneThree({
 type SubmittedAnswerScreenProps = {
   isActive: boolean
   photo: PhotoSlot
+  photoSrc?: string
   onRetry: () => Promise<void>
 }
 
-function SubmittedAnswerScreen({ isActive, photo, onRetry }: SubmittedAnswerScreenProps) {
+function SubmittedAnswerScreen({ isActive, photo, photoSrc, onRetry }: SubmittedAnswerScreenProps) {
   const [roleLabel, castLabel] = photo.label.split('\n')
 
   return (
@@ -3155,7 +3336,7 @@ function SubmittedAnswerScreen({ isActive, photo, onRetry }: SubmittedAnswerScre
       <span className="submitted-file-photo-frame">
         <FallbackPhotoImage
           className="submitted-file-photo"
-          src={photo.src}
+          src={photoSrc ?? photo.src}
           fallbackSrc={getDefaultPhotoSrc(photo.id)}
           retryKey={isActive ? 'active' : 'inactive'}
           alt={photo.label}
