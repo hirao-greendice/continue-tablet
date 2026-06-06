@@ -2039,6 +2039,11 @@ const photoUpdatedAtFormatter = new Intl.DateTimeFormat('ja-JP', {
   hour: '2-digit',
   minute: '2-digit',
 })
+const homeClockFormatter = new Intl.DateTimeFormat('ja-JP', {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+})
 
 function formatPhotoUpdatedAt(updatedAt: number | undefined) {
   if (!updatedAt) {
@@ -2279,6 +2284,7 @@ function HomeScreen({
   return (
     <section className="home-screen" aria-label="チーム選択">
       <BatteryIndicator status={batteryStatus} />
+      <HomeClock />
       <h1 className="home-title">ゲームは続く</h1>
       <div className="home-photo-strip" aria-label="現在の写真">
         {photos.map((photo) => (
@@ -2336,6 +2342,30 @@ function HomeScreen({
         {slideExportStatus && <p className="home-action-status">{slideExportStatus}</p>}
       </div>
     </section>
+  )
+}
+
+function HomeClock() {
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
+  const currentDate = new Date(currentTime)
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
+
+  return (
+    <time
+      className="home-clock"
+      dateTime={currentDate.toISOString()}
+      aria-label="current time"
+    >
+      <span className="home-clock-status" aria-hidden="true" />
+      <span className="home-clock-time">{homeClockFormatter.format(currentDate)}</span>
+    </time>
   )
 }
 
