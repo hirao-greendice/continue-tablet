@@ -475,9 +475,29 @@ type NavigatorWithBattery = Navigator & {
   getBattery?: () => Promise<BatteryManager>
 }
 
+type NetworkEffectiveType = 'slow-2g' | '2g' | '3g' | '4g'
+type NetworkInformation = EventTarget & {
+  downlink?: number
+  effectiveType?: NetworkEffectiveType
+  rtt?: number
+  saveData?: boolean
+}
+type NavigatorWithConnection = Navigator & {
+  connection?: NetworkInformation
+  mozConnection?: NetworkInformation
+  webkitConnection?: NetworkInformation
+}
+
 type BatteryStatus = {
   charging: boolean
   level: number | null
+  supported: boolean
+}
+
+type NetworkStatus = {
+  detail: string
+  level: number | null
+  online: boolean
   supported: boolean
 }
 
@@ -2387,6 +2407,107 @@ function useBatteryStatus() {
   return batteryStatus
 }
 
+function getNetworkConnection() {
+  const navigatorWithConnection = navigator as NavigatorWithConnection
+
+  return (
+    navigatorWithConnection.connection
+    ?? navigatorWithConnection.mozConnection
+    ?? navigatorWithConnection.webkitConnection
+    ?? null
+  )
+}
+
+function getNetworkLevel(connection: NetworkInformation | null, online: boolean) {
+  if (!online) {
+    return 0
+  }
+
+  if (!connection) {
+    return null
+  }
+
+  let level = 3
+  const effectiveType = connection.effectiveType
+  const downlink = connection.downlink
+  const rtt = connection.rtt
+
+  if (effectiveType === 'slow-2g' || effectiveType === '2g') {
+    level = Math.min(level, 1)
+  } else if (effectiveType === '3g') {
+    level = Math.min(level, 2)
+  }
+
+  if (typeof downlink === 'number') {
+    if (downlink < 0.7) {
+      level = Math.min(level, 1)
+    } else if (downlink < 2) {
+      level = Math.min(level, 2)
+    }
+  }
+
+  if (typeof rtt === 'number') {
+    if (rtt > 800) {
+      level = Math.min(level, 1)
+    } else if (rtt > 300) {
+      level = Math.min(level, 2)
+    }
+  }
+
+  return level
+}
+
+function getNetworkDetail(connection: NetworkInformation | null, online: boolean) {
+  if (!online) {
+    return 'オフライン'
+  }
+
+  if (!connection) {
+    return '計測不可'
+  }
+
+  const details = [
+    connection.effectiveType?.toUpperCase(),
+    typeof connection.downlink === 'number' ? `${connection.downlink.toFixed(1)}Mbps` : '',
+    typeof connection.rtt === 'number' ? `${connection.rtt}ms` : '',
+  ].filter(Boolean)
+
+  return details.join(' / ') || '計測中'
+}
+
+function createNetworkStatus(): NetworkStatus {
+  const online = navigator.onLine
+  const connection = getNetworkConnection()
+
+  return {
+    detail: getNetworkDetail(connection, online),
+    level: getNetworkLevel(connection, online),
+    online,
+    supported: Boolean(connection),
+  }
+}
+
+function useNetworkStatus() {
+  const [networkStatus, setNetworkStatus] = useState<NetworkStatus>(createNetworkStatus)
+
+  useEffect(() => {
+    const connection = getNetworkConnection()
+    const updateNetworkStatus = () => setNetworkStatus(createNetworkStatus())
+
+    window.addEventListener('online', updateNetworkStatus)
+    window.addEventListener('offline', updateNetworkStatus)
+    connection?.addEventListener('change', updateNetworkStatus)
+
+    return () => {
+      window.removeEventListener('online', updateNetworkStatus)
+      window.removeEventListener('offline', updateNetworkStatus)
+      connection?.removeEventListener('change', updateNetworkStatus)
+    }
+  }, [])
+
+  return networkStatus
+}
+
 type SecretMenuProps = {
   teamNumber: number | null
   onClose: () => void
@@ -2449,6 +2570,7 @@ function HomeScreen({
   onReload,
 }: HomeScreenProps) {
   const batteryStatus = useBatteryStatus()
+  const networkStatus = useNetworkStatus()
   const teamsByNumber = useMemo(
     () => new Map(teams.map((team) => [team.team, team])),
     [teams],
@@ -2457,6 +2579,7 @@ function HomeScreen({
   return (
     <section className="home-screen" aria-label="チーム選択">
       <BatteryIndicator status={batteryStatus} />
+      <NetworkIndicator status={networkStatus} />
       <HomeClock />
       <button className="home-reload-button" type="button" onClick={onReload}>
         リロード
@@ -2518,6 +2641,41 @@ function HomeScreen({
         {slideExportStatus && <p className="home-action-status">{slideExportStatus}</p>}
       </div>
     </section>
+  )
+}
+
+type NetworkIndicatorProps = {
+  status: NetworkStatus
+}
+
+function NetworkIndicator({ status }: NetworkIndicatorProps) {
+  const level = status.level ?? 0
+  const statusLabel = !status.online
+    ? 'オフライン'
+    : status.level === null
+      ? '不明'
+      : status.level >= 3
+        ? '強'
+        : status.level >= 2
+          ? '中'
+          : '弱'
+
+  return (
+    <div
+      className="network-indicator"
+      data-level={status.level ?? 'unknown'}
+      data-online={status.online}
+      data-supported={status.supported}
+      aria-label={`通信状態 ${statusLabel}、${status.detail}`}
+    >
+      <span className="network-bars" aria-hidden="true">
+        {Array.from({ length: 3 }, (_, index) => (
+          <span data-active={status.online && status.level !== null && index < level} key={index} />
+        ))}
+      </span>
+      <span className="network-label">通信 {statusLabel}</span>
+      <span className="network-detail">{status.detail}</span>
+    </div>
   )
 }
 
