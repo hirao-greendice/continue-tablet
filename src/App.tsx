@@ -3800,7 +3800,6 @@ function PhotoManager({
       <div className="photo-manager-inner">
         <header className="photo-manager-header">
           <h1>写真撮影</h1>
-          <p>人物を選んで、写真を大きく確認しながら撮影・差し替えできます。</p>
           {uploadStatus && <div className="upload-status" role="status">{uploadStatus}</div>}
         </header>
 
