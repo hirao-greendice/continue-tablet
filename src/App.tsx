@@ -445,6 +445,52 @@ function resolveBackupPhotoSrc(src: string) {
   return versionedAsset(backupPhotoPath, BACKUP_PHOTO_VERSION)
 }
 
+function normalizeStoredPhotoSrc(src: string) {
+  const trimmedSrc = src.trim()
+
+  if (!trimmedSrc || /^[a-z][a-z\d+\-.]*:/i.test(trimmedSrc)) {
+    return trimmedSrc
+  }
+
+  const path = trimmedSrc.split(/[?#]/, 1)[0].replace(/\\/g, '/')
+  const backupPhotoFolder = `${BACKUP_PHOTO_FOLDER}/`
+  const backupPhotoFolderIndex = path.indexOf(backupPhotoFolder)
+
+  if (backupPhotoFolderIndex === -1) {
+    return trimmedSrc
+  }
+
+  return versionedAsset(path.slice(backupPhotoFolderIndex), BACKUP_PHOTO_VERSION)
+}
+
+function isUploadedPhotoSrc(src: string) {
+  try {
+    const url = new URL(src)
+    const storagePath = decodeURIComponent(url.pathname)
+
+    return url.hostname === 'firebasestorage.googleapis.com'
+      && storagePath.includes('/photos/history/')
+  } catch {
+    return false
+  }
+}
+
+function recoverStoredCurrentPhotoSrc(storedPhoto: StoredPhoto) {
+  const currentSrc = normalizeStoredPhotoSrc(storedPhoto.src)
+
+  if (!currentSrc.includes(`${BACKUP_PHOTO_FOLDER}/`) || !storedPhoto.updatedAt) {
+    return currentSrc
+  }
+
+  const matchingUploadedPhoto = storedPhoto.history?.find(
+    (historyItem) =>
+      historyItem.updatedAt === storedPhoto.updatedAt
+      && isUploadedPhotoSrc(historyItem.src),
+  )
+
+  return matchingUploadedPhoto?.src.trim() || currentSrc
+}
+
 const STAGE_WIDTH = 1200
 const STAGE_HEIGHT = 1920
 const SLIDE_EXPORT_CROP = {
@@ -732,7 +778,7 @@ async function preparePhotoForDisplay(
     await preloadCachedImage(fallbackSrc, decodedImageCache).catch((error) => {
       console.error('Failed to preload fallback photo', error)
     })
-    return { ...photo, src: fallbackSrc }
+    return { ...photo, src: primarySrc }
   }
 }
 
@@ -2114,14 +2160,18 @@ function mergeStoredPhotos(currentPhotos: PhotoSlot[], storedPhotos: StoredPhoto
       return photo
     }
 
-    return storedPhoto
-      ? {
-          ...photo,
-          history: getPhotoHistory(storedPhoto),
-          src: storedPhoto.src,
-          updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhoto.src),
-        }
-      : photo
+    if (!storedPhoto) {
+      return photo
+    }
+
+    const storedPhotoSrc = recoverStoredCurrentPhotoSrc(storedPhoto)
+
+    return {
+      ...photo,
+      history: getPhotoHistory({ ...storedPhoto, src: storedPhotoSrc }),
+      src: storedPhotoSrc,
+      updatedAt: storedPhoto.updatedAt ?? getPhotoVersionTimestamp(storedPhotoSrc),
+    }
   })
 }
 
@@ -2171,9 +2221,10 @@ function setPhotoHistoryItemKeep(historyItem: PhotoHistoryItem, isKept: boolean)
 
 function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>) {
   const history = photo.history ?? []
-  const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(photo.src)
+  const currentSrc = normalizeStoredPhotoSrc(photo.src)
+  const currentUpdatedAt = photo.updatedAt ?? getPhotoVersionTimestamp(currentSrc)
   const items = [
-    { src: photo.src, updatedAt: currentUpdatedAt },
+    { src: currentSrc, updatedAt: currentUpdatedAt },
     ...history,
   ]
   const seen = new Map<string, PhotoHistoryItem>()
@@ -2181,11 +2232,13 @@ function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>
   let unkeptCount = 0
 
   items.forEach((item) => {
-    if (!item.src) {
+    const normalizedSrc = normalizeStoredPhotoSrc(item.src)
+
+    if (!normalizedSrc) {
       return
     }
 
-    const existingItem = seen.get(item.src)
+    const existingItem = seen.get(normalizedSrc)
 
     if (existingItem) {
       if (item.isKept) {
@@ -2202,10 +2255,10 @@ function getPhotoHistory(photo: Pick<PhotoSlot, 'history' | 'src' | 'updatedAt'>
     const nextItem: PhotoHistoryItem = {
       ...(item.isKept ? { isKept: true } : {}),
       ...(item.updatedAt ? { updatedAt: item.updatedAt } : {}),
-      src: item.src,
+      src: normalizedSrc,
     }
 
-    seen.set(item.src, nextItem)
+    seen.set(normalizedSrc, nextItem)
     uniqueItems.push(nextItem)
   })
 
